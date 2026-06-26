@@ -127,7 +127,7 @@ class RenewVaultLogoPainter extends CustomPainter {
     canvas.scale(scale);
 
     final bgPaint = Paint()
-      ..shader = const LinearGradient(
+      ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [AppBrand.primaryBlue, AppBrand.primaryBlueDark],
@@ -140,7 +140,7 @@ class RenewVaultLogoPainter extends CustomPainter {
       ..strokeWidth = 18
       ..strokeCap = StrokeCap.round;
     canvas.drawArc(
-      const Rect.fromCircle(center: Offset(256, 256), radius: 200),
+      Rect.fromCircle(center: const Offset(256, 256), radius: 200),
       -math.pi / 2,
       math.pi * 1.55,
       false,
@@ -166,7 +166,7 @@ class RenewVaultLogoPainter extends CustomPainter {
     canvas.drawPath(
       shieldPath,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [Colors.white, Color(0xFFEFF6FF)],
