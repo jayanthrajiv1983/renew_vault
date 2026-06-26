@@ -1,0 +1,66 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_spacing.dart';
+
+/// Tappable summary tile for dashboard and analytics grids.
+class SummaryStatCard extends StatelessWidget {
+  const SummaryStatCard({
+    super.key,
+    required this.label,
+    required this.count,
+    this.onTap,
+    this.countColor,
+  });
+
+  final String label;
+  final int count;
+  final VoidCallback? onTap;
+  final Color? countColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cardRadius = AppSpacing.cardBorderRadius;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: cardRadius,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.cardPadding,
+            vertical: AppSpacing.cardPadding - 4,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$count',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: countColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

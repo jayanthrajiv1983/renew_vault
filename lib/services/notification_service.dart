@@ -2,13 +2,21 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../models/renewal_item.dart';
+import 'settings_service.dart';
+import 'storage_service.dart';
+
 class NotificationService {
   NotificationService._();
 
   static final NotificationService instance = NotificationService._();
 
+  factory NotificationService() => instance;
+
   static const _channelId = 'renewvault_channel';
-  static const _channelName = 'RenewVault Notifications';
+  static const _channelName = 'Renew Vault Notifications';
+  static const _notificationTitle = 'Renew Vault Reminder';
+  static const _allReminderDays = [90, 60, 30, 15, 7, 3, 1, 0];
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -35,10 +43,13 @@ class NotificationService {
       importance: Importance.defaultImportance,
     );
 
-    await _plugin
+    final androidPlugin = _plugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.createNotificationChannel(channel);
+    await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.requestExactAlarmsPermission();
 
     _initialized = true;
   }
@@ -58,22 +69,27 @@ class NotificationService {
     tz.setLocalLocation(match ?? tz.UTC);
   }
 
+  static const _testNotificationId = 2147483647;
+
+  Future<void> showInstantNotification({
+    String title = 'Renew Vault',
+    String body = 'Test notification',
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+    );
+    const details = NotificationDetails(android: androidDetails);
+
+    await _plugin.show(_testNotificationId, title, body, details);
+  }
+
   Future<void> scheduleNotification({
     required int id,
     required String title,
     required String body,
-    required DateTime scheduledDate,
+    required tz.TZDateTime scheduledDate,
   }) async {
-    final scheduledTz = tz.TZDateTime(
-      tz.local,
-      scheduledDate.year,
-      scheduledDate.month,
-      scheduledDate.day,
-      scheduledDate.hour,
-      scheduledDate.minute,
-      scheduledDate.second,
-    );
-
     const androidDetails = AndroidNotificationDetails(
       _channelId,
       _channelName,
@@ -84,7 +100,7 @@ class NotificationService {
       id,
       title,
       body,
-      scheduledTz,
+      scheduledDate,
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
@@ -92,5 +108,79 @@ class NotificationService {
 
   Future<void> cancelNotification(int id) async {
     await _plugin.cancel(id);
+  }
+
+  int notificationIdFor(String itemId, int reminderDays) {
+    return Object.hash(itemId, reminderDays) & 0x7FFFFFFF;
+  }
+
+  static String _formatNotificationBody(String title, int daysRemaining) {
+    if (daysRemaining == 0) {
+      return '$title expires today.';
+    }
+    if (daysRemaining == 1) {
+      return '$title expires tomorrow.';
+    }
+    return '$title expires in $daysRemaining days.';
+  }
+
+  Future<void> cancelRenewalReminders(RenewalItem item) async {
+    final idsToCancel = <int>{...item.notificationIds.values};
+    for (final days in _allReminderDays) {
+      idsToCancel.add(notificationIdFor(item.id, days));
+    }
+
+    for (final id in idsToCancel) {
+      await cancelNotification(id);
+    }
+  }
+
+  Future<RenewalItem> scheduleRenewalReminders(RenewalItem item) async {
+    await cancelRenewalReminders(item);
+
+    if (!SettingsService.instance.getEnableNotifications()) {
+      return item.copyWith(notificationIds: const {});
+    }
+
+    final renewalDay = DateTime(
+      item.renewalDate.year,
+      item.renewalDate.month,
+      item.renewalDate.day,
+    );
+    final now = tz.TZDateTime.now(tz.local);
+    final notificationIds = <String, int>{};
+
+    for (final reminderDays in item.reminderDays) {
+      final reminderDay = renewalDay.subtract(Duration(days: reminderDays));
+      final scheduledTz = tz.TZDateTime(
+        tz.local,
+        reminderDay.year,
+        reminderDay.month,
+        reminderDay.day,
+        9,
+      );
+
+      if (scheduledTz.isBefore(now)) {
+        continue;
+      }
+
+      final id = notificationIdFor(item.id, reminderDays);
+      await scheduleNotification(
+        id: id,
+        title: _notificationTitle,
+        body: _formatNotificationBody(item.title, reminderDays),
+        scheduledDate: scheduledTz,
+      );
+      notificationIds[reminderDays.toString()] = id;
+    }
+
+    return item.copyWith(notificationIds: notificationIds);
+  }
+
+  Future<void> rescheduleAllReminders() async {
+    for (final item in StorageService.instance.getAll()) {
+      final updated = await scheduleRenewalReminders(item);
+      await StorageService.instance.saveToBox(updated);
+    }
   }
 }

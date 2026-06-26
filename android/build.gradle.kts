@@ -1,7 +1,26 @@
+import com.android.build.gradle.BaseExtension
+import org.gradle.api.tasks.compile.JavaCompile
+
 allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+}
+
+subprojects {
+    afterEvaluate {
+        extensions.findByType(BaseExtension::class.java)?.apply {
+            compileSdkVersion(36)
+            compileOptions {
+                sourceCompatibility = JavaVersion.VERSION_17
+                targetCompatibility = JavaVersion.VERSION_17
+            }
+        }
+        tasks.withType(JavaCompile::class.java) {
+            sourceCompatibility = "17"
+            targetCompatibility = "17"
+        }
     }
 }
 

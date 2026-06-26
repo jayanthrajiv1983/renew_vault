@@ -9,6 +9,8 @@ class RenewalItem {
     required this.renewalDate,
     this.notes = '',
     this.reminderDays = defaultReminderDays,
+    this.notificationIds = const {},
+    this.metadata = const {},
   });
 
   final String id;
@@ -18,6 +20,8 @@ class RenewalItem {
   final DateTime renewalDate;
   final String notes;
   final List<int> reminderDays;
+  final Map<String, int> notificationIds;
+  final Map<String, dynamic> metadata;
 
   RenewalItem copyWith({
     String? id,
@@ -27,6 +31,8 @@ class RenewalItem {
     DateTime? renewalDate,
     String? notes,
     List<int>? reminderDays,
+    Map<String, int>? notificationIds,
+    Map<String, dynamic>? metadata,
   }) {
     return RenewalItem(
       id: id ?? this.id,
@@ -36,6 +42,8 @@ class RenewalItem {
       renewalDate: renewalDate ?? this.renewalDate,
       notes: notes ?? this.notes,
       reminderDays: reminderDays ?? this.reminderDays,
+      notificationIds: notificationIds ?? this.notificationIds,
+      metadata: metadata ?? this.metadata,
     );
   }
 
@@ -48,7 +56,31 @@ class RenewalItem {
       'renewalDate': renewalDate.toIso8601String(),
       'notes': notes,
       'reminderDays': reminderDays,
+      'notificationIds': notificationIds,
+      'metadata': metadata,
     };
+  }
+
+  static Map<String, int> _parseNotificationIds(dynamic raw) {
+    if (raw is Map) {
+      return raw.map(
+        (key, value) => MapEntry(key.toString(), (value as num).toInt()),
+      );
+    }
+    return {};
+  }
+
+  static Map<String, dynamic> _parseMetadata(Map<String, dynamic> json) {
+    final raw = json['metadata'] ?? json['categoryDetails'];
+    if (raw is Map) {
+      final metadata = Map<String, dynamic>.from(raw);
+      if (metadata.containsKey('issuingAuthority') &&
+          !metadata.containsKey('authority')) {
+        metadata['authority'] = metadata.remove('issuingAuthority');
+      }
+      return metadata;
+    }
+    return {};
   }
 
   factory RenewalItem.fromJson(Map<String, dynamic> json) {
@@ -63,6 +95,8 @@ class RenewalItem {
               ?.map((day) => day as int)
               .toList() ??
           defaultReminderDays,
+      notificationIds: _parseNotificationIds(json['notificationIds']),
+      metadata: _parseMetadata(json),
     );
   }
 }

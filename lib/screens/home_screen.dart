@@ -1,9 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../models/renewal_item.dart';
+import '../models/sort_option.dart';
+import '../services/family_service.dart';
+import '../services/settings_service.dart';
 import '../services/storage_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../utils/sort_helper.dart';
+import '../utils/form_padding.dart';
+import '../search/renewal_search_delegate.dart';
+import '../widgets/renew_vault_logo.dart';
+import '../widgets/renewal_card.dart';
+import '../widgets/section_header.dart';
+import '../widgets/summary_stat_card.dart';
 import 'add_item_screen.dart';
+import 'analytics_screen.dart';
+import 'filtered_items_screen.dart';
 import 'item_detail_screen.dart';
+import 'settings_screen.dart';
+
+enum HomeFilterStatus { expiringSoon, expired, safe }
+
+/// Minimum width to show AppBar title text alongside the logo (tablet / wide).
+const _kAppBarTitleBreakpoint = 600.0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,16 +36,77 @@ class _HomeScreenState extends State<HomeScreen> {
   final _storage = StorageService.instance;
   List<RenewalItem> _items = [];
 
+  String? _selectedCategory;
+  HomeFilterStatus? _selectedStatus;
+  String? _selectedOwner;
+  SortOption? _explicitSort;
+
+  SortOption? get _effectiveSort =>
+      SettingsService.instance.getEffectiveSortOption();
+
+  bool get _hasActiveFilters =>
+      _selectedCategory != null ||
+      _selectedStatus != null ||
+      _selectedOwner != null;
+
   @override
   void initState() {
     super.initState();
+    SettingsService.instance.addListener(_onSettingsChanged);
+    _applySortFromSettings();
     _loadItems();
   }
 
-  void _loadItems() {
+  @override
+  void dispose() {
+    SettingsService.instance.removeListener(_onSettingsChanged);
+    super.dispose();
+  }
+
+  void _onSettingsChanged() {
+    if (mounted) {
+      setState(_applySortFromSettings);
+    }
+  }
+
+  void _applySortFromSettings() {
+    final saved = SettingsService.instance.getSortOption();
+    _explicitSort =
+        saved == null || saved == SortOption.nearestExpiry ? null : saved;
+  }
+
+  void _setExplicitSort(SortOption? option) {
+    final explicit =
+        option == null || option == SortOption.nearestExpiry ? null : option;
+    setState(() => _explicitSort = explicit);
+    SettingsService.instance.setSortOption(explicit);
+  }
+
+  Future<void> _loadItems() async {
     setState(() {
       _items = _storage.getAll();
     });
+  }
+
+  Future<void> _openAnalyticsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AnalyticsScreen(),
+      ),
+    );
+    _loadItems();
+  }
+
+  Future<void> _openSettingsScreen() async {
+    final restored = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => const SettingsScreen(),
+      ),
+    );
+    setState(_applySortFromSettings);
+    if (restored == true) {
+      _loadItems();
+    }
   }
 
   Future<void> _openAddItemScreen() async {
@@ -46,130 +127,302 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadItems();
   }
 
-  List<RenewalItem> get _expiringSoon {
-    final today = _dateOnly(DateTime.now());
-    final cutoff = today.add(const Duration(days: 30));
-
-    return (_items
-        .where((item) {
-          final renewalDay = _dateOnly(item.renewalDate);
-          return !renewalDay.isBefore(today) && !renewalDay.isAfter(cutoff);
-        })
-        .toList()
-      ..sort((a, b) => a.renewalDate.compareTo(b.renewalDate)))
-        .take(5)
-        .toList();
-  }
-
-  DateTime _dateOnly(DateTime date) {
-    return DateTime(date.year, date.month, date.day);
-  }
-
-  int _getDaysRemaining(DateTime renewalDate) {
-    return _dateOnly(renewalDate).difference(_dateOnly(DateTime.now())).inDays;
-  }
-
-  Color _getStatusColor(int daysRemaining) {
-    if (daysRemaining < 0 || daysRemaining <= 7) {
-      return Colors.red;
-    }
-    if (daysRemaining <= 30) {
-      return Colors.orange;
-    }
-    return Colors.green;
-  }
-
-  String _getStatusText(int daysRemaining) {
-    if (daysRemaining < 0) {
-      final daysAgo = -daysRemaining;
-      return daysAgo == 1 ? 'Expired 1 day ago' : 'Expired $daysAgo days ago';
-    }
-    if (daysRemaining == 0) {
-      return 'Expires today';
-    }
-    if (daysRemaining == 1) {
-      return '1 day left';
-    }
-    return '$daysRemaining days left';
-  }
-
-  IconData _categoryIcon(String category) {
-    switch (category) {
-      case 'Appliance':
-        return Icons.kitchen_outlined;
-      case 'Vehicle':
-        return Icons.directions_car_outlined;
-      case 'Insurance':
-        return Icons.shield_outlined;
-      case 'Document':
-        return Icons.description_outlined;
-      case 'Tax':
-        return Icons.receipt_long_outlined;
-      default:
-        return Icons.category_outlined;
+  Future<void> _openSearch() async {
+    var needsRefresh = false;
+    await showSearch(
+      context: context,
+      delegate: RenewalSearchDelegate(
+        onItemChanged: () => needsRefresh = true,
+      ),
+    );
+    if (needsRefresh) {
+      _loadItems();
     }
   }
 
-  Widget _buildRenewalCard(RenewalItem item) {
-    final daysRemaining = _getDaysRemaining(item.renewalDate);
-    final statusColor = _getStatusColor(daysRemaining);
-    final statusText = _getStatusText(daysRemaining);
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => _openItemDetail(item),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Icon(
-                _categoryIcon(item.category),
-                size: 40,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.category,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                statusText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: statusColor,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
+  Future<void> _openFilteredItems({
+    required String title,
+    required ItemFilter filter,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => FilteredItemsScreen(
+          title: title,
+          filter: filter,
         ),
       ),
     );
+    _loadItems();
   }
+
+  bool _matchesStatusFilter(RenewalItem item) {
+    if (_selectedStatus == null) {
+      return true;
+    }
+
+    final days = getDaysRemaining(item.renewalDate);
+    switch (_selectedStatus!) {
+      case HomeFilterStatus.expiringSoon:
+        return days >= 0 && days <= 30;
+      case HomeFilterStatus.expired:
+        return days < 0;
+      case HomeFilterStatus.safe:
+        return days > 30;
+    }
+  }
+
+  List<RenewalItem> _applyFilters(List<RenewalItem> items) {
+    return items.where((item) {
+      if (_selectedCategory != null && item.category != _selectedCategory) {
+        return false;
+      }
+      if (_selectedOwner != null && item.owner != _selectedOwner) {
+        return false;
+      }
+      if (!_matchesStatusFilter(item)) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  String _statusFilterLabel(HomeFilterStatus status) {
+    switch (status) {
+      case HomeFilterStatus.expiringSoon:
+        return 'Expiring Soon';
+      case HomeFilterStatus.expired:
+        return 'Expired';
+      case HomeFilterStatus.safe:
+        return 'Safe';
+    }
+  }
+
+  void _openFilterSheet() {
+    var tempCategory = _selectedCategory;
+    var tempStatus = _selectedStatus;
+    var tempOwner = _selectedOwner;
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: bottomSheetPadding(sheetContext),
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                  Text(
+                    'Filter Renewals',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  DropdownMenu<String?>(
+                    key: ValueKey('filter-category-$tempCategory'),
+                    initialSelection: tempCategory,
+                    label: const Text('Category'),
+                    expandedInsets: EdgeInsets.zero,
+                    dropdownMenuEntries: [
+                      const DropdownMenuEntry(
+                        value: null,
+                        label: 'All categories',
+                      ),
+                      ...AddItemScreen.categories.map(
+                        (category) => DropdownMenuEntry(
+                          value: category,
+                          label: category,
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setSheetState(() => tempCategory = value);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  Text(
+                    'Status',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.fieldLabelGap),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      FilterChip(
+                        label: const Text('All'),
+                        selected: tempStatus == null,
+                        onSelected: (_) {
+                          setSheetState(() => tempStatus = null);
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('Expiring Soon'),
+                        selected: tempStatus == HomeFilterStatus.expiringSoon,
+                        onSelected: (_) {
+                          setSheetState(
+                            () => tempStatus = HomeFilterStatus.expiringSoon,
+                          );
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('Expired'),
+                        selected: tempStatus == HomeFilterStatus.expired,
+                        onSelected: (_) {
+                          setSheetState(
+                            () => tempStatus = HomeFilterStatus.expired,
+                          );
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('Safe'),
+                        selected: tempStatus == HomeFilterStatus.safe,
+                        onSelected: (_) {
+                          setSheetState(
+                            () => tempStatus = HomeFilterStatus.safe,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  DropdownMenu<String?>(
+                    key: ValueKey('filter-owner-$tempOwner'),
+                    initialSelection: tempOwner,
+                    label: const Text('Owner'),
+                    expandedInsets: EdgeInsets.zero,
+                    dropdownMenuEntries: [
+                      const DropdownMenuEntry(
+                        value: null,
+                        label: 'All owners',
+                      ),
+                      ...FamilyService.instance.getAll().map(
+                        (member) => DropdownMenuEntry(
+                          value: member.name,
+                          label: member.name,
+                        ),
+                      ),
+                    ],
+                    onSelected: (value) {
+                      setSheetState(() => tempOwner = value);
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.screenPadding),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            setSheetState(() {
+                              tempCategory = null;
+                              tempStatus = null;
+                              tempOwner = null;
+                            });
+                          },
+                          child: const Text('Clear all'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.cardSpacing),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedCategory = tempCategory;
+                              _selectedStatus = tempStatus;
+                              _selectedOwner = tempOwner;
+                            });
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: const Text('Apply'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _openSortSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: bottomSheetPadding(sheetContext),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Sort Renewals',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.fieldLabelGap),
+                ...SortOption.values.map(
+                  (option) => RadioListTile<SortOption>(
+                    title: Text(option.label),
+                    value: option,
+                    groupValue: _explicitSort ?? SortOption.nearestExpiry,
+                    onChanged: (_) {
+                      _setExplicitSort(option);
+                      Navigator.of(sheetContext).pop();
+                    },
+                  ),
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.clear),
+                  title: const Text('Clear Sorting'),
+                  selected: _explicitSort == null,
+                  trailing: _explicitSort == null
+                      ? Icon(
+                          Icons.check,
+                          color: Theme.of(context).colorScheme.primary,
+                        )
+                      : null,
+                  onTap: () {
+                    _setExplicitSort(null);
+                    Navigator.of(sheetContext).pop();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  List<RenewalItem> get _expiringSoon {
+    final today = dateOnly(DateTime.now());
+    final cutoff = today.add(const Duration(days: 30));
+
+    final expiring = _applyFilters(_items).where((item) {
+      final renewalDay = dateOnly(item.renewalDate);
+      return !renewalDay.isBefore(today) && !renewalDay.isAfter(cutoff);
+    }).toList();
+
+    return sortRenewals(expiring, _effectiveSort).take(5).toList();
+  }
+
+  List<RenewalItem> get _filteredItems =>
+      sortRenewals(_applyFilters(_items), _effectiveSort);
 
   int _countExpiringSoon() {
     return _items
         .where((item) {
-          final days = _getDaysRemaining(item.renewalDate);
+          final days = getDaysRemaining(item.renewalDate);
           return days >= 0 && days <= 30;
         })
         .length;
@@ -177,75 +430,252 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int _countExpired() {
     return _items
-        .where((item) => _getDaysRemaining(item.renewalDate) < 0)
+        .where((item) => getDaysRemaining(item.renewalDate) < 0)
         .length;
   }
 
   int _countSafe() {
     return _items
-        .where((item) => _getDaysRemaining(item.renewalDate) > 30)
+        .where((item) => getDaysRemaining(item.renewalDate) > 30)
         .length;
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final expiringSoon = _expiringSoon;
+    final filteredItems = _filteredItems;
+    final expiredCount = _countExpired();
+
+    final showAppBarTitle =
+        MediaQuery.sizeOf(context).width >= _kAppBarTitleBreakpoint;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('RenewVault'),
+        centerTitle: false,
+        title: _AppBarBranding(showTitle: showAppBarTitle),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.analytics_outlined),
+            tooltip: 'Analytics',
+            onPressed: _openAnalyticsScreen,
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: _openSettingsScreen,
+          ),
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: 'Search',
+            onPressed: _openSearch,
+          ),
+          IconButton(
+            icon: const Icon(Icons.sort),
+            tooltip: 'Sort',
+            onPressed: _openSortSheet,
+          ),
+          IconButton(
+            icon: Badge(
+              isLabelVisible: _hasActiveFilters,
+              child: const Icon(Icons.filter_list),
+            ),
+            tooltip: 'Filter',
+            onPressed: _openFilterSheet,
+          ),
+        ],
       ),
-      body: _items.isEmpty
-          ? const Center(
-              child: Text(
-                'No renewals added yet',
-                style: TextStyle(fontSize: 18),
-              ),
-            )
-          : ListView(
-              children: [
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadItems,
+          child: _items.isEmpty
+            ? ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.65,
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.screenPadding,
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.event_note,
+                              size: 80,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant
+                                  .withValues(alpha: 0.38),
+                            ),
+                            const SizedBox(height: AppSpacing.screenPadding),
+                            Text(
+                              'No renewals added yet',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: AppSpacing.sectionSpacing),
+                            Text(
+                              'Tap the + button below to add your first renewal.',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            : ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: listScrollPadding(
+                  context,
+                  top: 0,
+                  includeFabClearance: true,
+                ),
+                children: [
+                if (_explicitSort != null)
+                  _SortChipBar(
+                    sortLabel: _explicitSort!.label,
+                    onClear: () => _setExplicitSort(null),
+                  ),
+                if (_hasActiveFilters)
+                  _ActiveFiltersBar(
+                    selectedCategory: _selectedCategory,
+                    selectedStatus: _selectedStatus,
+                    selectedOwner: _selectedOwner,
+                    statusLabel: _selectedStatus == null
+                        ? null
+                        : _statusFilterLabel(_selectedStatus!),
+                    onClearCategory: () {
+                      setState(() => _selectedCategory = null);
+                    },
+                    onClearStatus: () {
+                      setState(() => _selectedStatus = null);
+                    },
+                    onClearOwner: () {
+                      setState(() => _selectedOwner = null);
+                    },
+                  ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.only(
+                    top: AppSpacing.sectionSpacing,
+                    bottom: AppSpacing.fieldLabelGap,
+                  ),
                   child: GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
+                    mainAxisSpacing: AppSpacing.cardSpacing,
+                    crossAxisSpacing: AppSpacing.cardSpacing,
                     childAspectRatio: 1.55,
                     children: [
-                      _SummaryCard(
+                      SummaryStatCard(
                         label: 'Total Items',
                         count: _items.length,
+                        countColor: AppColors.statTotal(colorScheme),
+                        onTap: () => _openFilteredItems(
+                          title: 'Total Items',
+                          filter: ItemFilter.all,
+                        ),
                       ),
-                      _SummaryCard(
+                      SummaryStatCard(
                         label: 'Expiring Soon',
                         count: _countExpiringSoon(),
+                        countColor: AppColors.statExpiringSoon,
+                        onTap: () => _openFilteredItems(
+                          title: 'Expiring Soon',
+                          filter: ItemFilter.expiringSoon,
+                        ),
                       ),
-                      _SummaryCard(
+                      SummaryStatCard(
                         label: 'Expired',
                         count: _countExpired(),
+                        countColor: AppColors.statExpired,
+                        onTap: () => _openFilteredItems(
+                          title: 'Expired',
+                          filter: ItemFilter.expired,
+                        ),
                       ),
-                      _SummaryCard(
+                      SummaryStatCard(
                         label: 'Safe',
                         count: _countSafe(),
+                        countColor: AppColors.statSafe,
+                        onTap: () => _openFilteredItems(
+                          title: 'Safe',
+                          filter: ItemFilter.safe,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                _SectionHeader(title: 'Expiring Soon'),
+                if (expiredCount >= 1 &&
+                    SettingsService.instance.getShowExpiredBanner())
+                  _OverdueAlertBanner(
+                    count: expiredCount,
+                    onTap: () => _openFilteredItems(
+                      title: 'Expired',
+                      filter: ItemFilter.expired,
+                    ),
+                  ),
+                const SectionHeader(title: 'Expiring Soon'),
                 if (expiringSoon.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Text('No upcoming renewals'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.fieldLabelGap,
+                    ),
+                    child: Text(
+                      _hasActiveFilters
+                          ? 'No upcoming renewals match filters'
+                          : 'No upcoming renewals',
+                    ),
                   )
                 else
-                  ...expiringSoon.map(_buildRenewalCard),
-                const SizedBox(height: 16),
-                _SectionHeader(title: 'All Renewals'),
-                ..._items.map(_buildRenewalCard),
-              ],
-            ),
+                  ...expiringSoon.map(
+                    (item) => RenewalCard(
+                      item: item,
+                      onTap: () => _openItemDetail(item),
+                    ),
+                  ),
+                const SectionHeader(title: 'All Renewals'),
+                if (filteredItems.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.fieldLabelGap,
+                    ),
+                    child: Text(
+                      _hasActiveFilters
+                          ? 'No renewals match filters'
+                          : 'No renewals added yet',
+                    ),
+                  )
+                else
+                  ...filteredItems.map(
+                    (item) => RenewalCard(
+                      item: item,
+                      onTap: () => _openItemDetail(item),
+                    ),
+                  ),
+                ],
+              ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddItemScreen,
         child: const Icon(Icons.add),
@@ -254,63 +684,152 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.count,
-  });
+class _AppBarBranding extends StatelessWidget {
+  const _AppBarBranding({required this.showTitle});
 
-  final String label;
-  final int count;
+  final bool showTitle;
+
+  static const _logoSize = 36.0;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return RenewVaultLogo(
+      size: _logoSize,
+      showTitle: showTitle,
+      badgeBackground: true,
+    );
+  }
+}
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '$count',
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+class _SortChipBar extends StatelessWidget {
+  const _SortChipBar({
+    required this.sortLabel,
+    required this.onClear,
+  });
+
+  final String sortLabel;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        top: AppSpacing.cardSpacing,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: InputChip(
+          label: Text('Sort: $sortLabel'),
+          onDeleted: onClear,
         ),
       ),
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+class _ActiveFiltersBar extends StatelessWidget {
+  const _ActiveFiltersBar({
+    required this.selectedCategory,
+    required this.selectedStatus,
+    required this.selectedOwner,
+    required this.statusLabel,
+    required this.onClearCategory,
+    required this.onClearStatus,
+    required this.onClearOwner,
+  });
 
-  final String title;
+  final String? selectedCategory;
+  final HomeFilterStatus? selectedStatus;
+  final String? selectedOwner;
+  final String? statusLabel;
+  final VoidCallback onClearCategory;
+  final VoidCallback onClearStatus;
+  final VoidCallback onClearOwner;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.only(top: AppSpacing.cardSpacing),
+      child: Row(
+        children: [
+          if (selectedCategory != null)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
+              child: InputChip(
+                label: Text('Category: $selectedCategory'),
+                onDeleted: onClearCategory,
+              ),
             ),
+          if (selectedStatus != null && statusLabel != null)
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
+              child: InputChip(
+                label: Text('Status: $statusLabel'),
+                onDeleted: onClearStatus,
+              ),
+            ),
+          if (selectedOwner != null)
+            InputChip(
+              label: Text('Owner: $selectedOwner'),
+              onDeleted: onClearOwner,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OverdueAlertBanner extends StatelessWidget {
+  const _OverdueAlertBanner({
+    required this.count,
+    required this.onTap,
+  });
+
+  final int count;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final message = count == 1
+        ? 'You have 1 expired renewal'
+        : 'You have $count expired renewals';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),
+      child: Material(
+        color: theme.colorScheme.errorContainer,
+        borderRadius: AppSpacing.cardBorderRadius,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppSpacing.cardBorderRadius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.cardPadding,
+              vertical: AppSpacing.cardSpacing,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.warning_amber,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
+                const SizedBox(width: AppSpacing.cardSpacing),
+                Expanded(
+                  child: Text(
+                    message,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

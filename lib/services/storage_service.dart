@@ -34,9 +34,13 @@ class StorageService {
     return items;
   }
 
-  Future<void> save(RenewalItem item) async {
+  Future<void> saveToBox(RenewalItem item) async {
     await _box!.put(item.id, item.toJson());
-    await NotificationService.instance.scheduleRenewalReminders(item);
+  }
+
+  Future<void> save(RenewalItem item) async {
+    final updated = await NotificationService.instance.scheduleRenewalReminders(item);
+    await saveToBox(updated);
   }
 
   Future<void> update(RenewalItem item) async {
@@ -52,7 +56,23 @@ class StorageService {
   }
 
   Future<void> delete(String id) async {
-    await NotificationService.instance.cancelRenewalReminders(id);
+    final item = await getById(id);
+    if (item != null) {
+      await NotificationService.instance.cancelRenewalReminders(item);
+    }
     await _box!.delete(id);
+  }
+
+  Future<void> replaceAll(List<RenewalItem> items) async {
+    for (final item in getAll()) {
+      await NotificationService.instance.cancelRenewalReminders(item);
+    }
+
+    await _box!.clear();
+
+    for (final item in items) {
+      final updated = await NotificationService.instance.scheduleRenewalReminders(item);
+      await saveToBox(updated);
+    }
   }
 }

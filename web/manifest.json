@@ -1,6 +1,6 @@
 {
-    "name": "homecare_vault",
-    "short_name": "homecare_vault",
+    "name": "Renew Vault",
+    "short_name": "Renew Vault",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
