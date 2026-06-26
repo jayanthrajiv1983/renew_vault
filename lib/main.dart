@@ -9,7 +9,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   await StorageService.instance.init();
-  await NotificationService.instance.init();
+  await NotificationService.instance.initialize();
   runApp(const RenewVaultApp());
 }
 

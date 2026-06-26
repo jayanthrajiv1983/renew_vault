@@ -1,5 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
@@ -28,25 +28,34 @@ class NotificationService {
 
     await _plugin.initialize(initSettings);
 
-    const androidChannel = AndroidNotificationChannel(
+    const channel = AndroidNotificationChannel(
       _channelId,
       _channelName,
-      importance: Importance.high,
+      description: 'Renewal reminder notifications',
+      importance: Importance.defaultImportance,
     );
 
     await _plugin
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(androidChannel);
+        ?.createNotificationChannel(channel);
 
     _initialized = true;
   }
 
   void _configureLocalTimeZone() {
-    final offset = DateTime.now().timeZoneOffset;
-    final hours = offset.inHours.abs();
-    final sign = offset.isNegative ? '+' : '-';
-    tz.setLocalLocation(tz.getLocation('Etc/GMT$sign$hours'));
+    final now = DateTime.now();
+    final offset = now.timeZoneOffset;
+    tz.Location? match;
+
+    for (final location in tz.timeZoneDatabase.locations.values) {
+      if (tz.TZDateTime.from(now, location).timeZoneOffset == offset) {
+        match = location;
+        break;
+      }
+    }
+
+    tz.setLocalLocation(match ?? tz.UTC);
   }
 
   Future<void> scheduleNotification({
@@ -55,19 +64,28 @@ class NotificationService {
     required String body,
     required DateTime scheduledDate,
   }) async {
-    final scheduledTime = tz.TZDateTime.from(scheduledDate, tz.local);
+    final scheduledTz = tz.TZDateTime(
+      tz.local,
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      scheduledDate.hour,
+      scheduledDate.minute,
+      scheduledDate.second,
+    );
+
+    const androidDetails = AndroidNotificationDetails(
+      _channelId,
+      _channelName,
+    );
+    const details = NotificationDetails(android: androidDetails);
 
     await _plugin.zonedSchedule(
       id,
       title,
       body,
-      scheduledTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          _channelId,
-          _channelName,
-        ),
-      ),
+      scheduledTz,
+      details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
