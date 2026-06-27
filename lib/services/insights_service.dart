@@ -172,8 +172,6 @@ class InsightsService {
         return 'Documents';
       case 'Appliance':
         return 'Appliances';
-      case 'Vehicle':
-        return 'Vehicles';
       case 'Other':
         return 'Others';
       default:

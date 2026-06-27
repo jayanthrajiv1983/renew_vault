@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/categories.dart';
-import '../../services/analytics_service.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
 
@@ -10,7 +9,7 @@ class CategoryPieChart extends StatelessWidget {
   const CategoryPieChart({
     super.key,
     required this.categoryCounts,
-    this.categories = AnalyticsService.categories,
+    this.categories = Categories.ordered,
   });
 
   final Map<String, int> categoryCounts;

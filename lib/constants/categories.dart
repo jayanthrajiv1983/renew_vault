@@ -5,21 +5,43 @@ import 'package:flutter/material.dart';
 /// Color order matches [ordered] and the analytics pie chart palette.
 abstract final class Categories {
   static const ordered = [
-    'Document',
-    'Insurance',
     'Appliance',
-    'Vehicle',
-    'Tax',
+    'Document',
+    'Health Insurance',
+    'Life Insurance',
     'Other',
+    'Subscription',
+    'Tax',
+    'Travel Insurance',
+    'Vehicle Insurance',
   ];
+
+  static const insuranceCategories = [
+    'Health Insurance',
+    'Life Insurance',
+    'Travel Insurance',
+  ];
+
+  static const legacyCategoryReplacements = <String, String>{
+    'Vehicle': 'Vehicle Insurance',
+    'Insurance': 'Health Insurance',
+  };
+
+  static String? legacyReplacementFor(String category) {
+    return legacyCategoryReplacements[category];
+  }
+
+  static bool isInsuranceCategory(String category) {
+    return insuranceCategories.contains(category);
+  }
 
   static IconData iconFor(String category) {
     switch (category) {
-      case 'Vehicle':
+      case 'Vehicle Insurance':
         return Icons.directions_car;
       case 'Document':
         return Icons.description;
-      case 'Insurance':
+      case 'Health Insurance':
         return Icons.security;
       case 'Appliance':
         return Icons.home_repair_service;
@@ -27,6 +49,12 @@ abstract final class Categories {
         return Icons.account_balance;
       case 'Other':
         return Icons.event_note;
+      case 'Life Insurance':
+        return Icons.favorite_rounded;
+      case 'Travel Insurance':
+        return Icons.flight_takeoff_rounded;
+      case 'Subscription':
+        return Icons.subscriptions_outlined;
       default:
         return Icons.event_note;
     }
@@ -51,6 +79,9 @@ abstract final class Categories {
       scheme.primaryContainer,
       scheme.secondaryContainer,
       scheme.tertiaryContainer,
+      scheme.outline,
+      scheme.error,
+      scheme.inversePrimary,
     ];
   }
 }

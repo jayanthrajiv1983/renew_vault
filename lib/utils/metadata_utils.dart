@@ -38,7 +38,7 @@ const metadataDateKeys = {
 
 const categoryMetadataKeys = <String, List<String>>{
   'Document': ['documentNumber', 'issueDate', 'authority'],
-  'Vehicle': [
+  'Vehicle Insurance': [
     'registrationNumber',
     'pucExpiry',
     'insuranceExpiry',
@@ -52,7 +52,19 @@ const categoryMetadataKeys = <String, List<String>>{
     'lastServiceDate',
     'nextServiceDue',
   ],
-  'Insurance': [
+  'Health Insurance': [
+    'policyNumber',
+    'policyProvider',
+    'coverageAmount',
+    'annualCost',
+  ],
+  'Life Insurance': [
+    'policyNumber',
+    'policyProvider',
+    'coverageAmount',
+    'annualCost',
+  ],
+  'Travel Insurance': [
     'policyNumber',
     'policyProvider',
     'coverageAmount',
@@ -92,7 +104,7 @@ const categoryMetadataSections = <String, List<CategoryMetadataSection>>{
       keys: ['authority'],
     ),
   ],
-  'Vehicle': [
+  'Vehicle Insurance': [
     CategoryMetadataSection(
       title: 'Vehicle Information',
       keys: ['registrationNumber'],
@@ -120,7 +132,27 @@ const categoryMetadataSections = <String, List<CategoryMetadataSection>>{
       keys: ['lastServiceDate', 'nextServiceDue'],
     ),
   ],
-  'Insurance': [
+  'Health Insurance': [
+    CategoryMetadataSection(
+      title: 'Policy Information',
+      keys: ['policyNumber', 'policyProvider'],
+    ),
+    CategoryMetadataSection(
+      title: 'Coverage & Cost',
+      keys: ['coverageAmount', 'annualCost'],
+    ),
+  ],
+  'Life Insurance': [
+    CategoryMetadataSection(
+      title: 'Policy Information',
+      keys: ['policyNumber', 'policyProvider'],
+    ),
+    CategoryMetadataSection(
+      title: 'Coverage & Cost',
+      keys: ['coverageAmount', 'annualCost'],
+    ),
+  ],
+  'Travel Insurance': [
     CategoryMetadataSection(
       title: 'Policy Information',
       keys: ['policyNumber', 'policyProvider'],

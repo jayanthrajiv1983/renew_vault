@@ -40,8 +40,8 @@ abstract final class OcrFormMapper {
     String? fallback,
   }) {
     final category = switch (result.documentType) {
-      DocumentType.vehicleRc => 'Vehicle',
-      DocumentType.insurancePolicy => 'Insurance',
+      DocumentType.vehicleRc => 'Vehicle Insurance',
+      DocumentType.insurancePolicy => 'Health Insurance',
       DocumentType.drivingLicense ||
       DocumentType.passport ||
       DocumentType.panCard ||

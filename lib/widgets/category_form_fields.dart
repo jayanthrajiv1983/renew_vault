@@ -29,12 +29,14 @@ class CategoryFormFields extends StatelessWidget {
           controller: controller,
           onChanged: onChanged,
         );
-      case 'Vehicle':
+      case 'Vehicle Insurance':
         return _VehicleFormFields(
           controller: controller,
           onChanged: onChanged,
         );
-      case 'Insurance':
+      case 'Health Insurance':
+      case 'Life Insurance':
+      case 'Travel Insurance':
         return _InsuranceFormFields(
           controller: controller,
           onChanged: onChanged,
@@ -45,6 +47,7 @@ class CategoryFormFields extends StatelessWidget {
           onChanged: onChanged,
         );
       case 'Other':
+      case 'Subscription':
         return _OtherFormFields(
           controller: controller,
           onChanged: onChanged,

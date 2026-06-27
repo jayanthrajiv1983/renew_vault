@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
+import '../constants/categories.dart';
 import '../models/add_item_prefill.dart';
 import '../models/attachment_metadata.dart';
 import '../models/family_member.dart';
@@ -33,14 +34,7 @@ class AddItemScreen extends StatefulWidget {
   final AddItemLaunchMode launchMode;
   final AddItemPrefill? prefill;
 
-  static const categories = [
-    'Appliance',
-    'Vehicle',
-    'Insurance',
-    'Document',
-    'Tax',
-    'Other',
-  ];
+  static List<String> get categories => Categories.ordered;
 
   @override
   State<AddItemScreen> createState() => _AddItemScreenState();

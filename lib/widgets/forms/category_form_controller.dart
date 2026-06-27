@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/categories.dart';
 import '../../models/renewal_item.dart';
 import '../../services/ocr_correction_service.dart';
 import 'category_detail_keys.dart';
@@ -192,9 +193,10 @@ class CategoryFormController {
         return expiryDate;
       case 'Tax':
         return dueDate;
-      case 'Insurance':
-        return policyExpiry;
       default:
+        if (Categories.isInsuranceCategory(category)) {
+          return policyExpiry;
+        }
         return renewalDate;
     }
   }
@@ -206,9 +208,10 @@ class CategoryFormController {
           return 'Please select an expiry date';
         case 'Tax':
           return 'Please select a due date';
-        case 'Insurance':
-          return 'Please select a policy expiry date';
         default:
+          if (Categories.isInsuranceCategory(category)) {
+            return 'Please select a policy expiry date';
+          }
           return 'Please select a renewal date';
       }
     }
@@ -244,7 +247,7 @@ class CategoryFormController {
         addText(CategoryDetailKeys.documentNumber, documentNumberController);
         addDate(CategoryDetailKeys.issueDate, issueDate);
         addText(CategoryDetailKeys.authority, authorityController);
-      case 'Vehicle':
+      case 'Vehicle Insurance':
         addText(
           CategoryDetailKeys.registrationNumber,
           registrationNumberController,
@@ -252,7 +255,9 @@ class CategoryFormController {
         addDate(CategoryDetailKeys.insuranceExpiry, insuranceExpiry);
         addDate(CategoryDetailKeys.pucExpiry, pucExpiry);
         addDate(CategoryDetailKeys.lastServiceDate, vehicleLastServiceDate);
-      case 'Insurance':
+      case 'Health Insurance':
+      case 'Life Insurance':
+      case 'Travel Insurance':
         addText(CategoryDetailKeys.policyNumber, policyNumberController);
         addText(CategoryDetailKeys.policyProvider, policyProviderController);
         addText(CategoryDetailKeys.coverageAmount, coverageAmountController);
@@ -263,6 +268,7 @@ class CategoryFormController {
         addText(CategoryDetailKeys.annualCost, taxAnnualCostController);
         addDate(CategoryDetailKeys.dueDate, dueDate);
       case 'Other':
+      case 'Subscription':
     }
 
     return details;

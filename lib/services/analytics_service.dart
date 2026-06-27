@@ -1,3 +1,4 @@
+import '../constants/categories.dart';
 import '../models/renewal_item.dart';
 import '../widgets/renewal_card.dart';
 
@@ -68,14 +69,7 @@ class AnalyticsService {
 
   static final AnalyticsService instance = AnalyticsService._();
 
-  static const categories = [
-    'Document',
-    'Insurance',
-    'Appliance',
-    'Vehicle',
-    'Tax',
-    'Other',
-  ];
+  static List<String> get categories => Categories.ordered;
 
   AnalyticsData compute(List<RenewalItem> items) {
     final spending = _computeEstimatedSpending(items);
@@ -257,7 +251,8 @@ class AnalyticsService {
     var count = 0;
 
     for (final item in items) {
-      if (item.category != 'Insurance' && item.category != 'Tax') {
+      if (!Categories.isInsuranceCategory(item.category) &&
+          item.category != 'Tax') {
         continue;
       }
 

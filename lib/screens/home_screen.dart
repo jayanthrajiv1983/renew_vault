@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../constants/categories.dart';
 import '../models/renewal_item.dart';
 import '../models/sort_option.dart';
+import '../services/category_migration_service.dart';
 import '../services/family_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
@@ -58,7 +60,14 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     SettingsService.instance.addListener(_onSettingsChanged);
     _applySortFromSettings();
-    _loadItems();
+    _initializeData();
+  }
+
+  Future<void> _initializeData() async {
+    await CategoryMigrationService.instance.runMigrationIfNeeded();
+    if (mounted) {
+      _loadItems();
+    }
   }
 
   @override

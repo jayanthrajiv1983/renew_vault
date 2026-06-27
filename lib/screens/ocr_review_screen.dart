@@ -352,14 +352,16 @@ void applyOcrReviewToForm({
         categoryController.authorityController.text = data.authority!;
         track('authority', data.rawOcrValues['authority']);
       }
-    case 'Vehicle':
+    case 'Vehicle Insurance':
       if (data.documentNumber != null) {
         categoryController.registrationNumberController.text =
             data.documentNumber!;
       }
       categoryController.insuranceExpiry = data.expiryDate;
       categoryController.renewalDate = data.expiryDate;
-    case 'Insurance':
+    case 'Health Insurance':
+    case 'Life Insurance':
+    case 'Travel Insurance':
       if (data.documentNumber != null) {
         categoryController.policyNumberController.text = data.documentNumber!;
       }

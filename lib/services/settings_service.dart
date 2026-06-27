@@ -52,6 +52,8 @@ class SettingsService extends ChangeNotifier {
 
   static const backupReminderDismissedAtKey = 'backupReminderDismissedAt';
 
+  static const categoryMigrationV1CompleteKey = 'categoryMigrationV1Complete';
+
 
 
   Box? _box;
@@ -413,6 +415,16 @@ class SettingsService extends ChangeNotifier {
 
   bool _isSameCalendarDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  bool isCategoryMigrationV1Complete() {
+    final value = _box?.get(categoryMigrationV1CompleteKey);
+    return value == true;
+  }
+
+  Future<void> setCategoryMigrationV1Complete(bool complete) async {
+    await _box?.put(categoryMigrationV1CompleteKey, complete);
+    notifyListeners();
   }
 
   Future<void> applySettings(Map<String, dynamic> settings) async {

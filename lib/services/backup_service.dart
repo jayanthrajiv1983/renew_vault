@@ -14,6 +14,7 @@ import '../models/family_member.dart';
 import '../models/ocr_correction.dart';
 import '../models/renewal_item.dart';
 import 'attachment_service.dart';
+import 'category_migration_service.dart';
 import 'family_service.dart';
 import 'hive_encryption_service.dart';
 import 'ocr_correction_service.dart';
@@ -183,6 +184,8 @@ class BackupService {
 
     onProgress?.call(RestoreProgressStep.restoringData, 0.65);
     await applyBackup(preview.data, skipValidation: true);
+
+    await CategoryMigrationService.instance.runMigrationIfNeeded();
 
     onProgress?.call(RestoreProgressStep.restoringData, 1.0);
   }

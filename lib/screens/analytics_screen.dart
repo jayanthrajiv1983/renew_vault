@@ -210,7 +210,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                       const SizedBox(height: AppSpacing.fieldLabelGap),
                       Text(
                         _data.itemsWithCostCount == 0
-                            ? 'Add annual cost on Insurance and Tax items to improve this estimate.'
+                            ? 'Add annual cost on insurance and tax items to improve this estimate.'
                             : 'Based on ${_data.itemsWithCostCount} '
                                 '${_data.itemsWithCostCount == 1 ? 'item' : 'items'} '
                                 'with annual cost set.',
