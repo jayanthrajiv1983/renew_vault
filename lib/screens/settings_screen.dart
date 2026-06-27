@@ -13,6 +13,8 @@ import '../services/backup_service.dart';
 
 import '../services/app_lock_service.dart';
 
+import '../services/feedback_service.dart';
+
 import '../services/notification_service.dart';
 
 import '../services/settings_service.dart';
@@ -49,7 +51,7 @@ class SettingsScreen extends StatefulWidget {
 
   static const termsUrl = '';
 
-  static const supportEmail = 'support@renewvault.app';
+  static const supportEmail = 'jayanthrajiv@gmail.com';
 
   static const rateAppUrl = '';
 
@@ -445,47 +447,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _contactSupport() async {
-
-    final uri = Uri(
-
-      scheme: 'mailto',
-
-      path: SettingsScreen.supportEmail,
-
-      queryParameters: {
-
-        'subject': '${SettingsScreen.appName} Support',
-
-      },
-
+  Future<void> _launchFeedback(FeedbackType type) async {
+    await FeedbackService.instance.launchFeedback(
+      context: context,
+      type: type,
     );
-
-
-
-    if (!await launchUrl(uri)) {
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(
-
-          content: Text('Email us at ${SettingsScreen.supportEmail}'),
-
-        ),
-
-      );
-
-    }
-
   }
 
-
+  Widget _feedbackListTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required FeedbackType type,
+    required ColorScheme colorScheme,
+  }) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: colorScheme.primaryContainer,
+        child: Icon(
+          icon,
+          color: colorScheme.onPrimaryContainer,
+        ),
+      ),
+      title: Text(title),
+      subtitle: Text(subtitle),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () => _launchFeedback(type),
+    );
+  }
 
   Widget _sectionHeader(String title) {
     return SectionHeader(
@@ -1021,6 +1010,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
+          _sectionHeader('Feedback & Support'),
+
+          Card(
+            child: Column(
+              children: [
+                _feedbackListTile(
+                  icon: Icons.feedback_rounded,
+                  title: 'Send Feedback',
+                  subtitle: 'Share your experience with Renew Vault',
+                  type: FeedbackType.feedback,
+                  colorScheme: theme.colorScheme,
+                ),
+                const Divider(height: 1),
+                _feedbackListTile(
+                  icon: Icons.bug_report_rounded,
+                  title: 'Report a Bug',
+                  subtitle: 'Tell us about something that is not working',
+                  type: FeedbackType.bugReport,
+                  colorScheme: theme.colorScheme,
+                ),
+                const Divider(height: 1),
+                _feedbackListTile(
+                  icon: Icons.lightbulb_rounded,
+                  title: 'Request a Feature',
+                  subtitle: 'Suggest an improvement or new capability',
+                  type: FeedbackType.featureRequest,
+                  colorScheme: theme.colorScheme,
+                ),
+                const Divider(height: 1),
+                _feedbackListTile(
+                  icon: Icons.support_agent_rounded,
+                  title: 'Contact Support',
+                  subtitle: 'Get help from the Renew Vault team',
+                  type: FeedbackType.support,
+                  colorScheme: theme.colorScheme,
+                ),
+              ],
+            ),
+          ),
+
+          AppSpacing.gapSection,
+
           _sectionHeader('About'),
 
           Card(
@@ -1125,20 +1156,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fallbackMessage: 'Terms of service link coming soon',
 
                   ),
-
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-
-                  leading: const Icon(Icons.support_agent_outlined),
-
-                  title: const Text('Contact Support'),
-
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-
-                  onTap: _contactSupport,
 
                 ),
 
