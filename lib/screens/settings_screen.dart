@@ -11,6 +11,8 @@ import '../providers/theme_provider.dart';
 
 import '../services/backup_service.dart';
 
+import '../services/app_lock_service.dart';
+
 import '../services/notification_service.dart';
 
 import '../services/settings_service.dart';
@@ -297,6 +299,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() => _enableAppLock = value);
 
+  }
+
+
+
+  Future<void> _testBiometricAuthentication() async {
+    final authenticated = await AppLockService.instance.authenticate();
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          authenticated
+              ? 'Authentication successful'
+              : 'Authentication failed',
+        ),
+      ),
+    );
   }
 
 
@@ -754,6 +774,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _enableAppLock,
 
                   onChanged: _setEnableAppLock,
+
+                ),
+
+                const Divider(height: 1),
+
+                ListTile(
+
+                  leading: Icon(
+
+                    Icons.fingerprint,
+
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Test Biometric Authentication'),
+
+                  subtitle: const Text(
+
+                    'Verify fingerprint, face unlock, or device PIN prompt',
+
+                  ),
+
+                  trailing: const Icon(Icons.chevron_right),
+
+                  onTap: _testBiometricAuthentication,
 
                 ),
 

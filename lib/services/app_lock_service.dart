@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 import 'settings_service.dart';
@@ -16,19 +17,49 @@ class AppLockService {
   final LocalAuthentication _auth = LocalAuthentication();
 
   DateTime? _lastBackgroundTime;
-  bool _isAuthenticating = false;
+  bool _authInProgress = false;
+  bool _unlockedThisSession = false;
 
-  bool get isAuthenticating => _isAuthenticating;
+  bool get authInProgress => _authInProgress;
+
+  bool get isUnlockedThisSession => _unlockedThisSession;
+
+  Future<void> init() async {
+    final enabled = isAppLockEnabled();
+    debugPrint('App Lock enabled: $enabled');
+
+    final isSupported = await isDeviceSupported();
+    debugPrint('Device supported: $isSupported');
+
+    final canCheck = await canCheckBiometrics();
+    debugPrint('Can check biometrics: $canCheck');
+
+    final availableBiometrics = await getAvailableBiometrics();
+    debugPrint('Available biometrics: $availableBiometrics');
+  }
 
   bool isAppLockEnabled() => SettingsService.instance.getAppLockEnabled();
 
   void recordBackground() {
     _lastBackgroundTime = DateTime.now();
+    debugPrint('Last Background Time: $_lastBackgroundTime');
   }
 
   void clearBackgroundTime() {
     _lastBackgroundTime = null;
   }
+
+  void markUnlocked() {
+    _unlockedThisSession = true;
+    debugPrint('Session unlocked');
+  }
+
+  void markLocked() {
+    _unlockedThisSession = false;
+    debugPrint('Session locked');
+  }
+
+  DateTime? get lastBackgroundTime => _lastBackgroundTime;
 
   /// Whether the lock should appear when returning from background.
   bool isLockRequiredOnResume() {
@@ -69,28 +100,45 @@ class AppLockService {
   }
 
   Future<bool> authenticate() async {
-    if (_isAuthenticating) {
+    if (_authInProgress) {
+      debugPrint('Authentication requested: skipped (already in progress)');
       return false;
     }
 
-    _isAuthenticating = true;
+    _authInProgress = true;
+    debugPrint('Authentication requested');
     try {
-      final supported = await isDeviceSupported();
-      if (!supported) {
+      final isSupported = await isDeviceSupported();
+      debugPrint('Device supported: $isSupported');
+
+      final canCheck = await canCheckBiometrics();
+      debugPrint('Can check biometrics: $canCheck');
+
+      final availableBiometrics = await getAvailableBiometrics();
+      debugPrint('Available biometrics: $availableBiometrics');
+
+      if (!isSupported) {
+        debugPrint('Authentication result: false (device not supported)');
         return false;
       }
 
-      return await _auth.authenticate(
+      final authenticated = await _auth.authenticate(
         localizedReason: authenticateReason,
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
         ),
       );
-    } on Exception {
+      debugPrint('Authentication result: $authenticated');
+      if (authenticated) {
+        markUnlocked();
+      }
+      return authenticated;
+    } on Exception catch (error) {
+      debugPrint('Authentication result: false ($error)');
       return false;
     } finally {
-      _isAuthenticating = false;
+      _authInProgress = false;
     }
   }
 }

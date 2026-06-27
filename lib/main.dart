@@ -6,6 +6,7 @@ import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_brand.dart';
 import 'theme/app_theme.dart';
+import 'services/app_lock_service.dart';
 import 'services/family_service.dart';
 import 'services/notification_service.dart';
 import 'services/ocr_correction_service.dart';
@@ -35,6 +36,7 @@ Future<void> main() async {
   await StorageService.instance.init();
   await FamilyService.instance.init();
   await SettingsService.instance.init();
+  await AppLockService.instance.init();
   await OcrCorrectionService.instance.init();
   await ThemeProvider.instance.init();
   await NotificationService().initialize();
@@ -42,22 +44,8 @@ Future<void> main() async {
   runApp(const RenewVaultApp());
 }
 
-class RenewVaultApp extends StatefulWidget {
+class RenewVaultApp extends StatelessWidget {
   const RenewVaultApp({super.key});
-
-  @override
-  State<RenewVaultApp> createState() => _RenewVaultAppState();
-}
-
-class _RenewVaultAppState extends State<RenewVaultApp> {
-  bool _splashComplete = false;
-
-  void _onSplashComplete() {
-    if (_splashComplete) {
-      return;
-    }
-    setState(() => _splashComplete = true);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +60,14 @@ class _RenewVaultAppState extends State<RenewVaultApp> {
           darkTheme: AppTheme.dark(),
           builder: (context, child) {
             final appChild = child ?? const SizedBox.shrink();
-            if (!_splashComplete) {
-              return appChild;
-            }
             return PrivacyProtectionGate(
-              child: AppLockGate(child: appChild),
+              child: AppLockGate(
+                lockActive: true,
+                child: appChild,
+              ),
             );
           },
-          home: SplashScreen(onComplete: _onSplashComplete),
+          home: const SplashScreen(),
         );
       },
     );

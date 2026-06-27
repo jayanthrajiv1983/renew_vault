@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../services/app_lock_controller.dart';
 import '../services/app_lock_service.dart';
-import '../services/settings_service.dart';
 import '../theme/app_brand.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/renew_vault_logo.dart';
 
 /// Wraps the app and enforces biometric / device-credential lock when enabled.
+///
+/// Cold-start authentication is handled by [SplashScreen]. This gate blocks
+/// [child] after resume and when app lock is enabled from Settings.
 class AppLockGate extends StatefulWidget {
-  const AppLockGate({required this.child, super.key});
+  const AppLockGate({
+    required this.child,
+    this.lockActive = true,
+    super.key,
+  });
 
   final Widget child;
+
+  /// When false (e.g. during splash), lock enforcement is deferred.
+  final bool lockActive;
 
   @override
   State<AppLockGate> createState() => _AppLockGateState();
@@ -18,59 +28,72 @@ class AppLockGate extends StatefulWidget {
 
 class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   final _lockService = AppLockService.instance;
+  final _lockController = AppLockController.instance;
 
   bool _isUnlocked = false;
-  bool _isAuthenticating = false;
+  bool _isPromptingAuth = false;
   bool _hasBiometrics = false;
   bool _deviceSupported = false;
-  bool? _lastKnownAppLockEnabled;
+
+  bool get _shouldEnforceLock =>
+      widget.lockActive && _lockService.isAppLockEnabled();
+
+  bool get _showOverlay => _shouldEnforceLock && !_isUnlocked;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    SettingsService.instance.addListener(_onSettingsChanged);
-    _lastKnownAppLockEnabled = _lockService.isAppLockEnabled();
-    _initializeLockState();
+    _lockController.addListener(_onAppLockPreferenceChanged);
+    debugPrint(
+      'AppLockGate init: lockActive=${widget.lockActive}, '
+      'appLockEnabled=${_lockService.isAppLockEnabled()}',
+    );
+    // Cold-start auth is handled by SplashScreen; gate locks on resume/settings.
+    _isUnlocked = true;
+    _loadDeviceCapabilities();
+  }
+
+  @override
+  void didUpdateWidget(covariant AppLockGate oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.lockActive && widget.lockActive) {
+      debugPrint('AppLockGate: lockActive became true');
+    }
   }
 
   @override
   void dispose() {
+    _lockController.removeListener(_onAppLockPreferenceChanged);
     WidgetsBinding.instance.removeObserver(this);
-    SettingsService.instance.removeListener(_onSettingsChanged);
     super.dispose();
   }
 
-  Future<void> _initializeLockState() async {
-    if (!_lockService.isAppLockEnabled()) {
-      if (mounted) {
-        setState(() => _isUnlocked = true);
-      }
-      return;
-    }
-
+  Future<void> _loadDeviceCapabilities() async {
     _deviceSupported = await _lockService.isDeviceSupported();
     _hasBiometrics = await _lockService.canCheckBiometrics();
-
-    if (!mounted) {
-      return;
+    final availableBiometrics = await _lockService.getAvailableBiometrics();
+    debugPrint('AppLockGate device supported: $_deviceSupported');
+    debugPrint('AppLockGate can check biometrics: $_hasBiometrics');
+    debugPrint('AppLockGate available biometrics: $availableBiometrics');
+    if (mounted) {
+      setState(() {});
     }
-
-    setState(() => _isUnlocked = false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _promptAuth();
-    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_isAuthenticating) {
+    debugPrint('AppLockGate lifecycle: $state');
+
+    if (_isPromptingAuth || _lockService.authInProgress) {
       return;
     }
 
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden) {
-      _lockService.recordBackground();
+      if (_shouldEnforceLock) {
+        _lockService.recordBackground();
+      }
       return;
     }
 
@@ -78,7 +101,7 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
       return;
     }
 
-    if (!_lockService.isAppLockEnabled()) {
+    if (!_shouldEnforceLock) {
       if (!_isUnlocked && mounted) {
         setState(() => _isUnlocked = true);
       }
@@ -86,6 +109,8 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     }
 
     if (_lockService.isLockRequiredOnResume()) {
+      debugPrint('AppLockGate: resume lock required (>30s background)');
+      _lockService.markLocked();
       if (mounted) {
         setState(() => _isUnlocked = false);
       }
@@ -96,69 +121,87 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   }
 
   Future<void> _promptAuth() async {
-    if (!mounted || _isUnlocked || _isAuthenticating) {
+    if (!mounted ||
+        !_shouldEnforceLock ||
+        _isUnlocked ||
+        _isPromptingAuth ||
+        _lockService.authInProgress) {
+      debugPrint(
+        'AppLockGate: prompt skipped '
+        '(mounted=$mounted, enforce=$_shouldEnforceLock, '
+        'unlocked=$_isUnlocked, prompting=$_isPromptingAuth)',
+      );
       return;
     }
 
-    if (!_lockService.isAppLockEnabled()) {
-      setState(() => _isUnlocked = true);
-      return;
-    }
+    debugPrint('AppLockGate: prompting authentication');
+    setState(() => _isPromptingAuth = true);
 
-    setState(() => _isAuthenticating = true);
-
-    final success = await _lockService.authenticate();
+    final authenticated = await _lockService.authenticate();
 
     if (!mounted) {
       return;
     }
 
     setState(() {
-      _isAuthenticating = false;
-      if (success) {
+      _isPromptingAuth = false;
+      if (authenticated) {
         _isUnlocked = true;
         _lockService.clearBackgroundTime();
+      } else {
+        _isUnlocked = false;
+        debugPrint('AppLockGate: authentication failed, overlay remains');
       }
     });
   }
 
-  void _onSettingsChanged() {
+  void _onAppLockPreferenceChanged() {
     if (!mounted) {
       return;
     }
 
-    final enabled = _lockService.isAppLockEnabled();
-    if (_lastKnownAppLockEnabled == enabled) {
+    final enabled = _lockController.preferenceEnabled;
+    if (enabled == null) {
       return;
     }
-    _lastKnownAppLockEnabled = enabled;
+
+    debugPrint('AppLockGate: preference changed enabled=$enabled');
 
     if (!enabled) {
       setState(() => _isUnlocked = true);
       return;
     }
 
+    _lockService.markLocked();
     setState(() => _isUnlocked = false);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _promptAuth();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _loadDeviceCapabilities();
+      if (mounted) {
+        _promptAuth();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_lockService.isAppLockEnabled()) {
-      return widget.child;
-    }
-
-    if (_isUnlocked) {
-      return widget.child;
-    }
-
-    return _AppLockOverlay(
-      isAuthenticating: _isAuthenticating,
-      deviceSupported: _deviceSupported,
-      hasBiometrics: _hasBiometrics,
-      onUnlock: () => _promptAuth(),
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ExcludeSemantics(
+          excluding: _showOverlay,
+          child: IgnorePointer(
+            ignoring: _showOverlay,
+            child: widget.child,
+          ),
+        ),
+        if (_showOverlay)
+          _AppLockOverlay(
+            isAuthenticating: _isPromptingAuth || _lockService.authInProgress,
+            deviceSupported: _deviceSupported,
+            hasBiometrics: _hasBiometrics,
+            onUnlock: () => _promptAuth(),
+          ),
+      ],
     );
   }
 }

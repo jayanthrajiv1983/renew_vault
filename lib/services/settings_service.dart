@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:hive/hive.dart';
 
+import 'app_lock_controller.dart';
 import 'hive_encryption_service.dart';
 
 
@@ -200,13 +202,11 @@ class SettingsService extends ChangeNotifier {
 
     final value = _box?.get(enableAppLockKey);
 
-    if (value is bool) {
+    final enabled = value is bool ? value : true;
 
-      return value;
+    debugPrint('App Lock Enabled: $enabled (read)');
 
-    }
-
-    return true;
+    return enabled;
 
   }
 
@@ -215,6 +215,10 @@ class SettingsService extends ChangeNotifier {
   Future<void> setAppLockEnabled(bool enabled) async {
 
     await _box?.put(enableAppLockKey, enabled);
+
+    debugPrint('App Lock Enabled: $enabled (write)');
+
+    AppLockController.instance.onAppLockPreferenceChanged(enabled);
 
     notifyListeners();
 

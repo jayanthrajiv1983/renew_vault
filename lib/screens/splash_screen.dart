@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 import '../screens/home_screen.dart';
+import '../services/app_lock_service.dart';
+import '../services/settings_service.dart';
 import '../theme/app_brand.dart';
 import '../theme/app_spacing.dart';
 
 /// Branded animated splash shown at app launch.
 ///
 /// Displays logo, [AppBrand.displayName], and [AppBrand.tagline] with a subtle
-/// staggered fade + scale, then navigates to [HomeScreen].
+/// staggered fade + scale, then authenticates when app lock is enabled before
+/// navigating to [HomeScreen].
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({this.onComplete, super.key});
-
-  final VoidCallback? onComplete;
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -29,6 +30,9 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _titleScale;
   late final Animation<double> _taglineFade;
   late final Animation<double> _taglineScale;
+
+  bool _isAuthenticating = false;
+  bool _authFailed = false;
 
   @override
   void initState() {
@@ -72,29 +76,51 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _controller.forward();
-    _navigateWhenReady();
+    _startup();
   }
 
-  Future<void> _navigateWhenReady() async {
+  Future<void> _startup() async {
+    if (SettingsService.instance.getAppLockEnabled()) {
+      debugPrint('Splash: app lock enabled, requesting authentication');
+      final authenticated = await _authenticateForStartup();
+      if (!authenticated || !mounted) {
+        debugPrint('Splash: authentication failed, staying on splash');
+        return;
+      }
+    }
+
     await Future<void>.delayed(_navigateDelay);
     if (!mounted) {
       return;
     }
+
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
     );
-    if (!mounted) {
-      return;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      widget.onComplete?.call();
-    });
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  Future<bool> _authenticateForStartup() async {
+    if (!mounted) {
+      return false;
+    }
+
+    setState(() {
+      _isAuthenticating = true;
+      _authFailed = false;
+    });
+
+    final authenticated = await AppLockService.instance.authenticate();
+
+    if (!mounted) {
+      return false;
+    }
+
+    setState(() {
+      _isAuthenticating = false;
+      _authFailed = !authenticated;
+    });
+
+    return authenticated;
   }
 
   Color _backgroundColor(Brightness brightness) {
@@ -108,6 +134,12 @@ class _SplashScreenState extends State<SplashScreen>
     final base = shortestSide >= 600 ? 160.0 : 128.0;
     final maxWidth = constraints.maxWidth * 0.4;
     return base.clamp(96.0, maxWidth);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -178,6 +210,50 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ),
                   ),
+                  if (_isAuthenticating) ...[
+                    const SizedBox(height: AppSpacing.sectionSpacing),
+                    const CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                    const SizedBox(height: AppSpacing.fieldLabelGap),
+                    Text(
+                      'Waiting for authentication…',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: taglineColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ] else if (_authFailed) ...[
+                    const SizedBox(height: AppSpacing.sectionSpacing),
+                    Text(
+                      'Authentication required to continue',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: taglineColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.fieldLabelGap),
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final navigator = Navigator.of(context);
+                        final ok = await _authenticateForStartup();
+                        if (!mounted || !ok) {
+                          return;
+                        }
+                        await navigator.pushReplacement(
+                          MaterialPageRoute<void>(
+                            builder: (_) => const HomeScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.lock_open_outlined),
+                      label: const Text('Unlock'),
+                      style: FilledButton.styleFrom(
+                        foregroundColor: AppBrand.primaryBlue,
+                        backgroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
