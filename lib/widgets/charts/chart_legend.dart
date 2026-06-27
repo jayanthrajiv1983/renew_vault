@@ -5,11 +5,13 @@ class ChartLegendItem {
     required this.label,
     required this.color,
     this.value,
+    this.onTap,
   });
 
   final String label;
   final Color color;
   final String? value;
+  final VoidCallback? onTap;
 }
 
 class ChartLegend extends StatelessWidget {
@@ -32,7 +34,7 @@ class ChartLegend extends StatelessWidget {
       spacing: wrapSpacing,
       runSpacing: runSpacing,
       children: items.map((item) {
-        return Row(
+        final legend = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
@@ -51,6 +53,19 @@ class ChartLegend extends StatelessWidget {
               ),
             ),
           ],
+        );
+
+        if (item.onTap == null) {
+          return legend;
+        }
+
+        return InkWell(
+          onTap: item.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            child: legend,
+          ),
         );
       }).toList(),
     );

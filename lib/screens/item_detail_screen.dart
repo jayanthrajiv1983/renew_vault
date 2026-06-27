@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../models/renewal_item.dart';
 import '../services/family_service.dart';
-import '../services/storage_service.dart';
 import '../theme/app_spacing.dart';
 import '../utils/metadata_utils.dart';
 import '../utils/form_padding.dart';
+import '../utils/item_actions.dart';
 import '../constants/categories.dart';
 import '../constants/reminder_intervals.dart';
 import '../widgets/attachments_section.dart';
@@ -89,34 +89,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        insetPadding: dialogInsetPadding(context),
-        title: const Text('Delete renewal?'),
-        content: Text('Delete "${item.title}"? This cannot be undone.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    await ItemActions.confirmDelete(
+      context,
+      item,
+      onDeleted: () {
+        if (context.mounted) {
+          Navigator.of(context).pop(true);
+        }
+      },
     );
-
-    if (confirmed != true || !context.mounted) {
-      return;
-    }
-
-    await StorageService.instance.delete(item.id);
-
-    if (context.mounted) {
-      Navigator.of(context).pop(true);
-    }
   }
 
   String _reminderLabel(int days) {

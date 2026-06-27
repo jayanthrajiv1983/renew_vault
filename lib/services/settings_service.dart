@@ -54,6 +54,10 @@ class SettingsService extends ChangeNotifier {
 
   static const categoryMigrationV1CompleteKey = 'categoryMigrationV1Complete';
 
+  static const completedMilestonesKey = 'completedMilestones';
+
+  static const milestonesBootstrappedKey = 'milestonesBootstrapped';
+
 
 
   Box? _box;
@@ -424,6 +428,38 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> setCategoryMigrationV1Complete(bool complete) async {
     await _box?.put(categoryMigrationV1CompleteKey, complete);
+    notifyListeners();
+  }
+
+  Set<int> getCompletedMilestones() {
+    final value = _box?.get(completedMilestonesKey);
+    if (value is List) {
+      return value.whereType<int>().toSet();
+    }
+    return {};
+  }
+
+  Future<void> setCompletedMilestones(Set<int> milestones) async {
+    final sorted = milestones.toList()..sort();
+    await _box?.put(completedMilestonesKey, sorted);
+    notifyListeners();
+  }
+
+  Future<void> markMilestoneCompleted(int threshold) async {
+    final completed = getCompletedMilestones()..add(threshold);
+    await setCompletedMilestones(completed);
+  }
+
+  bool isMilestoneCompleted(int threshold) {
+    return getCompletedMilestones().contains(threshold);
+  }
+
+  bool getMilestonesBootstrapped() {
+    return _box?.get(milestonesBootstrappedKey) == true;
+  }
+
+  Future<void> setMilestonesBootstrapped(bool bootstrapped) async {
+    await _box?.put(milestonesBootstrappedKey, bootstrapped);
     notifyListeners();
   }
 

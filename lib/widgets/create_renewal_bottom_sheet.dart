@@ -13,7 +13,10 @@ enum _CreateRenewalOption {
 }
 
 /// Shows the primary renewal creation bottom sheet and navigates to [AddItemScreen].
-Future<void> showCreateRenewalBottomSheet(BuildContext context) async {
+Future<void> showCreateRenewalBottomSheet(
+  BuildContext context, {
+  String? initialCategory,
+}) async {
   final option = await showModalBottomSheet<_CreateRenewalOption>(
     context: context,
     showDragHandle: true,
@@ -70,8 +73,9 @@ Future<void> showCreateRenewalBottomSheet(BuildContext context) async {
     case _CreateRenewalOption.manual:
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => const AddItemScreen(
+          builder: (context) => AddItemScreen(
             launchMode: AddItemLaunchMode.manual,
+            initialCategory: initialCategory,
           ),
         ),
       );
@@ -80,7 +84,10 @@ Future<void> showCreateRenewalBottomSheet(BuildContext context) async {
       if (prefill != null && context.mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => AddItemScreen(prefill: prefill),
+            builder: (context) => AddItemScreen(
+              prefill: prefill,
+              initialCategory: initialCategory,
+            ),
           ),
         );
       }
@@ -89,7 +96,10 @@ Future<void> showCreateRenewalBottomSheet(BuildContext context) async {
       if (prefill != null && context.mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => AddItemScreen(prefill: prefill),
+            builder: (context) => AddItemScreen(
+              prefill: prefill,
+              initialCategory: initialCategory,
+            ),
           ),
         );
       }

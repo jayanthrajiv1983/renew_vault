@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../models/renewal_item.dart';
 import '../screens/item_detail_screen.dart';
+import '../services/pending_delete_controller.dart';
 import '../services/storage_service.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
-import '../widgets/renewal_card.dart';
+import '../shared/widgets/empty_state_widget.dart';
+import '../widgets/slidable_renewal_card.dart';
 
 class RenewalSearchDelegate extends SearchDelegate<void> {
   RenewalSearchDelegate({this.onItemChanged});
@@ -27,6 +30,51 @@ class RenewalSearchDelegate extends SearchDelegate<void> {
     }).toList();
   }
 
+  bool get _isDatabaseEmpty => StorageService.instance.getAll().isEmpty;
+
+  Widget _buildEmptyDatabaseState(BuildContext context) {
+    return EmptyStateWidget(
+      icon: EmptyStateWidget.mutedIcon(context, Icons.manage_search),
+      title: 'Nothing to search yet',
+      subtitle: 'Add items to start searching across Renew Vault.',
+      semanticLabel:
+          'Nothing to search yet. Add items to start searching across Renew Vault.',
+    );
+  }
+
+  Widget _buildNoResultsState(BuildContext context) {
+    return EmptyStateWidget(
+      icon: EmptyStateWidget.mutedIcon(context, Icons.search_off),
+      title: 'No matches found',
+      subtitle: 'Try a different keyword or filter.',
+      semanticLabel: 'No matches found. Try a different keyword or filter.',
+    );
+  }
+
+  Widget _buildSearchHint(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      label: 'Search by title, category, owner, or notes',
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screenPadding,
+          ),
+          child: Text(
+            'Search by title, category, owner, or notes',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            maxLines: 3,
+            overflow: TextOverflow.visible,
+            softWrap: true,
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _openItemDetail(BuildContext context, RenewalItem item) async {
     final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
@@ -40,32 +88,47 @@ class RenewalSearchDelegate extends SearchDelegate<void> {
     }
   }
 
-  Widget _buildResultsList(BuildContext context, List<RenewalItem> results) {
+  Widget _buildResultsList(BuildContext context) {
     if (query.trim().isEmpty) {
+      if (_isDatabaseEmpty) {
+        return _buildEmptyDatabaseState(context);
+      }
       return const SizedBox.shrink();
     }
 
-    if (results.isEmpty) {
-      return Center(
-        child: Text(
-          'No matching renewals found',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      );
-    }
+    return ListenableBuilder(
+      listenable: PendingDeleteController.instance,
+      builder: (context, _) {
+        final refreshedResults = _search(query);
+        if (query.trim().isEmpty) {
+          if (_isDatabaseEmpty) {
+            return _buildEmptyDatabaseState(context);
+          }
+          return const SizedBox.shrink();
+        }
 
-    return ListView(
-      padding: listScrollPadding(context, top: AppSpacing.fieldLabelGap),
-      children: results
-          .map(
-            (item) => RenewalCard(
-              item: item,
-              onTap: () => _openItemDetail(context, item),
-            ),
-          )
-          .toList(),
+        if (refreshedResults.isEmpty) {
+          return _buildNoResultsState(context);
+        }
+
+        return SlidableAutoCloseBehavior(
+          child: ListView(
+            padding: listScrollPadding(context, top: AppSpacing.fieldLabelGap),
+            children: refreshedResults
+                .map(
+                  (item) => SlidableRenewalCard(
+                    item: item,
+                    onTap: () => _openItemDetail(context, item),
+                    onItemChanged: () {
+                      onItemChanged?.call();
+                      showSuggestions(context);
+                    },
+                  ),
+                )
+                .toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -96,22 +159,18 @@ class RenewalSearchDelegate extends SearchDelegate<void> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return _buildResultsList(context, _search(query));
+    return _buildResultsList(context);
   }
 
   @override
   Widget buildSuggestions(BuildContext context) {
     if (query.isEmpty) {
-      return Center(
-        child: Text(
-          'Search by title, category, owner, or notes',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      );
+      if (_isDatabaseEmpty) {
+        return _buildEmptyDatabaseState(context);
+      }
+      return _buildSearchHint(context);
     }
 
-    return _buildResultsList(context, _search(query));
+    return _buildResultsList(context);
   }
 }

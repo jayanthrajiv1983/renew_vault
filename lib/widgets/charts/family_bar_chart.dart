@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
 
@@ -33,14 +34,8 @@ class FamilyBarChart extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     if (ownerCounts.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.screenPadding),
-        child: Text(
-          'No family member data yet',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
+      return EmptyStateWidget.compact(
+        title: 'No family member data yet',
       );
     }
 

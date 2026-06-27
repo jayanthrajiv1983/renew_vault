@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/backup_history_entry.dart';
 import '../services/backup_history_service.dart';
 import '../services/backup_service.dart';
+import '../shared/widgets/empty_state_widget.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
 import '../utils/format_helpers.dart';
@@ -214,36 +215,13 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _entries.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.screenPadding,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.history,
-                            size: 48,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(height: AppSpacing.fieldLabelGap),
-                          Text(
-                            'No backups recorded yet',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: AppSpacing.fieldLabelGap),
-                          Text(
-                            'Successful backups appear here after you create one from Settings.',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                ? EmptyStateWidget(
+                    icon: EmptyStateWidget.mutedIcon(context, Icons.history),
+                    title: 'No backups recorded yet',
+                    subtitle:
+                        'Successful backups appear here after you create one from Settings.',
+                    semanticLabel:
+                        'No backups recorded yet. Successful backups appear here after you create one from Settings.',
                   )
                 : ListView.separated(
                     padding: listScrollPadding(

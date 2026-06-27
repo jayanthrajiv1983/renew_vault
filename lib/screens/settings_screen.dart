@@ -19,6 +19,7 @@ import '../services/notification_service.dart';
 
 import '../services/settings_service.dart';
 
+import '../shared/widgets/success_overlay.dart';
 import '../theme/app_brand.dart';
 import '../theme/app_spacing.dart';
 import '../utils/backup_flow.dart';
@@ -28,8 +29,11 @@ import '../widgets/renew_vault_logo.dart';
 import '../widgets/reminder_interval_picker.dart';
 import '../widgets/section_header.dart';
 
+import '../features/settings/screens/app_diagnostics_screen.dart';
 import 'backup_history_screen.dart';
 import 'family_members_screen.dart';
+import 'notifications_screen.dart';
+import 'upcoming_renewals_screen.dart';
 
 
 
@@ -220,6 +224,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (!mounted) {
         return;
+      }
+
+      if (isRestore) {
+        await SuccessOverlay.show(
+          context,
+          message: 'Restore complete',
+        );
+        if (!mounted) {
+          return;
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -443,6 +457,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const BackupHistoryScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openNotificationsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const NotificationsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openUpcomingRenewalsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const UpcomingRenewalsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openAppDiagnosticsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const AppDiagnosticsScreen(),
       ),
     );
   }
@@ -702,6 +740,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _enableNotifications,
 
                   onChanged: _setEnableNotifications,
+
+                ),
+
+                const Divider(height: 1),
+
+                ListTile(
+
+                  leading: Icon(
+
+                    Icons.notifications_none,
+
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Scheduled Reminders'),
+
+                  subtitle: const Text('View upcoming reminder alerts'),
+
+                  trailing: const Icon(Icons.chevron_right),
+
+                  onTap: _openNotificationsScreen,
+
+                ),
+
+                const Divider(height: 1),
+
+                ListTile(
+
+                  leading: Icon(
+
+                    Icons.event_available,
+
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Upcoming Renewals'),
+
+                  subtitle: const Text('Renewals with reminders on the way'),
+
+                  trailing: const Icon(Icons.chevron_right),
+
+                  onTap: _openUpcomingRenewalsScreen,
 
                 ),
 
@@ -1047,6 +1129,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   colorScheme: theme.colorScheme,
                 ),
               ],
+            ),
+          ),
+
+          AppSpacing.gapSection,
+
+          _sectionHeader('Diagnostics'),
+
+          Card(
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.health_and_safety_rounded,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+              title: const Text('App Diagnostics'),
+              subtitle: const Text(
+                'View app, device, and storage information',
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: _openAppDiagnosticsScreen,
             ),
           ),
 

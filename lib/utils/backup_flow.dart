@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import '../services/backup_history_service.dart';
 import '../services/backup_service.dart';
 import '../services/settings_service.dart';
+import '../shared/widgets/success_overlay.dart';
 import '../utils/form_padding.dart';
 import '../widgets/backup_progress_dialog.dart';
 
@@ -37,6 +38,15 @@ Future<void> runEncryptedBackupFlow(BuildContext context) async {
     }
 
     await _promptAndShareBackup(context, file);
+
+    if (!context.mounted) {
+      return;
+    }
+
+    await SuccessOverlay.show(
+      context,
+      message: 'Backup complete',
+    );
   } on Exception catch (error) {
     if (!context.mounted) {
       return;

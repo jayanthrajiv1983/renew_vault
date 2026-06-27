@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/family_member.dart';
 import '../services/family_service.dart';
+import '../shared/widgets/empty_state_widget.dart';
+import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
 import '../widgets/owner_avatar.dart';
@@ -86,19 +88,12 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
       ),
       body: SafeArea(
         child: _members.isEmpty
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.screenPadding,
-                  ),
-                  child: Text(
-                    'No family members yet. Tap + to add one.',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ),
+            ? EmptyStateWidget(
+                icon: EmptyStateWidget.mutedIcon(context, Icons.group_outlined),
+                title: 'No family members yet',
+                subtitle: 'Tap + to add a family member.',
+                semanticLabel:
+                    'No family members yet. Tap plus to add a family member.',
               )
             : ListView.separated(
                 padding: listScrollPadding(
@@ -209,6 +204,16 @@ class _FamilyMemberFormScreenState extends State<_FamilyMemberFormScreen> {
       debugPrint('Save successful');
       if (!mounted) {
         return;
+      }
+
+      if (!_isEditMode) {
+        await SuccessOverlay.showCelebration(
+          context,
+          message: 'Family member added',
+        );
+        if (!mounted) {
+          return;
+        }
       }
 
       Navigator.of(context).pop(true);

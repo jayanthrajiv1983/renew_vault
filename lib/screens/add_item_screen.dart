@@ -11,9 +11,11 @@ import '../models/family_member.dart';
 import '../models/renewal_item.dart';
 import '../services/attachment_service.dart';
 import '../services/family_service.dart';
+import '../services/milestone_service.dart';
 import '../services/renewal_creation_flow.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
+import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/attachment_form_section.dart';
 import '../widgets/category_form_fields.dart';
@@ -28,11 +30,15 @@ class AddItemScreen extends StatefulWidget {
     this.item,
     this.launchMode = AddItemLaunchMode.manual,
     this.prefill,
+    this.initialCategory,
   });
 
   final RenewalItem? item;
   final AddItemLaunchMode launchMode;
   final AddItemPrefill? prefill;
+
+  /// Pre-selects the category dropdown when creating a new item.
+  final String? initialCategory;
 
   static List<String> get categories => Categories.ordered;
 
@@ -102,7 +108,11 @@ class _AddItemScreenState extends State<AddItemScreen> {
     } else {
       _itemId = DateTime.now().millisecondsSinceEpoch.toString();
       _persistedAttachmentIds = {};
-      _category = AddItemScreen.categories.first;
+      final initialCategory = widget.initialCategory;
+      _category = initialCategory != null &&
+              AddItemScreen.categories.contains(initialCategory)
+          ? initialCategory
+          : AddItemScreen.categories.first;
       _owner = _defaultOwnerName();
       _selectedReminderDays =
           SettingsService.instance.getDefaultReminderDays().toSet();
@@ -337,6 +347,27 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     await StorageService.instance.save(item);
     _saved = true;
+
+    if (!mounted) {
+      return;
+    }
+
+    await SuccessOverlay.show(context, message: 'Item saved');
+    if (!mounted) {
+      return;
+    }
+
+    if (!_isEditMode) {
+      final itemCount = StorageService.instance.getAll().length;
+      final milestone =
+          await MilestoneService.instance.checkAndConsume(itemCount);
+      if (milestone != null && mounted) {
+        await SuccessOverlay.showCelebration(
+          context,
+          message: milestone.message,
+        );
+      }
+    }
 
     if (!mounted) {
       return;

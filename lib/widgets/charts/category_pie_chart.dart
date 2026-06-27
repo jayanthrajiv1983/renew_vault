@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/categories.dart';
+import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
 
@@ -10,10 +11,12 @@ class CategoryPieChart extends StatelessWidget {
     super.key,
     required this.categoryCounts,
     this.categories = Categories.ordered,
+    this.onCategoryTap,
   });
 
   final Map<String, int> categoryCounts;
   final List<String> categories;
+  final ValueChanged<String>? onCategoryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +25,8 @@ class CategoryPieChart extends StatelessWidget {
     final total = categoryCounts.values.fold<int>(0, (sum, count) => sum + count);
 
     if (total == 0) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.screenPadding),
-        child: Text(
-          'No category data yet',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
+      return EmptyStateWidget.compact(
+        title: 'No category data yet',
       );
     }
 
@@ -70,6 +67,9 @@ class CategoryPieChart extends StatelessWidget {
           label: category,
           color: color,
           value: '$count',
+          onTap: onCategoryTap == null
+              ? null
+              : () => onCategoryTap!(category),
         ),
       );
     }

@@ -17,6 +17,7 @@ import 'attachment_service.dart';
 import 'category_migration_service.dart';
 import 'family_service.dart';
 import 'hive_encryption_service.dart';
+import 'milestone_service.dart';
 import 'ocr_correction_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
@@ -356,6 +357,7 @@ class BackupService {
     await FamilyService.instance.replaceAll(familyMembers);
     await SettingsService.instance.applySettings(settings);
     await _applyOcrCorrections(data['ocrCorrections']);
+    await MilestoneService.instance.syncPassedMilestones(renewals.length);
   }
 
   Future<void> _applyOcrCorrections(dynamic raw) async {

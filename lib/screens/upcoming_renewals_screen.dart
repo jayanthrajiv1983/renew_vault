@@ -3,32 +3,22 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../models/renewal_item.dart';
 import '../services/pending_delete_controller.dart';
-import '../services/storage_service.dart';
-import '../shared/widgets/empty_state_widget.dart';
+import '../services/reminders_service.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
-import '../widgets/renewal_card.dart';
+import '../widgets/reminders_caught_up_empty_state.dart';
 import '../widgets/slidable_renewal_card.dart';
 import 'item_detail_screen.dart';
 
-enum ItemFilter { all, expiringSoon, expired, safe }
-
-class FilteredItemsScreen extends StatefulWidget {
-  const FilteredItemsScreen({
-    super.key,
-    required this.title,
-    required this.filter,
-  });
-
-  final String title;
-  final ItemFilter filter;
+class UpcomingRenewalsScreen extends StatefulWidget {
+  const UpcomingRenewalsScreen({super.key});
 
   @override
-  State<FilteredItemsScreen> createState() => _FilteredItemsScreenState();
+  State<UpcomingRenewalsScreen> createState() => _UpcomingRenewalsScreenState();
 }
 
-class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
-  final _storage = StorageService.instance;
+class _UpcomingRenewalsScreenState extends State<UpcomingRenewalsScreen> {
+  final _reminders = RemindersService.instance;
   List<RenewalItem> _items = [];
 
   @override
@@ -46,22 +36,8 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
 
   void _loadItems() {
     setState(() {
-      _items = _storage.getAll().where(_matchesFilter).toList();
+      _items = _reminders.getRenewalsWithUpcomingReminders();
     });
-  }
-
-  bool _matchesFilter(RenewalItem item) {
-    final days = getDaysRemaining(item.renewalDate);
-    switch (widget.filter) {
-      case ItemFilter.all:
-        return true;
-      case ItemFilter.expiringSoon:
-        return days >= 0 && days <= 30;
-      case ItemFilter.expired:
-        return days < 0;
-      case ItemFilter.safe:
-        return days > 30;
-    }
   }
 
   Future<void> _openItemDetail(RenewalItem item) async {
@@ -78,17 +54,11 @@ class _FilteredItemsScreenState extends State<FilteredItemsScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(widget.title),
+        title: const Text('Upcoming Renewals'),
       ),
       body: SafeArea(
         child: _items.isEmpty
-            ? EmptyStateWidget(
-                icon: EmptyStateWidget.mutedIcon(context, Icons.filter_list_off),
-                title: 'No items found',
-                subtitle: 'Nothing in this list matches the current filter.',
-                semanticLabel:
-                    'No items found. Nothing in this list matches the current filter.',
-              )
+            ? const RemindersCaughtUpEmptyState()
             : SlidableAutoCloseBehavior(
                 child: ListView.builder(
                   padding: listScrollPadding(

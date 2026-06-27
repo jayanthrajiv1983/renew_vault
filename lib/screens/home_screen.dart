@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
-import '../constants/categories.dart';
 import '../models/renewal_item.dart';
 import '../models/sort_option.dart';
 import '../services/category_migration_service.dart';
 import '../services/family_service.dart';
+import '../services/pending_delete_controller.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
@@ -15,12 +16,16 @@ import '../utils/form_padding.dart';
 import '../search/renewal_search_delegate.dart';
 import '../widgets/renew_vault_logo.dart';
 import '../widgets/renewal_card.dart';
+import '../widgets/slidable_renewal_card.dart';
 import '../widgets/backup_reminder_banner.dart';
 import '../widgets/section_header.dart';
 import '../widgets/summary_stat_card.dart';
+import '../shared/widgets/empty_state_widget.dart';
 import '../widgets/create_renewal_bottom_sheet.dart';
+import '../widgets/category_empty_state.dart';
 import 'add_item_screen.dart';
 import 'analytics_screen.dart';
+import 'category_items_screen.dart';
 import 'filtered_items_screen.dart';
 import 'item_detail_screen.dart';
 import 'settings_screen.dart';
@@ -59,6 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     SettingsService.instance.addListener(_onSettingsChanged);
+    PendingDeleteController.instance.addListener(_loadItems);
     _applySortFromSettings();
     _initializeData();
   }
@@ -73,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     SettingsService.instance.removeListener(_onSettingsChanged);
+    PendingDeleteController.instance.removeListener(_loadItems);
     super.dispose();
   }
 
@@ -152,6 +159,31 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openCreateRenewal() async {
     await showCreateRenewalBottomSheet(context);
     _loadItems();
+  }
+
+  Future<void> _openAddItemForCategory(String category) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => AddItemScreen(initialCategory: category),
+      ),
+    );
+    _loadItems();
+  }
+
+  Future<void> _openCategoryItems(String category) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CategoryItemsScreen(category: category),
+      ),
+    );
+    _loadItems();
+  }
+
+  bool _isCategoryEmpty(String? category) {
+    if (category == null) {
+      return false;
+    }
+    return !_items.any((item) => item.category == category);
   }
 
   Future<void> _openItemDetail(RenewalItem item) async {
@@ -482,6 +514,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final expiringSoon = _expiringSoon;
     final filteredItems = _filteredItems;
     final expiredCount = _countExpired();
+    final showCategoryEmptyState =
+        _selectedCategory != null && _isCategoryEmpty(_selectedCategory);
 
     final showAppBarTitle =
         MediaQuery.sizeOf(context).width >= _kAppBarTitleBreakpoint;
@@ -527,7 +561,8 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _loadItems,
-          child: _items.isEmpty
+          child: SlidableAutoCloseBehavior(
+            child: _items.isEmpty
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: listScrollPadding(context, top: AppSpacing.sectionSpacing),
@@ -535,49 +570,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (backupReminderBanner != null) backupReminderBanner,
                   SizedBox(
                     height: MediaQuery.sizeOf(context).height * 0.65,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.screenPadding,
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.event_note,
-                              size: 80,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant
-                                  .withValues(alpha: 0.38),
-                            ),
-                            const SizedBox(height: AppSpacing.screenPadding),
-                            Text(
-                              'No renewals added yet',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: AppSpacing.sectionSpacing),
-                            Text(
-                              'Tap the + button below to add your first renewal.',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ),
+                    child: EmptyStateWidget(
+                      icon: EmptyStateWidget.mutedIcon(
+                        context,
+                        Icons.event_note,
                       ),
+                      title: 'No items yet',
+                      subtitle:
+                          "Start organizing your life's essentials by adding your first item.",
+                      buttonText: 'Add Item',
+                      onButtonPressed: _openCreateRenewal,
+                      semanticLabel:
+                          "No items yet. Start organizing your life's essentials by adding your first item. Add Item.",
                     ),
                   ),
                 ],
@@ -617,6 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     onClearOwner: () {
                       setState(() => _selectedOwner = null);
                     },
+                    onCategoryTap: _selectedCategory == null
+                        ? null
+                        : () => _openCategoryItems(_selectedCategory!),
                   ),
                 Padding(
                   padding: const EdgeInsets.only(
@@ -670,6 +677,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
+                if (showCategoryEmptyState)
+                  SizedBox(
+                    height: MediaQuery.sizeOf(context).height * 0.45,
+                    child: CategoryEmptyState(
+                      category: _selectedCategory!,
+                      onAddItem: () =>
+                          _openAddItemForCategory(_selectedCategory!),
+                    ),
+                  )
+                else ...[
                 if (expiredCount >= 1 &&
                     SettingsService.instance.getShowExpiredBanner())
                   _OverdueAlertBanner(
@@ -681,44 +698,38 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 const SectionHeader(title: 'Expiring Soon'),
                 if (expiringSoon.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.fieldLabelGap,
-                    ),
-                    child: Text(
-                      _hasActiveFilters
-                          ? 'No upcoming renewals match filters'
-                          : 'No upcoming renewals',
-                    ),
+                  EmptyStateWidget.compact(
+                    title: _hasActiveFilters
+                        ? 'No upcoming renewals match filters'
+                        : 'No upcoming renewals',
                   )
                 else
                   ...expiringSoon.map(
-                    (item) => RenewalCard(
+                    (item) => SlidableRenewalCard(
                       item: item,
                       onTap: () => _openItemDetail(item),
+                      onItemChanged: _loadItems,
                     ),
                   ),
                 const SectionHeader(title: 'All Renewals'),
                 if (filteredItems.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: AppSpacing.fieldLabelGap,
-                    ),
-                    child: Text(
-                      _hasActiveFilters
-                          ? 'No renewals match filters'
-                          : 'No renewals added yet',
-                    ),
+                  EmptyStateWidget.compact(
+                    title: _hasActiveFilters
+                        ? 'No renewals match filters'
+                        : 'No renewals added yet',
                   )
                 else
                   ...filteredItems.map(
-                    (item) => RenewalCard(
+                    (item) => SlidableRenewalCard(
                       item: item,
                       onTap: () => _openItemDetail(item),
+                      onItemChanged: _loadItems,
                     ),
                   ),
                 ],
+                ],
               ),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -780,6 +791,7 @@ class _ActiveFiltersBar extends StatelessWidget {
     required this.onClearCategory,
     required this.onClearStatus,
     required this.onClearOwner,
+    this.onCategoryTap,
   });
 
   final String? selectedCategory;
@@ -789,6 +801,7 @@ class _ActiveFiltersBar extends StatelessWidget {
   final VoidCallback onClearCategory;
   final VoidCallback onClearStatus;
   final VoidCallback onClearOwner;
+  final VoidCallback? onCategoryTap;
 
   @override
   Widget build(BuildContext context) {
@@ -802,6 +815,7 @@ class _ActiveFiltersBar extends StatelessWidget {
               padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
               child: InputChip(
                 label: Text('Category: $selectedCategory'),
+                onPressed: onCategoryTap,
                 onDeleted: onClearCategory,
               ),
             ),

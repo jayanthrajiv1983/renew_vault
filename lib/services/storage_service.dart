@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/renewal_item.dart';
 import 'attachment_service.dart';
@@ -11,6 +12,7 @@ class StorageService {
   static final StorageService instance = StorageService._();
 
   static const _boxName = 'renewals';
+  static const _uuid = Uuid();
 
   Box? _box;
 
@@ -60,10 +62,62 @@ class StorageService {
   Future<void> delete(String id) async {
     final item = await getById(id);
     if (item != null) {
+      await permanentlyDeleteStashedItem(item);
+    } else {
+      await _box!.delete(id);
+    }
+  }
+
+  /// Removes an item from Hive and cancels reminders without deleting attachments.
+  /// Used while a delete is pending undo.
+  Future<void> stashDelete(String id) async {
+    final item = await getById(id);
+    if (item != null) {
       await NotificationService.instance.cancelRenewalReminders(item);
-      await AttachmentService.instance.deleteAllAttachmentFiles(item);
     }
     await _box!.delete(id);
+  }
+
+  /// Permanently removes a stashed or stored item, including attachments.
+  Future<void> permanentlyDeleteStashedItem(RenewalItem item) async {
+    await NotificationService.instance.cancelRenewalReminders(item);
+    await AttachmentService.instance.deleteAllAttachmentFiles(item);
+    if (_box!.containsKey(item.id)) {
+      await _box!.delete(item.id);
+    }
+  }
+
+  /// Creates a copy of [source] with a new id, title suffixed with " (Copy)",
+  /// fresh notification ids, and duplicated attachment files on disk.
+  Future<RenewalItem> duplicate(RenewalItem source) async {
+    final newId = _uuid.v4();
+    var duplicateItem = source.copyWith(
+      id: newId,
+      title: '${source.title} (Copy)',
+      notificationIds: const {},
+      reminderDays: List<int>.from(source.reminderDays),
+      metadata: Map<String, dynamic>.from(source.metadata),
+      attachments: const [],
+    );
+
+    for (final attachment in source.attachments) {
+      final sourceFile =
+          await AttachmentService.instance.resolveAttachmentFile(attachment);
+      if (!await sourceFile.exists()) {
+        continue;
+      }
+
+      final result = await AttachmentService.instance.saveFile(
+        item: duplicateItem,
+        sourceFile: sourceFile,
+        fileType: attachment.fileType,
+        preferredFileName: attachment.fileName,
+      );
+      duplicateItem = result.item;
+    }
+
+    await save(duplicateItem);
+    return duplicateItem;
   }
 
   Future<void> replaceAll(List<RenewalItem> items) async {

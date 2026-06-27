@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import '../../services/analytics_service.dart';
 import 'chart_legend.dart';
@@ -22,14 +23,8 @@ class ExpiryLineChart extends StatelessWidget {
     final fillColor = scheme.primary.withValues(alpha: 0.12);
 
     if (monthlyExpiries.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.screenPadding),
-        child: Text(
-          'No upcoming expiry data',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant,
-          ),
-        ),
+      return EmptyStateWidget.compact(
+        title: 'No upcoming expiry data',
       );
     }
 

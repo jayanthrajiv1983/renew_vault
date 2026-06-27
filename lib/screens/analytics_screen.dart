@@ -1,19 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../models/renewal_item.dart';
 import '../services/analytics_service.dart';
 import '../services/insights_service.dart';
+import '../services/pending_delete_controller.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
+import '../shared/widgets/empty_state_widget.dart';
 import '../widgets/charts/category_pie_chart.dart';
 import '../widgets/charts/expiry_line_chart.dart';
 import '../widgets/charts/family_bar_chart.dart';
+import '../widgets/create_renewal_bottom_sheet.dart';
 import '../widgets/insight_card.dart';
-import '../widgets/renewal_card.dart';
+import '../widgets/slidable_renewal_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/summary_stat_card.dart';
+import 'category_items_screen.dart';
 import 'item_detail_screen.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -34,7 +39,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   @override
   void initState() {
     super.initState();
+    PendingDeleteController.instance.addListener(_loadData);
     _loadData();
+  }
+
+  @override
+  void dispose() {
+    PendingDeleteController.instance.removeListener(_loadData);
+    super.dispose();
   }
 
   void _loadData() {
@@ -45,6 +57,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     });
   }
 
+  Future<void> _openCreateRenewal() async {
+    await showCreateRenewalBottomSheet(context);
+    _loadData();
+  }
+
   Future<void> _openItemDetail(RenewalItem item) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
@@ -53,6 +70,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
     _loadData();
   }
+
+  Future<void> _openCategoryItems(String category) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CategoryItemsScreen(category: category),
+      ),
+    );
+    _loadData();
+  }
+
+  bool get _hasInsufficientData => _data.overview.total == 0;
 
   @override
   Widget build(BuildContext context) {
@@ -66,10 +94,29 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async => _loadData(),
-          child: ListView(
+          child: SlidableAutoCloseBehavior(
+            child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: listScrollPadding(context),
             children: [
+              if (_hasInsufficientData)
+                SizedBox(
+                  height: MediaQuery.sizeOf(context).height * 0.65,
+                  child: EmptyStateWidget(
+                    icon: EmptyStateWidget.mutedIcon(
+                      context,
+                      Icons.insights_outlined,
+                    ),
+                    title: 'Not enough data yet',
+                    subtitle:
+                        'Add and manage more items to unlock insights.',
+                    buttonText: 'Add Item',
+                    onButtonPressed: _openCreateRenewal,
+                    semanticLabel:
+                        'Not enough data yet. Add and manage more items to unlock insights. Add Item.',
+                  ),
+                )
+              else ...[
               if (_insightsList.isNotEmpty) ...[
                 const SectionHeader(
                   title: 'Smart Insights',
@@ -136,6 +183,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   padding: AppSpacing.cardInsets,
                   child: CategoryPieChart(
                     categoryCounts: _data.categoryCounts,
+                    onCategoryTap: _openCategoryItems,
                   ),
                 ),
               ),
@@ -174,19 +222,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 Card(
                   child: Padding(
                     padding: AppSpacing.cardInsets,
-                    child: Text(
-                      'No upcoming renewals',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
+                    child: EmptyStateWidget.compact(
+                      title: 'No upcoming renewals',
                     ),
                   ),
                 )
               else
                 ..._data.upcomingItems.map(
-                  (item) => RenewalCard(
+                  (item) => SlidableRenewalCard(
                     item: item,
                     onTap: () => _openItemDetail(item),
+                    onItemChanged: _loadData,
                   ),
                 ),
               AppSpacing.gapSection,
@@ -222,7 +268,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   ),
                 ),
               ),
+              ],
             ],
+          ),
           ),
         ),
       ),
