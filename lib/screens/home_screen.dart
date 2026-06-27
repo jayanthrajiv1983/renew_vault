@@ -7,11 +7,13 @@ import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../utils/backup_flow.dart';
 import '../utils/sort_helper.dart';
 import '../utils/form_padding.dart';
 import '../search/renewal_search_delegate.dart';
 import '../widgets/renew_vault_logo.dart';
 import '../widgets/renewal_card.dart';
+import '../widgets/backup_reminder_banner.dart';
 import '../widgets/section_header.dart';
 import '../widgets/summary_stat_card.dart';
 import '../widgets/create_renewal_bottom_sheet.dart';
@@ -41,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
   HomeFilterStatus? _selectedStatus;
   String? _selectedOwner;
   SortOption? _explicitSort;
+  bool _isRunningBackup = false;
 
   SortOption? get _effectiveSort =>
       SettingsService.instance.getEffectiveSortOption();
@@ -108,6 +111,33 @@ class _HomeScreenState extends State<HomeScreen> {
     if (restored == true) {
       _loadItems();
     }
+  }
+
+  Future<void> _runBackupFromHome() async {
+    setState(() => _isRunningBackup = true);
+    try {
+      await runEncryptedBackupFlow(context);
+    } finally {
+      if (mounted) {
+        setState(() => _isRunningBackup = false);
+      }
+    }
+  }
+
+  Future<void> _dismissBackupReminder() async {
+    await SettingsService.instance.setBackupReminderDismissedAt(DateTime.now());
+  }
+
+  Widget? _buildBackupReminderBanner() {
+    if (!SettingsService.instance.shouldShowBackupReminder()) {
+      return null;
+    }
+
+    return BackupReminderBanner(
+      message: SettingsService.instance.getBackupReminderMessage(),
+      onBackupNow: _isRunningBackup ? null : _runBackupFromHome,
+      onDismiss: _dismissBackupReminder,
+    );
   }
 
   Future<void> _openCreateRenewal() async {
@@ -447,6 +477,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final showAppBarTitle =
         MediaQuery.sizeOf(context).width >= _kAppBarTitleBreakpoint;
 
+    final backupReminderBanner = _buildBackupReminderBanner();
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
@@ -489,7 +521,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: _items.isEmpty
             ? ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: listScrollPadding(context, top: AppSpacing.sectionSpacing),
                 children: [
+                  if (backupReminderBanner != null) backupReminderBanner,
                   SizedBox(
                     height: MediaQuery.sizeOf(context).height * 0.65,
                     child: Center(
@@ -547,6 +581,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   includeFabClearance: true,
                 ),
                 children: [
+                if (backupReminderBanner != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sectionSpacing),
+                    child: backupReminderBanner,
+                  ),
                 if (_explicitSort != null)
                   _SortChipBar(
                     sortLabel: _explicitSort!.label,

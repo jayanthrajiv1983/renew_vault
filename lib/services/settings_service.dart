@@ -6,6 +6,8 @@ import 'hive_encryption_service.dart';
 
 
 
+import '../models/backup_reminder_interval.dart';
+
 import '../models/renewal_item.dart';
 
 import '../models/sort_option.dart';
@@ -41,6 +43,12 @@ class SettingsService extends ChangeNotifier {
   static const enableAppLockKey = 'enableAppLock';
 
   static const hideAppContentsInRecentsKey = 'hideAppContentsInRecents';
+
+  static const backupReminderIntervalKey = 'backupReminderInterval';
+
+  static const lastBackupAtKey = 'lastBackupAt';
+
+  static const backupReminderDismissedAtKey = 'backupReminderDismissedAt';
 
 
 
@@ -307,6 +315,101 @@ class SettingsService extends ChangeNotifier {
   }
 
 
+
+  BackupReminderInterval getBackupReminderInterval() {
+    final value = _box?.get(backupReminderIntervalKey);
+    if (value is String) {
+      return BackupReminderInterval.fromName(value);
+    }
+    return BackupReminderInterval.monthly;
+  }
+
+  Future<void> setBackupReminderInterval(BackupReminderInterval interval) async {
+    await _box?.put(backupReminderIntervalKey, interval.name);
+    notifyListeners();
+  }
+
+  DateTime? getLastBackupAt() {
+    final value = _box?.get(lastBackupAtKey);
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    return null;
+  }
+
+  Future<void> setLastBackupAt(DateTime time) async {
+    await _box?.put(lastBackupAtKey, time.toUtc().toIso8601String());
+    notifyListeners();
+  }
+
+  DateTime? getBackupReminderDismissedAt() {
+    final value = _box?.get(backupReminderDismissedAtKey);
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    return null;
+  }
+
+  Future<void> setBackupReminderDismissedAt(DateTime time) async {
+    await _box?.put(backupReminderDismissedAtKey, time.toUtc().toIso8601String());
+    notifyListeners();
+  }
+
+  Future<void> clearBackupReminderDismissedAt() async {
+    await _box?.delete(backupReminderDismissedAtKey);
+    notifyListeners();
+  }
+
+  Future<void> recordSuccessfulBackup() async {
+    await setLastBackupAt(DateTime.now());
+    await clearBackupReminderDismissedAt();
+  }
+
+  int? getDaysSinceLastBackup() {
+    final lastBackup = getLastBackupAt();
+    if (lastBackup == null) {
+      return null;
+    }
+    return DateTime.now().difference(lastBackup).inDays;
+  }
+
+  bool shouldShowBackupReminder() {
+    final interval = getBackupReminderInterval();
+    if (interval == BackupReminderInterval.off) {
+      return false;
+    }
+
+    final dismissedAt = getBackupReminderDismissedAt();
+    if (dismissedAt != null && _isSameCalendarDay(dismissedAt, DateTime.now())) {
+      return false;
+    }
+
+    final lastBackup = getLastBackupAt();
+    if (lastBackup == null) {
+      return true;
+    }
+
+    final daysSince = DateTime.now().difference(lastBackup).inDays;
+    return daysSince >= interval.intervalDays;
+  }
+
+  String getBackupReminderMessage() {
+    final daysSince = getDaysSinceLastBackup();
+    if (daysSince == null) {
+      return 'Your data has not been backed up yet.';
+    }
+    return 'Your data has not been backed up for $daysSince days.';
+  }
+
+  bool _isSameCalendarDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
 
   Future<void> applySettings(Map<String, dynamic> settings) async {
 

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../models/backup_reminder_interval.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 
 
 
+import '../models/backup_preview.dart';
 import '../providers/theme_provider.dart';
 
 import '../services/backup_service.dart';
@@ -14,11 +17,14 @@ import '../services/settings_service.dart';
 
 import '../theme/app_brand.dart';
 import '../theme/app_spacing.dart';
+import '../utils/backup_flow.dart';
 import '../utils/form_padding.dart';
+import '../widgets/restore_progress_dialog.dart';
 import '../widgets/renew_vault_logo.dart';
 import '../widgets/reminder_interval_picker.dart';
 import '../widgets/section_header.dart';
 
+import 'backup_history_screen.dart';
 import 'family_members_screen.dart';
 
 
@@ -65,8 +71,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   bool _isRestoring = false;
 
-  bool _isExporting = false;
-
   bool _isImporting = false;
 
 
@@ -83,11 +87,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _hideAppContentsInRecents;
 
+  late BackupReminderInterval _backupReminderInterval;
 
 
-  bool get _isBusy =>
 
-      _isBackingUp || _isRestoring || _isExporting || _isImporting;
+  bool get _isBusy => _isBackingUp || _isRestoring || _isImporting;
 
 
 
@@ -117,278 +121,130 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _hideAppContentsInRecents = _settings.getHideAppContentsInRecents();
 
+    _backupReminderInterval = _settings.getBackupReminderInterval();
+
   }
 
 
 
   Future<void> _backupData() async {
-
     setState(() => _isBackingUp = true);
 
-
-
     try {
-
-      final file = await BackupService.instance.exportToFile();
-
-
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Backup saved to ${file.path}')),
-
-      );
-
-    } on Exception catch (error) {
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Backup failed: $error')),
-
-      );
-
+      await runEncryptedBackupFlow(context);
     } finally {
-
       if (mounted) {
-
         setState(() => _isBackingUp = false);
-
       }
-
     }
-
   }
 
 
 
-  Future<void> _exportData() async {
-
-    setState(() => _isExporting = true);
-
-
-
-    try {
-
-      final file = await BackupService.instance.exportToFile();
-
-      await BackupService.instance.shareBackupFile(file);
-
-
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        const SnackBar(content: Text('Backup exported successfully')),
-
-      );
-
-    } on Exception catch (error) {
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Export failed: $error')),
-
-      );
-
-    } finally {
-
-      if (mounted) {
-
-        setState(() => _isExporting = false);
-
-      }
-
-    }
-
-  }
-
-
-
-  Future<void> _restoreOrImportData({required String actionLabel}) async {
-
-    final isRestore = actionLabel == 'Restore';
-
+  Future<void> _restoreOrImportData({
+    required List<String> allowedExtensions,
+    required String actionLabel,
+    required bool isRestore,
+  }) async {
     setState(() {
-
       if (isRestore) {
-
         _isRestoring = true;
-
       } else {
-
         _isImporting = true;
-
       }
-
     });
 
-
-
     try {
-
-      final data = await BackupService.instance.pickAndReadBackup();
-
-      BackupService.instance.validateBackup(data);
-
-
-
-      if (!mounted) {
-
-        return;
-
-      }
-
-
-
-      final confirmed = await showDialog<bool>(
-
-        context: context,
-
-        builder: (context) => AlertDialog(
-
-          insetPadding: dialogInsetPadding(context),
-
-          title: Text('$actionLabel backup?'),
-
-          content: Text(
-
-            'This will replace all renewals, family members, and settings '
-
-            'with the data from the selected backup. This cannot be undone.',
-
-          ),
-
-          actions: [
-
-            TextButton(
-
-              onPressed: () => Navigator.of(context).pop(false),
-
-              child: const Text('Cancel'),
-
-            ),
-
-            FilledButton(
-
-              onPressed: () => Navigator.of(context).pop(true),
-
-              child: Text(actionLabel),
-
-            ),
-
-          ],
-
-        ),
-
+      final pickResult = await BackupService.instance.pickBackupFile(
+        allowedExtensions: allowedExtensions,
       );
 
-
-
-      if (confirmed != true || !mounted) {
-
+      if (pickResult == null || !mounted) {
         return;
-
       }
 
+      final previewResult = await showRestorePreviewProgressDialog(
+        context,
+        (onProgress) => BackupService.instance.previewPickedBackup(
+          pickResult,
+          onProgress: onProgress,
+        ),
+      );
 
+      if (!mounted) {
+        return;
+      }
 
-      await BackupService.instance.applyBackup(data);
+      if (previewResult is BackupValidationException) {
+        await showRestoreErrorDialog(
+          context,
+          message: previewResult.message,
+        );
+        return;
+      }
+
+      if (previewResult is Exception) {
+        await showRestoreErrorDialog(
+          context,
+          message: previewResult.toString(),
+        );
+        return;
+      }
+
+      if (previewResult is! BackupPreview) {
+        return;
+      }
+
+      final confirmed = await showRestoreSummaryDialog(context, previewResult);
+      if (confirmed != true || !mounted) {
+        return;
+      }
+
+      final restored = await showRestoreApplyProgressDialog(
+        context,
+        (onProgress) => BackupService.instance.restoreFromPreview(
+          previewResult,
+          onProgress: onProgress,
+        ),
+      );
+
+      if (!restored || !mounted) {
+        return;
+      }
 
       _loadSettings();
 
-
-
       if (!mounted) {
-
         return;
-
       }
 
-
-
       ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Backup ${actionLabel.toLowerCase()}d successfully')),
-
+        SnackBar(
+          content: Text('Backup ${actionLabel.toLowerCase()}d successfully'),
+        ),
       );
-
       Navigator.of(context).pop(true);
-
-    } on BackupCancelledException {
-
-      return;
-
     } on BackupValidationException catch (error) {
-
       if (!mounted) {
-
         return;
-
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text(error.message)),
-
-      );
-
+      await showRestoreErrorDialog(context, message: error.message);
     } on Exception catch (error) {
-
       if (!mounted) {
-
         return;
-
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('$actionLabel failed: $error')),
-
+      await showRestoreErrorDialog(
+        context,
+        message: '$actionLabel failed: $error',
       );
-
     } finally {
-
       if (mounted) {
-
         setState(() {
-
           _isRestoring = false;
-
           _isImporting = false;
-
         });
-
       }
-
     }
-
   }
 
 
@@ -455,6 +311,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
+  Future<void> _setBackupReminderInterval(BackupReminderInterval interval) async {
+    await _settings.setBackupReminderInterval(interval);
+    setState(() => _backupReminderInterval = interval);
+  }
+
+  void _openBackupReminderSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: bottomSheetPadding(sheetContext),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Backup Reminder',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: AppSpacing.fieldLabelGap),
+                Text(
+                  'Show a reminder on the home screen when a backup is overdue',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.sectionSpacing),
+                ...BackupReminderInterval.values.map(
+                  (interval) => RadioListTile<BackupReminderInterval>(
+                    title: Text(interval.label),
+                    value: interval,
+                    groupValue: _backupReminderInterval,
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      _setBackupReminderInterval(value);
+                      Navigator.of(sheetContext).pop();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+
   Future<void> _openUrl(String url, {required String fallbackMessage}) async {
 
     if (url.isEmpty) {
@@ -503,6 +413,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const FamilyMembersScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openBackupHistoryScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BackupHistoryScreen(),
       ),
     );
   }
@@ -885,6 +803,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   leading: CircleAvatar(
 
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+
+                    child: Icon(
+
+                      Icons.schedule_outlined,
+
+                      color: theme.colorScheme.onSecondaryContainer,
+
+                    ),
+
+                  ),
+
+                  title: const Text('Backup Reminder'),
+
+                  subtitle: Text(_backupReminderInterval.label),
+
+                  trailing: const Icon(Icons.chevron_right),
+
+                  onTap: _openBackupReminderSheet,
+
+                ),
+
+                const Divider(height: 1),
+
+                ListTile(
+
+                  leading: CircleAvatar(
+
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
+
+                    child: Icon(
+
+                      Icons.history,
+
+                      color: theme.colorScheme.onSurfaceVariant,
+
+                    ),
+
+                  ),
+
+                  title: const Text('Backup History'),
+
+                  subtitle: const Text('View past backups and share again'),
+
+                  trailing: const Icon(Icons.chevron_right),
+
+                  onTap: _openBackupHistoryScreen,
+
+                ),
+
+                const Divider(height: 1),
+
+                ListTile(
+
+                  leading: CircleAvatar(
+
                     backgroundColor: theme.colorScheme.primaryContainer,
 
                     child: Icon(
@@ -899,7 +873,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: const Text('Backup Data'),
 
-                  subtitle: const Text('Save a JSON backup to local storage'),
+                  subtitle: const Text(
+                    'Create encrypted backup and save or share via Drive, iCloud, email, etc.',
+                  ),
 
                   trailing: _busyTrailing(_isBackingUp) ??
 
@@ -931,7 +907,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: const Text('Restore Data'),
 
-                  subtitle: const Text('Replace all data from a backup file'),
+                  subtitle: const Text(
+                    'Replace all data from an encrypted .rvbackup file',
+                  ),
 
                   trailing: _busyTrailing(_isRestoring) ??
 
@@ -940,42 +918,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   enabled: !_isBusy,
 
                   onTap: _isBusy
-
                       ? null
-
-                      : () => _restoreOrImportData(actionLabel: 'Restore'),
-
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-
-                  leading: CircleAvatar(
-
-                    backgroundColor: theme.colorScheme.secondaryContainer,
-
-                    child: Icon(
-
-                      Icons.upload_file,
-
-                      color: theme.colorScheme.onSecondaryContainer,
-
-                    ),
-
-                  ),
-
-                  title: const Text('Export Data'),
-
-                  subtitle: const Text('Share a JSON backup file'),
-
-                  trailing: _busyTrailing(_isExporting) ??
-
-                      const Icon(Icons.chevron_right),
-
-                  enabled: !_isBusy,
-
-                  onTap: _isBusy ? null : _exportData,
+                      : () => _restoreOrImportData(
+                            allowedExtensions: const ['rvbackup'],
+                            actionLabel: 'Restore',
+                            isRestore: true,
+                          ),
 
                 ),
 
@@ -999,7 +947,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: const Text('Import Data'),
 
-                  subtitle: const Text('Load data from a JSON backup file'),
+                  subtitle: const Text(
+                    'Load data from a .rvbackup or legacy JSON backup',
+                  ),
 
                   trailing: _busyTrailing(_isImporting) ??
 
@@ -1008,10 +958,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   enabled: !_isBusy,
 
                   onTap: _isBusy
-
                       ? null
-
-                      : () => _restoreOrImportData(actionLabel: 'Import'),
+                      : () => _restoreOrImportData(
+                            allowedExtensions: const ['rvbackup', 'json'],
+                            actionLabel: 'Import',
+                            isRestore: false,
+                          ),
 
                 ),
 

@@ -120,6 +120,35 @@ class OcrCorrectionService {
     }).toList();
   }
 
+  /// All stored OCR corrections for backup export.
+  List<OcrCorrection> getAllCorrections() {
+    final box = _box;
+    if (box == null || box.isEmpty) {
+      return const [];
+    }
+
+    final corrections = <OcrCorrection>[];
+    for (final key in box.keys) {
+      final stored = box.get(key);
+      if (stored is Map) {
+        corrections.add(
+          OcrCorrection.fromJson(Map<String, dynamic>.from(stored)),
+        );
+      }
+    }
+    return corrections;
+  }
+
+  /// Replaces all stored corrections (used during backup restore).
+  Future<void> replaceAll(List<OcrCorrection> corrections) async {
+    await init();
+    await _box?.clear();
+    for (final correction in corrections) {
+      final key = _storageKey(correction.fieldName, correction.originalValue);
+      await _box?.put(key, correction.toJson());
+    }
+  }
+
   /// Whether [field]'s value came from a learned correction (for UI hints).
   bool wasLearnedCorrection(
     OcrExtractionResult field, {

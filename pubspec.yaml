@@ -52,6 +52,8 @@ dependencies:
   flutter_svg: ^2.2.0
   local_auth: ^2.3.0
   flutter_secure_storage: ^10.3.1
+  archive: ^4.0.7
+  encrypt: ^5.0.3
 
 dev_dependencies:
   flutter_test:
