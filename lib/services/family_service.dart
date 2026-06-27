@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
 import '../models/family_member.dart';
+import 'hive_encryption_service.dart';
 
 class FamilyService {
   FamilyService._();
@@ -20,7 +21,7 @@ class FamilyService {
 
     debugPrint('FamilyService: initializing');
     try {
-      _box = await Hive.openBox(_boxName);
+      _box = await HiveEncryptionService.instance.openBox(_boxName);
       debugPrint('FamilyService: box opened');
       _initialized = true;
       await ensureDefaultSelf();

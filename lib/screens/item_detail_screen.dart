@@ -8,6 +8,7 @@ import '../utils/metadata_utils.dart';
 import '../utils/form_padding.dart';
 import '../constants/categories.dart';
 import '../constants/reminder_intervals.dart';
+import '../widgets/attachments_section.dart';
 import '../widgets/item_detail_section.dart';
 import '../widgets/metadata_display.dart';
 import '../widgets/owner_avatar.dart';
@@ -258,6 +259,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 ),
               ),
             ),
+          AttachmentsSection(item: item),
           FadeTransition(
             opacity: _contentFade,
             child: Column(

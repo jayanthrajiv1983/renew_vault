@@ -1,6 +1,8 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
 import '../models/renewal_item.dart';
+import 'attachment_service.dart';
+import 'hive_encryption_service.dart';
 import 'notification_service.dart';
 
 class StorageService {
@@ -13,7 +15,7 @@ class StorageService {
   Box? _box;
 
   Future<void> init() async {
-    _box = await Hive.openBox(_boxName);
+    _box = await HiveEncryptionService.instance.openBox(_boxName);
   }
 
   List<RenewalItem> getAll() {
@@ -59,6 +61,7 @@ class StorageService {
     final item = await getById(id);
     if (item != null) {
       await NotificationService.instance.cancelRenewalReminders(item);
+      await AttachmentService.instance.deleteAllAttachmentFiles(item);
     }
     await _box!.delete(id);
   }

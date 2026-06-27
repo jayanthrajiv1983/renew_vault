@@ -4,7 +4,16 @@ import 'package:flutter/material.dart';
 abstract final class AppBrand {
   static const String name = 'Renew Vault';
 
-  static const String tagline = 'Track everything that expires.';
+  /// User-facing app name including trademark — use in splash, About, and branding.
+  static const String displayName = 'Renew Vault™';
+
+  static const String tagline = 'Your life, organized.';
+
+  /// User-facing semver shown in About and release notes.
+  static const String version = '0.1.1';
+
+  /// When true, About shows a Beta badge beside the version.
+  static const bool isBeta = true;
 
   static const String description =
       'Securely track renewals, warranties, insurance, documents, taxes, and subscriptions.';
@@ -21,7 +30,17 @@ abstract final class AppBrand {
   /// Darker blue for gradients and depth.
   static const Color primaryBlueDark = Color(0xFF1D4ED8);
 
-  static const String logoSvgAsset = 'assets/images/logo/renew_vault_logo.svg';
+  /// Official logo mark — single source of truth for in-app and launcher art.
+  static const String logoAsset = 'assets/images/logo/renew_vault_logo.png';
 
+  /// Alias kept for launcher-icon tooling (same PNG as [logoAsset]).
   static const String logoIconAsset = 'assets/images/logo/renew_vault_icon.png';
+
+  /// Splash composite: logo + app name + tagline (reference / tooling only).
+  static const String splashLightAsset =
+      'assets/images/logo/renew_vault_splash_light.png';
+
+  /// Splash composite: logo + app name + tagline (reference / tooling only).
+  static const String splashDarkAsset =
+      'assets/images/logo/renew_vault_splash_dark.png';
 }

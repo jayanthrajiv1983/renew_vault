@@ -1,20 +1,37 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+
+import '../models/add_item_prefill.dart';
+import '../models/attachment_metadata.dart';
 import '../models/family_member.dart';
 import '../models/renewal_item.dart';
+import '../services/attachment_service.dart';
 import '../services/family_service.dart';
+import '../services/renewal_creation_flow.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/attachment_form_section.dart';
 import '../widgets/category_form_fields.dart';
 import '../widgets/forms/category_form_controller.dart';
 import '../widgets/reminder_interval_picker.dart';
 import '../widgets/safe_form_scaffold.dart';
+import 'ocr_review_screen.dart';
 
 class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({super.key, this.item});
+  const AddItemScreen({
+    super.key,
+    this.item,
+    this.launchMode = AddItemLaunchMode.manual,
+    this.prefill,
+  });
 
   final RenewalItem? item;
+  final AddItemLaunchMode launchMode;
+  final AddItemPrefill? prefill;
 
   static const categories = [
     'Appliance',
@@ -35,12 +52,34 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _notesController = TextEditingController();
   final _categoryFormController = CategoryFormController();
 
+  late String _itemId;
   late String _category;
   late String _owner;
   late Set<int> _selectedReminderDays;
   List<FamilyMember> _familyMembers = [];
+  List<AttachmentMetadata> _attachments = [];
+  final List<AttachmentMetadata> _removedAttachments = [];
+  late Set<String> _persistedAttachmentIds;
+  bool _saved = false;
+  bool _scanning = false;
 
   bool get _isEditMode => widget.item != null;
+
+  bool get _hasExistingFormData {
+    if (_titleController.text.trim().isNotEmpty) {
+      return true;
+    }
+    if (_categoryFormController.documentNumberController.text.trim().isNotEmpty) {
+      return true;
+    }
+    if (_categoryFormController.registrationNumberController.text.trim().isNotEmpty) {
+      return true;
+    }
+    if (_categoryFormController.policyNumberController.text.trim().isNotEmpty) {
+      return true;
+    }
+    return _categoryFormController.primaryRenewalDateFor(_category) != null;
+  }
 
   List<String> get _ownerOptions {
     final names = _familyMembers.map((member) => member.name).toList();
@@ -56,6 +95,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
     _familyMembers = FamilyService.instance.getAll();
     final item = widget.item;
     if (item != null) {
+      _itemId = item.id;
+      _attachments = List<AttachmentMetadata>.from(item.attachments);
+      _persistedAttachmentIds =
+          item.attachments.map((attachment) => attachment.id).toSet();
       _titleController.text = item.title;
       _notesController.text = item.notes;
       _category = item.category;
@@ -63,10 +106,55 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _selectedReminderDays = item.reminderDays.toSet();
       _categoryFormController.loadFromItem(item);
     } else {
+      _itemId = DateTime.now().millisecondsSinceEpoch.toString();
+      _persistedAttachmentIds = {};
       _category = AddItemScreen.categories.first;
       _owner = _defaultOwnerName();
       _selectedReminderDays =
           SettingsService.instance.getDefaultReminderDays().toSet();
+    }
+
+    final prefill = widget.prefill;
+    if (prefill != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_applyPrefill(prefill));
+      });
+    }
+  }
+
+  Future<void> _applyPrefill(AddItemPrefill prefill) async {
+    if (!mounted) {
+      return;
+    }
+
+    if (prefill.reviewData != null) {
+      applyOcrReviewToForm(
+        data: prefill.reviewData!,
+        currentCategory: _category,
+        titleController: _titleController,
+        categoryController: _categoryFormController,
+        onCategoryChanged: _onCategoryChanged,
+        onChanged: () => setState(() {}),
+      );
+    }
+
+    await _attachFileFromPath(
+      prefill.attachmentPath,
+      prefill.fileType,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    final message = prefill.infoMessage ??
+        (prefill.reviewData != null
+            ? 'Scan applied. Review fields and save when ready.'
+            : null);
+    if (message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 
@@ -83,6 +171,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
   @override
   void dispose() {
+    if (!_saved) {
+      final sessionAdded = _attachments
+          .where(
+            (attachment) =>
+                !_persistedAttachmentIds.contains(attachment.id),
+          )
+          .toList();
+      if (sessionAdded.isNotEmpty) {
+        unawaited(
+          AttachmentService.instance
+              .deleteAllAttachmentFilesForList(sessionAdded),
+        );
+      }
+    }
     _titleController.dispose();
     _notesController.dispose();
     _categoryFormController.dispose();
@@ -94,6 +196,108 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _category = value;
       _categoryFormController.clearCategoryFields();
     });
+  }
+
+  Future<void> _scanDocument() async {
+    if (_scanning) {
+      return;
+    }
+
+    if (_category == 'Document') {
+      await _categoryFormController.recordAllPendingOcrCorrections();
+    }
+
+    setState(() => _scanning = true);
+    try {
+      final prefill = await RenewalCreationFlow.runScanDocumentFlow(
+        context,
+        hasExistingData: _hasExistingFormData,
+        currentCategory: _category,
+      );
+      if (prefill == null || !mounted) {
+        return;
+      }
+
+      await _applyPrefill(prefill);
+    } finally {
+      if (mounted) {
+        setState(() => _scanning = false);
+      }
+    }
+  }
+
+  Future<void> _attachFileFromPath(
+    String filePath,
+    AttachmentFileType fileType,
+  ) async {
+    final sourceFile = File(filePath);
+    if (!await sourceFile.exists()) {
+      return;
+    }
+
+    if (_attachments.isNotEmpty &&
+        !AttachmentService.instance.canAddAttachmentCount(_attachments.length)) {
+      final replace = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Replace attachment?'),
+          content: const Text(
+            'Free plan allows one attachment per renewal. '
+            'Replace the current attachment with the new file?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Keep existing'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Replace'),
+            ),
+          ],
+        ),
+      );
+      if (replace != true || !mounted) {
+        return;
+      }
+
+      final existing = _attachments.first;
+      if (_persistedAttachmentIds.contains(existing.id)) {
+        _removedAttachments.add(existing);
+      } else {
+        await AttachmentService.instance.deleteAttachmentFileOnly(existing);
+      }
+      setState(() => _attachments = []);
+    }
+
+    if (!mounted) {
+      return;
+    }
+
+    try {
+      final stub = AttachmentService.instance.stubItemForAttachments(
+        renewalItemId: _itemId,
+        attachments: _attachments,
+      );
+      final preferredName = p.basename(filePath).isNotEmpty
+          ? p.basename(filePath)
+          : 'document_${DateTime.now().millisecondsSinceEpoch}.${fileType.extension}';
+      final saveResult = await AttachmentService.instance.saveFile(
+        item: stub,
+        sourceFile: sourceFile,
+        fileType: fileType,
+        preferredFileName: preferredName,
+      );
+      if (mounted) {
+        setState(() => _attachments = saveResult.item.attachments);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not attach file: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -118,9 +322,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       ..sort((a, b) => b.compareTo(a));
 
     final item = RenewalItem(
-      id: _isEditMode
-          ? widget.item!.id
-          : DateTime.now().millisecondsSinceEpoch.toString(),
+      id: _itemId,
       title: _titleController.text.trim(),
       category: _category,
       owner: _owner,
@@ -130,9 +332,17 @@ class _AddItemScreenState extends State<AddItemScreen> {
       notificationIds:
           _isEditMode ? widget.item!.notificationIds : const {},
       metadata: _categoryFormController.buildMetadata(_category),
+      attachments: _attachments,
     );
 
+    if (_isEditMode && _removedAttachments.isNotEmpty) {
+      await AttachmentService.instance.deleteAllAttachmentFilesForList(
+        _removedAttachments,
+      );
+    }
+
     await StorageService.instance.save(item);
+    _saved = true;
 
     if (!mounted) {
       return;
@@ -154,6 +364,21 @@ class _AddItemScreenState extends State<AddItemScreen> {
         child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              FilledButton.icon(
+                onPressed: _scanning ? null : _scanDocument,
+                icon: _scanning
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.document_scanner_outlined),
+                label: Text(_scanning ? 'Scanning…' : 'Scan Document'),
+              ),
+              AppSpacing.gapField,
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -231,6 +456,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 ),
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
+              ),
+              AppSpacing.gapField,
+              AttachmentFormSection(
+                renewalItemId: _itemId,
+                attachments: _attachments,
+                persistedAttachmentIds: _persistedAttachmentIds,
+                onAttachmentsChanged: (attachments) {
+                  setState(() => _attachments = attachments);
+                },
+                onPersistedAttachmentRemoved: (attachment) {
+                  _removedAttachments.add(attachment);
+                },
               ),
             ],
           ),

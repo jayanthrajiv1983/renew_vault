@@ -1,3 +1,5 @@
+import 'attachment_metadata.dart';
+
 class RenewalItem {
   static const defaultReminderDays = [30, 7, 1];
 
@@ -11,6 +13,7 @@ class RenewalItem {
     this.reminderDays = defaultReminderDays,
     this.notificationIds = const {},
     this.metadata = const {},
+    this.attachments = const [],
   });
 
   final String id;
@@ -22,6 +25,7 @@ class RenewalItem {
   final List<int> reminderDays;
   final Map<String, int> notificationIds;
   final Map<String, dynamic> metadata;
+  final List<AttachmentMetadata> attachments;
 
   RenewalItem copyWith({
     String? id,
@@ -33,6 +37,7 @@ class RenewalItem {
     List<int>? reminderDays,
     Map<String, int>? notificationIds,
     Map<String, dynamic>? metadata,
+    List<AttachmentMetadata>? attachments,
   }) {
     return RenewalItem(
       id: id ?? this.id,
@@ -44,6 +49,7 @@ class RenewalItem {
       reminderDays: reminderDays ?? this.reminderDays,
       notificationIds: notificationIds ?? this.notificationIds,
       metadata: metadata ?? this.metadata,
+      attachments: attachments ?? this.attachments,
     );
   }
 
@@ -58,7 +64,22 @@ class RenewalItem {
       'reminderDays': reminderDays,
       'notificationIds': notificationIds,
       'metadata': metadata,
+      'attachments': attachments.map((attachment) => attachment.toJson()).toList(),
     };
+  }
+
+  static List<AttachmentMetadata> _parseAttachments(dynamic raw) {
+    if (raw is! List) {
+      return [];
+    }
+    return raw
+        .whereType<Map>()
+        .map(
+          (entry) => AttachmentMetadata.fromJson(
+            Map<String, dynamic>.from(entry),
+          ),
+        )
+        .toList();
   }
 
   static Map<String, int> _parseNotificationIds(dynamic raw) {
@@ -97,6 +118,7 @@ class RenewalItem {
           defaultReminderDays,
       notificationIds: _parseNotificationIds(json['notificationIds']),
       metadata: _parseMetadata(json),
+      attachments: _parseAttachments(json['attachments']),
     );
   }
 }

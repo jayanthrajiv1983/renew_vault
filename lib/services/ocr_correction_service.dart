@@ -1,6 +1,7 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
 
 import '../models/ocr_correction.dart';
+import 'hive_encryption_service.dart';
 import 'ocr/ocr_extraction_result.dart';
 
 /// On-device OCR correction learning. Stores user corrections locally in Hive.
@@ -20,7 +21,7 @@ class OcrCorrectionService {
     if (_initialized) {
       return;
     }
-    _box = await Hive.openBox(_boxName);
+    _box = await HiveEncryptionService.instance.openBox(_boxName);
     _initialized = true;
   }
 

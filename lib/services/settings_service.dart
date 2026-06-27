@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
+
+import 'hive_encryption_service.dart';
 
 
 
@@ -36,6 +38,10 @@ class SettingsService extends ChangeNotifier {
 
   static const autoSortByNearestExpiryKey = 'autoSortByNearestExpiry';
 
+  static const enableAppLockKey = 'enableAppLock';
+
+  static const hideAppContentsInRecentsKey = 'hideAppContentsInRecents';
+
 
 
   Box? _box;
@@ -44,7 +50,7 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> init() async {
 
-    _box = await Hive.openBox(_boxName);
+    _box = await HiveEncryptionService.instance.openBox(_boxName);
 
   }
 
@@ -175,6 +181,58 @@ class SettingsService extends ChangeNotifier {
   Future<void> setAutoSortByNearestExpiry(bool enabled) async {
 
     await _box?.put(autoSortByNearestExpiryKey, enabled);
+
+    notifyListeners();
+
+  }
+
+
+
+  bool getAppLockEnabled() {
+
+    final value = _box?.get(enableAppLockKey);
+
+    if (value is bool) {
+
+      return value;
+
+    }
+
+    return true;
+
+  }
+
+
+
+  Future<void> setAppLockEnabled(bool enabled) async {
+
+    await _box?.put(enableAppLockKey, enabled);
+
+    notifyListeners();
+
+  }
+
+
+
+  bool getHideAppContentsInRecents() {
+
+    final value = _box?.get(hideAppContentsInRecentsKey);
+
+    if (value is bool) {
+
+      return value;
+
+    }
+
+    return true;
+
+  }
+
+
+
+  Future<void> setHideAppContentsInRecents(bool enabled) async {
+
+    await _box?.put(hideAppContentsInRecentsKey, enabled);
 
     notifyListeners();
 

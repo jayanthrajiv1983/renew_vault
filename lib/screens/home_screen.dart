@@ -14,6 +14,7 @@ import '../widgets/renew_vault_logo.dart';
 import '../widgets/renewal_card.dart';
 import '../widgets/section_header.dart';
 import '../widgets/summary_stat_card.dart';
+import '../widgets/create_renewal_bottom_sheet.dart';
 import 'add_item_screen.dart';
 import 'analytics_screen.dart';
 import 'filtered_items_screen.dart';
@@ -109,12 +110,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _openAddItemScreen() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const AddItemScreen(),
-      ),
-    );
+  Future<void> _openCreateRenewal() async {
+    await showCreateRenewalBottomSheet(context);
     _loadItems();
   }
 
@@ -677,7 +674,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openAddItemScreen,
+        onPressed: _openCreateRenewal,
         child: const Icon(Icons.add),
       ),
     );
@@ -696,7 +693,6 @@ class _AppBarBranding extends StatelessWidget {
     return RenewVaultLogo(
       size: _logoSize,
       showTitle: showTitle,
-      badgeBackground: true,
     );
   }
 }

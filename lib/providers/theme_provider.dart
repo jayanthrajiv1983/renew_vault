@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive/hive.dart';
+
+import '../services/hive_encryption_service.dart';
 
 enum AppThemeMode {
   light,
@@ -54,7 +56,7 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode get themeMode => _appThemeMode.themeMode;
 
   Future<void> init() async {
-    _box = await Hive.openBox(_boxName);
+    _box = await HiveEncryptionService.instance.openBox(_boxName);
     _loadFromBox();
   }
 

@@ -1,5 +1,5 @@
 # Renew Vault
 
-Track renewals, warranties, expiries and reminders for your entire family.
+Your life, organized.
 
 Built with Flutter.

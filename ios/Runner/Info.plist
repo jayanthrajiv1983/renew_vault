@@ -27,9 +27,11 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSCameraUsageDescription</key>
-		<string>Renew Vault needs camera access to scan document details.</string>
+		<string>Renew Vault needs camera access to scan document details and capture attachment photos.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Renew Vault needs photo library access to scan document images.</string>
+		<string>Renew Vault needs photo library access to scan document images and attach photos to renewals.</string>
+		<key>NSFaceIDUsageDescription</key>
+		<string>Renew Vault uses Face ID to unlock the app and protect your renewal data.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>

@@ -29,9 +29,9 @@ class SettingsScreen extends StatefulWidget {
 
 
 
-  static const appName = AppBrand.name;
+  static const appName = AppBrand.displayName;
 
-  static const appVersion = '1.0.0';
+  static const appVersion = AppBrand.version;
 
   static const appTagline = AppBrand.tagline;
 
@@ -79,6 +79,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _autoSortByNearestExpiry;
 
+  late bool _enableAppLock;
+
+  late bool _hideAppContentsInRecents;
+
 
 
   bool get _isBusy =>
@@ -108,6 +112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _showExpiredBanner = _settings.getShowExpiredBanner();
 
     _autoSortByNearestExpiry = _settings.getAutoSortByNearestExpiry();
+
+    _enableAppLock = _settings.getAppLockEnabled();
+
+    _hideAppContentsInRecents = _settings.getHideAppContentsInRecents();
 
   }
 
@@ -427,6 +435,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
+  Future<void> _setEnableAppLock(bool value) async {
+
+    await _settings.setAppLockEnabled(value);
+
+    setState(() => _enableAppLock = value);
+
+  }
+
+
+
+  Future<void> _setHideAppContentsInRecents(bool value) async {
+
+    await _settings.setHideAppContentsInRecents(value);
+
+    setState(() => _hideAppContentsInRecents = value);
+
+  }
+
+
+
   Future<void> _openUrl(String url, {required String fallbackMessage}) async {
 
     if (url.isEmpty) {
@@ -686,6 +714,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
+          _sectionHeader('Family'),
+
+          Card(
+
+            child: ListTile(
+
+              leading: CircleAvatar(
+
+                backgroundColor: theme.colorScheme.primaryContainer,
+
+                child: Icon(
+
+                  Icons.group_outlined,
+
+                  color: theme.colorScheme.onPrimaryContainer,
+
+                ),
+
+              ),
+
+              title: const Text('Manage Family Members'),
+
+              subtitle: const Text('Add, edit, or remove family members'),
+
+              trailing: const Icon(Icons.chevron_right),
+
+              onTap: _openFamilyMembersScreen,
+
+            ),
+
+          ),
+
+          AppSpacing.gapSection,
+
           _sectionHeader('Notifications'),
 
           Card(
@@ -745,33 +807,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
-          _sectionHeader('Family'),
+          _sectionHeader('Security'),
 
           Card(
 
-            child: ListTile(
+            child: Column(
 
-              leading: CircleAvatar(
+              children: [
 
-                backgroundColor: theme.colorScheme.primaryContainer,
+                SwitchListTile(
 
-                child: Icon(
+                  secondary: Icon(
 
-                  Icons.group_outlined,
+                    Icons.lock_outline,
 
-                  color: theme.colorScheme.onPrimaryContainer,
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Enable App Lock'),
+
+                  subtitle: const Text(
+
+                    'Require fingerprint, face unlock, or device PIN to open the app',
+
+                  ),
+
+                  value: _enableAppLock,
+
+                  onChanged: _setEnableAppLock,
 
                 ),
 
-              ),
+                const Divider(height: 1),
 
-              title: const Text('Manage Family Members'),
+                SwitchListTile(
 
-              subtitle: const Text('Add, edit, or remove family members'),
+                  secondary: Icon(
 
-              trailing: const Icon(Icons.chevron_right),
+                    Icons.visibility_off_outlined,
 
-              onTap: _openFamilyMembersScreen,
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Hide app contents in Recents'),
+
+                  subtitle: const Text(
+
+                    'Blur the app when backgrounded and block screenshots and recent-apps previews',
+
+                  ),
+
+                  value: _hideAppContentsInRecents,
+
+                  onChanged: _setHideAppContentsInRecents,
+
+                ),
+
+              ],
 
             ),
 
@@ -952,13 +1046,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   child: RenewVaultLogo(
-
                     size: 72,
-
                     showTagline: true,
-
-                    badgeBackground: false,
-
                   ),
 
                 ),
@@ -975,10 +1064,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: Text(SettingsScreen.appName),
 
-                  subtitle: Text(
-
-                    'Version ${SettingsScreen.appVersion}',
-
+                  subtitle: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Version ${SettingsScreen.appVersion}'),
+                      if (AppBrand.isBeta) ...[
+                        const SizedBox(width: AppSpacing.fieldLabelGap),
+                        Chip(
+                          label: const Text('Beta'),
+                          labelStyle: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          backgroundColor:
+                              theme.colorScheme.primaryContainer,
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                          side: BorderSide.none,
+                        ),
+                      ],
+                    ],
                   ),
 
                 ),
