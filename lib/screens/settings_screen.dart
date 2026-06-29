@@ -30,6 +30,7 @@ import '../widgets/reminder_interval_picker.dart';
 import '../widgets/section_header.dart';
 
 import '../features/settings/screens/app_diagnostics_screen.dart';
+import '../features/settings/screens/debug_logs_screen.dart';
 import 'backup_history_screen.dart';
 import 'family_members_screen.dart';
 import 'notifications_screen.dart';
@@ -481,6 +482,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const AppDiagnosticsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openDebugLogsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const DebugLogsScreen(),
       ),
     );
   }
@@ -1137,20 +1146,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _sectionHeader('Diagnostics'),
 
           Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.health_and_safety_rounded,
-                  color: theme.colorScheme.onPrimaryContainer,
+            child: Column(
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    child: Icon(
+                      Icons.health_and_safety_rounded,
+                      color: theme.colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  title: const Text('App Diagnostics'),
+                  subtitle: const Text(
+                    'View app, device, and storage information',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openAppDiagnosticsScreen,
                 ),
-              ),
-              title: const Text('App Diagnostics'),
-              subtitle: const Text(
-                'View app, device, and storage information',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _openAppDiagnosticsScreen,
+                const Divider(height: 1),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.secondaryContainer,
+                    child: Icon(
+                      Icons.article_outlined,
+                      color: theme.colorScheme.onSecondaryContainer,
+                    ),
+                  ),
+                  title: const Text('Debug Logs'),
+                  subtitle: const Text(
+                    'View and export application event logs',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openDebugLogsScreen,
+                ),
+              ],
             ),
           ),
 

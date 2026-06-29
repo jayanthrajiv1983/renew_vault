@@ -5,6 +5,7 @@ import 'package:hive/hive.dart';
 
 import 'app_lock_controller.dart';
 import 'hive_encryption_service.dart';
+import '../core/services/logging_service.dart';
 
 
 
@@ -223,6 +224,10 @@ class SettingsService extends ChangeNotifier {
     await _box?.put(enableAppLockKey, enabled);
 
     debugPrint('App Lock Enabled: $enabled (write)');
+    LoggingService.instance.logInfo(
+      'SETTINGS',
+      'App lock changed: ${enabled ? 'Enabled' : 'Disabled'}',
+    );
 
     AppLockController.instance.onAppLockPreferenceChanged(enabled);
 

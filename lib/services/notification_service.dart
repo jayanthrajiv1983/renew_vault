@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../core/services/logging_service.dart';
 import '../models/renewal_item.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
@@ -104,10 +105,18 @@ class NotificationService {
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
+    LoggingService.instance.logInfo(
+      'NOTIFICATIONS',
+      'Notification scheduled (id hash: $id)',
+    );
   }
 
   Future<void> cancelNotification(int id) async {
     await _plugin.cancel(id);
+    LoggingService.instance.logInfo(
+      'NOTIFICATIONS',
+      'Notification cancelled (id hash: $id)',
+    );
   }
 
   int notificationIdFor(String itemId, int reminderDays) {

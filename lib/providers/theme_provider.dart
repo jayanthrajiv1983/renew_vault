@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
+import '../core/services/logging_service.dart';
 import '../services/hive_encryption_service.dart';
 
 enum AppThemeMode {
@@ -81,6 +82,12 @@ class ThemeProvider extends ChangeNotifier {
 
     _appThemeMode = mode;
     await _box?.put(themeModeKey, mode.name);
+    final modeLabel = switch (mode) {
+      AppThemeMode.dark => 'Enabled',
+      AppThemeMode.light => 'Disabled',
+      AppThemeMode.system => 'System',
+    };
+    LoggingService.instance.logInfo('SETTINGS', 'Dark mode changed: $modeLabel');
     notifyListeners();
   }
 }

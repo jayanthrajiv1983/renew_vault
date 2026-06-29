@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/services/logging_service.dart';
 import '../models/renewal_item.dart';
 import '../utils/haptic_feedback.dart';
 import 'storage_service.dart';
@@ -135,6 +136,7 @@ class PendingDeleteController extends ChangeNotifier {
     pending.timer.cancel();
     _snackBarQueue.remove(id);
     await StorageService.instance.permanentlyDeleteStashedItem(pending.item);
+    LoggingService.instance.logInfo('RENEWALS', 'Renewal deleted');
     notifyListeners();
   }
 }

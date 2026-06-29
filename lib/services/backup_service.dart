@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../core/services/logging_service.dart';
 import '../models/backup_preview.dart';
 import '../models/family_member.dart';
 import '../models/ocr_correction.dart';
@@ -97,6 +98,7 @@ class BackupService {
   Future<File> exportEncryptedBackup({
     BackupProgressCallback? onProgress,
   }) async {
+    LoggingService.instance.logInfo('BACKUP', 'Backup started');
     onProgress?.call(BackupProgressStep.creatingBackup, 0.1);
 
     final zipBytes = await _createZipArchive(onProgress);
@@ -113,6 +115,7 @@ class BackupService {
     await file.writeAsBytes(encryptedBytes, flush: true);
 
     onProgress?.call(BackupProgressStep.preparingFile, 1.0);
+    LoggingService.instance.logInfo('BACKUP', 'Backup completed');
     return file;
   }
 
@@ -174,21 +177,28 @@ class BackupService {
     BackupPreview preview, {
     RestoreProgressCallback? onProgress,
   }) async {
-    onProgress?.call(RestoreProgressStep.restoringData, 0.1);
+    LoggingService.instance.logInfo('BACKUP', 'Restore started');
+    try {
+      onProgress?.call(RestoreProgressStep.restoringData, 0.1);
 
-    validateBackup(preview.data);
+      validateBackup(preview.data);
 
-    if (preview.archive != null) {
-      onProgress?.call(RestoreProgressStep.restoringData, 0.35);
-      await _restoreAttachmentsFromArchive(preview.archive!);
+      if (preview.archive != null) {
+        onProgress?.call(RestoreProgressStep.restoringData, 0.35);
+        await _restoreAttachmentsFromArchive(preview.archive!);
+      }
+
+      onProgress?.call(RestoreProgressStep.restoringData, 0.65);
+      await applyBackup(preview.data, skipValidation: true);
+
+      await CategoryMigrationService.instance.runMigrationIfNeeded();
+
+      onProgress?.call(RestoreProgressStep.restoringData, 1.0);
+      LoggingService.instance.logInfo('BACKUP', 'Restore completed');
+    } on Exception {
+      LoggingService.instance.logError('BACKUP', 'Restore failed');
+      rethrow;
     }
-
-    onProgress?.call(RestoreProgressStep.restoringData, 0.65);
-    await applyBackup(preview.data, skipValidation: true);
-
-    await CategoryMigrationService.instance.runMigrationIfNeeded();
-
-    onProgress?.call(RestoreProgressStep.restoringData, 1.0);
   }
 
   /// Legacy helper — reads and fully decodes a picked backup in one step.

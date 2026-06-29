@@ -7,6 +7,7 @@ import '../models/add_item_prefill.dart';
 import '../models/attachment_metadata.dart';
 import '../screens/add_item_screen.dart';
 import '../screens/ocr_review_screen.dart';
+import '../core/services/logging_service.dart';
 import '../widgets/ocr/ocr_scan_helpers.dart';
 import 'ocr/ocr_form_mapper.dart';
 import 'ocr_service.dart';
@@ -106,12 +107,15 @@ abstract final class RenewalCreationFlow {
   }) async {
     var overlayShown = false;
     try {
+      LoggingService.instance.logInfo('OCR', 'Scan started');
+
       if (context.mounted) {
         overlayShown = true;
         showOcrScanningOverlay(context);
       }
 
       final result = await OcrService.fastScanAndParse(imagePath);
+      LoggingService.instance.logInfo('OCR', 'Scan completed');
       final correctedFields =
           OcrCorrectionService.instance.applyLearnedCorrections(
         result.fields,
@@ -175,6 +179,7 @@ abstract final class RenewalCreationFlow {
         launchMode: launchMode,
       );
     } catch (e) {
+      LoggingService.instance.logError('OCR', 'Scan failed');
       if (overlayShown && context.mounted) {
         dismissOcrScanningOverlay(context);
         overlayShown = false;

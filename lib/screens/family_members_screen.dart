@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/services/logging_service.dart';
 import '../models/family_member.dart';
 import '../services/family_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
@@ -76,6 +77,7 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
     }
 
     await _familyService.delete(member.id);
+    LoggingService.instance.logInfo('FAMILY', 'Family member deleted');
     _loadMembers();
   }
 
@@ -202,6 +204,9 @@ class _FamilyMemberFormScreenState extends State<_FamilyMemberFormScreen> {
       await _familyService.save(member);
 
       debugPrint('Save successful');
+      if (!_isEditMode) {
+        LoggingService.instance.logInfo('FAMILY', 'Family member added');
+      }
       if (!mounted) {
         return;
       }

@@ -8,6 +8,7 @@ import '../constants/categories.dart';
 import '../models/add_item_prefill.dart';
 import '../models/attachment_metadata.dart';
 import '../models/family_member.dart';
+import '../core/services/logging_service.dart';
 import '../models/renewal_item.dart';
 import '../services/attachment_service.dart';
 import '../services/family_service.dart';
@@ -346,6 +347,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
 
     await StorageService.instance.save(item);
+    LoggingService.instance.logInfo(
+      'RENEWALS',
+      _isEditMode ? 'Renewal updated' : 'Renewal created',
+    );
     _saved = true;
 
     if (!mounted) {

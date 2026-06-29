@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
+import '../core/services/logging_service.dart';
 import 'settings_service.dart';
 
 /// Handles biometric / device-credential app lock timing and authentication.
@@ -106,6 +107,7 @@ class AppLockService {
     }
 
     _authInProgress = true;
+    LoggingService.instance.logInfo('SECURITY', 'Biometric authentication started');
     debugPrint('Authentication requested');
     try {
       final isSupported = await isDeviceSupported();
@@ -119,6 +121,7 @@ class AppLockService {
 
       if (!isSupported) {
         debugPrint('Authentication result: false (device not supported)');
+        LoggingService.instance.logError('SECURITY', 'Authentication failed');
         return false;
       }
 
@@ -131,11 +134,15 @@ class AppLockService {
       );
       debugPrint('Authentication result: $authenticated');
       if (authenticated) {
+        LoggingService.instance.logInfo('SECURITY', 'Authentication successful');
         markUnlocked();
+      } else {
+        LoggingService.instance.logError('SECURITY', 'Authentication failed');
       }
       return authenticated;
     } on Exception catch (error) {
       debugPrint('Authentication result: false ($error)');
+      LoggingService.instance.logError('SECURITY', 'Authentication failed');
       return false;
     } finally {
       _authInProgress = false;

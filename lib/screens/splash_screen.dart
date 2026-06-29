@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/services/logging_service.dart';
 import '../screens/home_screen.dart';
 import '../services/app_lock_service.dart';
 import '../services/settings_service.dart';
@@ -75,6 +76,7 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
 
+    LoggingService.instance.logInfo('APP', 'Splash screen displayed');
     _controller.forward();
     _startup();
   }
@@ -94,6 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
       return;
     }
 
+    LoggingService.instance.logInfo('APP', 'Application startup complete');
     await Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
     );

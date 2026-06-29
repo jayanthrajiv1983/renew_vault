@@ -15,6 +15,8 @@ import 'services/settings_service.dart';
 import 'services/storage_migration_service.dart';
 import 'services/pending_delete_controller.dart';
 import 'shared/services/microinteraction_service.dart';
+import 'core/services/logging_service.dart';
+import 'core/widgets/app_lifecycle_logger.dart';
 import 'services/storage_service.dart';
 import 'widgets/app_lock_gate.dart';
 import 'widgets/privacy_protection_gate.dart';
@@ -36,6 +38,8 @@ Future<void> main() async {
     return;
   }
 
+  await LoggingService.instance.init();
+  LoggingService.instance.logInfo('APP', 'Application started');
   await StorageService.instance.init();
   await FamilyService.instance.init();
   await SettingsService.instance.init();
@@ -54,29 +58,31 @@ class RenewVaultApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: ThemeProvider.instance,
-      builder: (context, _) {
-        return MaterialApp(
-          navigatorKey: rootNavigatorKey,
-          scaffoldMessengerKey: rootScaffoldMessengerKey,
-          title: AppBrand.name,
-          debugShowCheckedModeBanner: false,
-          themeMode: ThemeProvider.instance.themeMode,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          builder: (context, child) {
-            final appChild = child ?? const SizedBox.shrink();
-            return PrivacyProtectionGate(
-              child: AppLockGate(
-                lockActive: true,
-                child: appChild,
-              ),
-            );
-          },
-          home: const SplashScreen(),
-        );
-      },
+    return AppLifecycleLogger(
+      child: ListenableBuilder(
+        listenable: ThemeProvider.instance,
+        builder: (context, _) {
+          return MaterialApp(
+            navigatorKey: rootNavigatorKey,
+            scaffoldMessengerKey: rootScaffoldMessengerKey,
+            title: AppBrand.name,
+            debugShowCheckedModeBanner: false,
+            themeMode: ThemeProvider.instance.themeMode,
+            theme: AppTheme.light(),
+            darkTheme: AppTheme.dark(),
+            builder: (context, child) {
+              final appChild = child ?? const SizedBox.shrink();
+              return PrivacyProtectionGate(
+                child: AppLockGate(
+                  lockActive: true,
+                  child: appChild,
+                ),
+              );
+            },
+            home: const SplashScreen(),
+          );
+        },
+      ),
     );
   }
 }
