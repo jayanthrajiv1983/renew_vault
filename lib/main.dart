@@ -6,6 +6,7 @@ import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_brand.dart';
 import 'theme/app_theme.dart';
+import 'services/app_info_service.dart';
 import 'services/app_lock_service.dart';
 import 'services/family_service.dart';
 import 'services/milestone_service.dart';
@@ -39,6 +40,7 @@ Future<void> main() async {
   }
 
   await LoggingService.instance.init();
+  await AppInfoService.instance.init();
   LoggingService.instance.logInfo('APP', 'Application started');
   await StorageService.instance.init();
   await FamilyService.instance.init();

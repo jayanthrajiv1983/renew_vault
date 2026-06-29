@@ -3,10 +3,9 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../theme/app_brand.dart';
+import 'app_info_service.dart';
 
 enum FeedbackType {
   feedback(subject: 'Renew Vault Feedback'),
@@ -27,12 +26,13 @@ class FeedbackService {
   static const supportEmail = 'jayanthrajiv@gmail.com';
 
   Future<String> buildEmailBody({required bool darkModeEnabled}) async {
-    final packageInfo = await PackageInfo.fromPlatform();
+    final appInfo = AppInfoService.instance;
+    await appInfo.init();
     final deviceInfo = await _getDeviceInfo();
 
     return '''
-App Version: ${AppBrand.version}
-Build Number: ${packageInfo.buildNumber}
+${await appInfo.formattedVersionString}
+Release Channel: ${appInfo.releaseChannel.isEmpty ? 'Stable' : appInfo.releaseChannel}
 Device Platform: ${deviceInfo.platform}
 OS Version: ${deviceInfo.osVersion}
 Dark Mode Enabled: ${darkModeEnabled ? 'Yes' : 'No'}

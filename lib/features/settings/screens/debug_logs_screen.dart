@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/services/log_export_service.dart';
 import '../../../core/services/logging_service.dart';
 import '../../../models/app_log.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
-import '../../../theme/app_brand.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../utils/form_padding.dart';
@@ -35,32 +35,61 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
     _loadLogs();
   }
 
-  String _buildExportReport() {
-    final buffer = StringBuffer()
-      ..writeln('${AppBrand.name} Debug Logs')
-      ..writeln();
-
-    for (final log in _logs) {
-      buffer.writeln(
-        '${log.timestamp} | ${log.level} | ${log.category} | ${log.message}',
-      );
+  void _showNoLogsSnackBar() {
+    if (!mounted) {
+      return;
     }
-
-    return buffer.toString().trimRight();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('No logs to export.')),
+    );
   }
 
   Future<void> _exportLogs() async {
     if (_logs.isEmpty) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No logs to export.')),
-      );
+      _showNoLogsSnackBar();
       return;
     }
 
-    await SharePlus.instance.share(ShareParams(text: _buildExportReport()));
+    await LogExportService.instance.generateExportFile(logs: _logs);
+    LoggingService.instance.logInfo('LOGS', 'Debug logs exported');
+    _loadLogs();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debug logs exported successfully.')),
+    );
+  }
+
+  Future<void> _shareLogs() async {
+    if (_logs.isEmpty) {
+      _showNoLogsSnackBar();
+      return;
+    }
+
+    final export = await LogExportService.instance.generateExportFile(
+      logs: _logs,
+    );
+
+    await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(export.file.path)],
+        subject: 'Renew Vault Debug Logs',
+      ),
+    );
+
+    LoggingService.instance.logInfo('LOGS', 'Debug logs shared');
+    _loadLogs();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Debug logs shared successfully.')),
+    );
   }
 
   Future<void> _confirmClearLogs() async {
@@ -68,9 +97,9 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         insetPadding: dialogInsetPadding(context),
-        title: const Text('Clear debug logs?'),
+        title: const Text('Clear Debug Logs?'),
         content: const Text(
-          'All stored log entries will be permanently removed. This cannot be undone.',
+          'This will permanently remove all application logs.',
         ),
         actions: [
           TextButton(
@@ -90,6 +119,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
     }
 
     await LoggingService.instance.clearLogs();
+    LoggingService.instance.logInfo('LOGS', 'Debug logs cleared');
     _loadLogs();
 
     if (!mounted) {
@@ -97,7 +127,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debug logs cleared.')),
+      const SnackBar(content: Text('Debug logs cleared successfully.')),
     );
   }
 
@@ -198,12 +228,17 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
         title: const Text('Debug Logs'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.ios_share_rounded),
+            icon: const Icon(Icons.share_rounded),
+            tooltip: 'Share Logs',
+            onPressed: _shareLogs,
+          ),
+          IconButton(
+            icon: const Icon(Icons.download_rounded),
             tooltip: 'Export Logs',
             onPressed: _exportLogs,
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded),
+            icon: const Icon(Icons.delete_sweep_rounded),
             tooltip: 'Clear Logs',
             onPressed: _confirmClearLogs,
           ),
@@ -214,10 +249,11 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
             ? EmptyStateWidget(
                 icon: EmptyStateWidget.mutedIcon(
                   context,
-                  Icons.receipt_long_outlined,
+                  Icons.receipt_long_rounded,
                 ),
-                title: 'No logs yet',
-                subtitle: 'Application events will appear here.',
+                title: 'No Debug Logs',
+                subtitle:
+                    'Application events and errors will appear here.',
               )
             : RefreshIndicator(
                 onRefresh: _refreshLogs,

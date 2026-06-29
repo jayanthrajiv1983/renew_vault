@@ -9,10 +9,7 @@ abstract final class AppBrand {
 
   static const String tagline = 'Your life, organized.';
 
-  /// User-facing semver shown in About and release notes.
-  static const String version = '0.1.1';
-
-  /// When true, About shows a Beta badge beside the version.
+  /// When true, About and diagnostics show a Beta release-channel badge.
   static const bool isBeta = true;
 
   static const String description =

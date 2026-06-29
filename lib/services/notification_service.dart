@@ -71,6 +71,21 @@ class NotificationService {
   }
 
   static const _testNotificationId = 2147483647;
+  static const _betaTestNotificationId = 2147483646;
+
+  /// Schedules a beta-tester notification 10 seconds from now.
+  Future<void> scheduleTestNotification() async {
+    final scheduled = tz.TZDateTime.now(tz.local).add(
+      const Duration(seconds: 10),
+    );
+
+    await scheduleNotification(
+      id: _betaTestNotificationId,
+      title: 'Renew Vault Test Notification',
+      body: 'Notifications are working correctly.',
+      scheduledDate: scheduled,
+    );
+  }
 
   Future<void> showInstantNotification({
     String title = 'Renew Vault',

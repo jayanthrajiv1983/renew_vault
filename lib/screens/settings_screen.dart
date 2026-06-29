@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/backup_preview.dart';
 import '../providers/theme_provider.dart';
 
+import '../services/app_info_service.dart';
 import '../services/backup_service.dart';
 
 import '../services/app_lock_service.dart';
@@ -20,7 +21,6 @@ import '../services/notification_service.dart';
 import '../services/settings_service.dart';
 
 import '../shared/widgets/success_overlay.dart';
-import '../theme/app_brand.dart';
 import '../theme/app_spacing.dart';
 import '../utils/backup_flow.dart';
 import '../utils/form_padding.dart';
@@ -30,6 +30,7 @@ import '../widgets/reminder_interval_picker.dart';
 import '../widgets/section_header.dart';
 
 import '../features/settings/screens/app_diagnostics_screen.dart';
+import '../features/settings/screens/beta_tester_tools_screen.dart';
 import '../features/settings/screens/debug_logs_screen.dart';
 import 'backup_history_screen.dart';
 import 'family_members_screen.dart';
@@ -41,14 +42,6 @@ import 'upcoming_renewals_screen.dart';
 class SettingsScreen extends StatefulWidget {
 
   const SettingsScreen({super.key});
-
-
-
-  static const appName = AppBrand.displayName;
-
-  static const appVersion = AppBrand.version;
-
-  static const appTagline = AppBrand.tagline;
 
 
 
@@ -490,6 +483,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const DebugLogsScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openBetaTesterToolsScreen() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const BetaTesterToolsScreen(),
       ),
     );
   }
@@ -1179,6 +1180,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _openDebugLogsScreen,
                 ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: theme.colorScheme.tertiaryContainer,
+                    child: Icon(
+                      Icons.science_rounded,
+                      color: theme.colorScheme.onTertiaryContainer,
+                    ),
+                  ),
+                  title: const Text('Beta Tester Tools'),
+                  subtitle: const Text(
+                    'Run tests for notifications, OCR, backup, and more',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openBetaTesterToolsScreen,
+                ),
               ],
             ),
           ),
@@ -1203,51 +1220,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     AppSpacing.cardPadding,
 
-                    AppSpacing.fieldLabelGap,
+                    AppSpacing.cardPadding,
 
                   ),
 
-                  child: RenewVaultLogo(
-                    size: 72,
-                    showTagline: true,
-                  ),
+                  child: Column(
 
-                ),
-
-                ListTile(
-
-                  leading: Icon(
-
-                    Icons.info_outline,
-
-                    color: theme.colorScheme.primary,
-
-                  ),
-
-                  title: Text(SettingsScreen.appName),
-
-                  subtitle: Row(
                     mainAxisSize: MainAxisSize.min,
+
                     children: [
-                      Text('Version ${SettingsScreen.appVersion}'),
-                      if (AppBrand.isBeta) ...[
-                        const SizedBox(width: AppSpacing.fieldLabelGap),
-                        Chip(
-                          label: const Text('Beta'),
-                          labelStyle: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          backgroundColor:
-                              theme.colorScheme.primaryContainer,
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          side: BorderSide.none,
-                        ),
-                      ],
+
+                      const RenewVaultLogo(
+
+                        size: 72,
+
+                        showTagline: true,
+
+                      ),
+
+                      const SizedBox(height: AppSpacing.sectionSpacing),
+
+                      _AboutVersionInfo(theme: theme),
+
                     ],
+
                   ),
 
                 ),
@@ -1323,6 +1319,150 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
 
       ),
+
+    );
+
+  }
+
+}
+
+
+
+class _AboutVersionInfo extends StatelessWidget {
+
+  const _AboutVersionInfo({required this.theme});
+
+
+
+  final ThemeData theme;
+
+
+
+  @override
+
+  Widget build(BuildContext context) {
+
+    final appInfo = AppInfoService.instance;
+
+    final versionText = appInfo.formattedVersionStringSync;
+
+    final releaseChannel = appInfo.releaseChannel;
+
+
+
+    if (versionText == null) {
+      return FutureBuilder<void>(
+        future: appInfo.init(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Text(
+              'Loading version…',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            );
+          }
+          if (snapshot.hasError) {
+            return Text(
+              'Version unavailable',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            );
+          }
+          final loadedText = appInfo.formattedVersionStringSync;
+          if (loadedText == null) {
+            return Text(
+              'Version unavailable',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            );
+          }
+          return _AboutVersionBody(
+            theme: theme,
+            versionText: loadedText,
+            releaseChannel: releaseChannel,
+          );
+        },
+      );
+    }
+
+    return _AboutVersionBody(
+      theme: theme,
+      versionText: versionText,
+      releaseChannel: releaseChannel,
+    );
+  }
+}
+
+class _AboutVersionBody extends StatelessWidget {
+  const _AboutVersionBody({
+    required this.theme,
+    required this.versionText,
+    required this.releaseChannel,
+  });
+
+  final ThemeData theme;
+  final String versionText;
+  final String releaseChannel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+
+      mainAxisSize: MainAxisSize.min,
+
+      children: [
+
+        Text(
+
+          versionText,
+
+          style: theme.textTheme.bodyMedium?.copyWith(
+
+            color: theme.colorScheme.onSurfaceVariant,
+
+          ),
+
+          textAlign: TextAlign.center,
+
+        ),
+
+        if (releaseChannel.isNotEmpty) ...[
+
+          const SizedBox(height: AppSpacing.fieldLabelGap),
+
+          Chip(
+
+            label: Text(releaseChannel),
+
+            labelStyle: theme.textTheme.labelSmall?.copyWith(
+
+              color: theme.colorScheme.onPrimaryContainer,
+
+              fontWeight: FontWeight.w600,
+
+            ),
+
+            backgroundColor: theme.colorScheme.primaryContainer,
+
+            padding: EdgeInsets.zero,
+
+            visualDensity: VisualDensity.compact,
+
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+
+            side: BorderSide.none,
+
+          ),
+
+        ],
+
+      ],
 
     );
 
