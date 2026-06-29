@@ -123,7 +123,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   padding: EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),
                 ),
                 SizedBox(
-                  height: 108,
+                  height: 112,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: _insightsList.length,

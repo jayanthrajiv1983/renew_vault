@@ -11,6 +11,10 @@ class InsightCard extends StatelessWidget {
 
   final InsightItem insight;
 
+  static const double _radius = 20;
+  static const double _elevation = 2;
+  static const EdgeInsets _padding = EdgeInsets.all(20);
+
   Color _accentColor(ColorScheme colorScheme) {
     switch (insight.priority) {
       case InsightPriority.high:
@@ -26,40 +30,45 @@ class InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
     final accent = _accentColor(colorScheme);
 
-    return Card(
-      color: accent.withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(
-        borderRadius: AppSpacing.cardBorderRadius,
-        side: BorderSide(
-          color: accent.withValues(alpha: 0.24),
-        ),
-      ),
+    final backgroundColor = isDark
+        ? colorScheme.surfaceContainerHigh
+        : colorScheme.primaryContainer.withValues(alpha: 0.25);
+
+    return Material(
+      elevation: _elevation,
+      shadowColor: colorScheme.shadow.withValues(alpha: isDark ? 0.28 : 0.1),
+      surfaceTintColor: colorScheme.surfaceTint.withValues(alpha: 0.04),
+      color: backgroundColor,
+      borderRadius: BorderRadius.circular(_radius),
       child: Padding(
-        padding: AppSpacing.cardInsets,
+        padding: _padding,
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(AppSpacing.chipRadius + 4),
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: colorScheme.primaryContainer.withValues(
+                alpha: isDark ? 0.4 : 0.55,
               ),
               child: Icon(
-                insight.icon,
+                Icons.auto_awesome_rounded,
                 color: accent,
-                size: 24,
+                size: 22,
               ),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: AppSpacing.sectionSpacing),
             Expanded(
               child: Text(
                 insight.message,
-                style: theme.textTheme.bodyMedium?.copyWith(
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyLarge?.copyWith(
                   fontWeight: FontWeight.w500,
-                  height: 1.35,
+                  height: 1.45,
+                  color: colorScheme.onSurface,
                 ),
               ),
             ),

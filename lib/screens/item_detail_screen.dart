@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../models/renewal_item.dart';
 import '../services/family_service.dart';
@@ -29,8 +30,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   late final AnimationController _entryController;
   late final Animation<double> _headerFade;
   late final Animation<double> _headerScale;
-  late final Animation<double> _basicInfoFade;
-  late final Animation<Offset> _basicInfoSlide;
   late final Animation<double> _categoryDetailsFade;
   late final Animation<Offset> _categoryDetailsSlide;
   late final Animation<double> _contentFade;
@@ -48,11 +47,6 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     );
     _headerFade = curved;
     _headerScale = Tween<double>(begin: 0.92, end: 1).animate(curved);
-    _basicInfoFade = curved;
-    _basicInfoSlide = Tween<Offset>(
-      begin: const Offset(0, 0.04),
-      end: Offset.zero,
-    ).animate(curved);
     _categoryDetailsFade = CurvedAnimation(
       parent: _entryController,
       curve: const Interval(0.12, 1, curve: Curves.easeOut),
@@ -180,46 +174,67 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
             ),
           ),
           const SizedBox(height: AppSpacing.screenPadding),
-          FadeTransition(
-            opacity: _basicInfoFade,
-            child: SlideTransition(
-              position: _basicInfoSlide,
-              child: ItemDetailSection(
-                title: 'Basic Information',
-                borderRadius:
-                    BorderRadius.circular(AppSpacing.sectionSpacing),
-                elevation: AppSpacing.cardElevation,
-                surfaceTintColor: theme.colorScheme.surfaceTint,
-                trailing: _RenewalStatusBadge(daysRemaining: daysRemaining),
-                child: Column(
-                  children: [
-                    _BasicInfoRow(
-                      icon: Icons.description_outlined,
-                      label: 'Title',
-                      value: item.title,
-                    ),
-                    const Divider(height: 1),
-                    _BasicInfoRow(
-                      icon: categoryIcon(item.category),
-                      label: 'Category',
-                      value: item.category,
-                    ),
-                    const Divider(height: 1),
-                    _BasicInfoRow(
-                      icon: Icons.person_outline,
-                      label: 'Owner',
-                      valueWidget: _OwnerInfoValue(ownerName: item.owner),
-                    ),
-                    const Divider(height: 1),
-                    _BasicInfoRow(
-                      icon: Icons.calendar_today_outlined,
-                      label: 'Renewal Date',
-                      value: formatMetadataDate(item.renewalDate),
-                      valueColor: theme.colorScheme.primary,
-                    ),
-                  ],
+          ItemDetailSection(
+            title: 'Basic Information',
+            borderRadius: BorderRadius.circular(AppSpacing.sectionSpacing),
+            elevation: AppSpacing.cardElevation,
+            surfaceTintColor: theme.colorScheme.surfaceTint,
+            trailing: _RenewalStatusBadge(daysRemaining: daysRemaining),
+            child: Column(
+              children: [
+                _StaggeredFadeIn(
+                  index: 0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _DetailInfoRow(
+                        icon: Icons.description_outlined,
+                        label: 'Title',
+                        value: item.title,
+                      ),
+                      const _DetailInfoDivider(),
+                    ],
+                  ),
                 ),
-              ),
+                _StaggeredFadeIn(
+                  index: 1,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _DetailInfoRow(
+                        icon: categoryIcon(item.category),
+                        label: 'Category',
+                        value: item.category,
+                      ),
+                      const _DetailInfoDivider(),
+                    ],
+                  ),
+                ),
+                _StaggeredFadeIn(
+                  index: 2,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _DetailInfoRow(
+                        leading:
+                            OwnerAvatar(ownerName: item.owner, radius: 20),
+                        label: 'Owner',
+                        valueWidget: _OwnerInfoValue(ownerName: item.owner),
+                      ),
+                      const _DetailInfoDivider(),
+                    ],
+                  ),
+                ),
+                _StaggeredFadeIn(
+                  index: 3,
+                  child: _DetailInfoRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Renewal Date',
+                    value: formatMetadataDate(item.renewalDate),
+                    valueColor: theme.colorScheme.primary,
+                  ),
+                ),
+              ],
             ),
           ),
           if (hasCategoryDetails)
@@ -326,16 +341,111 @@ class _RenewalStatusBadge extends StatelessWidget {
   }
 }
 
-class _BasicInfoRow extends StatelessWidget {
-  const _BasicInfoRow({
-    required this.icon,
+class _StaggeredFadeIn extends StatefulWidget {
+  const _StaggeredFadeIn({
+    required this.index,
+    required this.child,
+  });
+
+  static const _delayPerItem = Duration(milliseconds: 50);
+  static const _duration = Duration(milliseconds: 300);
+
+  final int index;
+  final Widget child;
+
+  @override
+  State<_StaggeredFadeIn> createState() => _StaggeredFadeInState();
+}
+
+class _StaggeredFadeInState extends State<_StaggeredFadeIn>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+  bool _started = false;
+
+  bool _shouldAnimate(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    if (mediaQuery.disableAnimations) {
+      return false;
+    }
+    return !SchedulerBinding
+        .instance.platformDispatcher.accessibilityFeatures.disableAnimations;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _controller =
+        AnimationController(vsync: this, duration: _StaggeredFadeIn._duration);
+    final curved = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOut,
+    );
+    _fade = curved;
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(curved);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+
+    if (!_shouldAnimate(context)) {
+      _controller.value = 1;
+      return;
+    }
+
+    final delay = _StaggeredFadeIn._delayPerItem * widget.index;
+    Future<void>.delayed(delay, () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_shouldAnimate(context)) {
+      return widget.child;
+    }
+
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Fixed icon column + gap; divider inset = [iconColumnWidth] + [iconGap].
+class _DetailInfoRow extends StatelessWidget {
+  const _DetailInfoRow({
+    this.icon,
+    this.leading,
     required this.label,
     this.value,
     this.valueWidget,
     this.valueColor,
-  }) : assert(value != null || valueWidget != null);
+  })  : assert(icon != null || leading != null),
+        assert(value != null || valueWidget != null);
 
-  final IconData icon;
+  static const double iconColumnWidth = 44;
+  static const double iconGap = AppSpacing.sectionSpacing;
+  static double get dividerLeftPadding => iconColumnWidth + iconGap;
+
+  final IconData? icon;
+  final Widget? leading;
   final String label;
   final String? value;
   final Widget? valueWidget;
@@ -347,54 +457,76 @@ class _BasicInfoRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.fieldLabelGap),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardSpacing),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: colorScheme.primaryContainer,
-            child: Icon(
-              icon,
-              size: 18,
-              color: colorScheme.onPrimaryContainer,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.cardSpacing),
+          _buildLeadingSlot(colorScheme),
+          const SizedBox(width: iconGap),
           Expanded(
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(
-                  flex: 2,
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                Text(
+                  label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.fieldLabelGap),
+                valueWidget ??
+                    Text(
+                      value!,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: valueColor ?? colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.fieldLabelGap),
-                Flexible(
-                  flex: 3,
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: valueWidget ??
-                        Text(
-                          value!,
-                          textAlign: TextAlign.end,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: valueColor ?? colorScheme.onSurface,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                  ),
-                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLeadingSlot(ColorScheme colorScheme) {
+    if (leading != null) {
+      return SizedBox(
+        width: iconColumnWidth,
+        height: iconColumnWidth,
+        child: Center(child: leading),
+      );
+    }
+
+    return SizedBox(
+      width: iconColumnWidth,
+      height: iconColumnWidth,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(AppSpacing.chipRadius + 2),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailInfoDivider extends StatelessWidget {
+  const _DetailInfoDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: _DetailInfoRow.dividerLeftPadding),
+      child: const Divider(height: 1),
     );
   }
 }
@@ -413,35 +545,26 @@ class _OwnerInfoValue extends StatelessWidget {
     final showRelationship = relationship.isNotEmpty &&
         relationship.toLowerCase() != ownerName.trim().toLowerCase();
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        OwnerAvatar(ownerName: ownerName, radius: 16),
-        const SizedBox(width: AppSpacing.fieldLabelGap),
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                ownerName,
-                textAlign: TextAlign.start,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              if (showRelationship)
-                Text(
-                  relationship,
-                  textAlign: TextAlign.start,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-            ],
+        Text(
+          ownerName,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
           ),
         ),
+        if (showRelationship)
+          Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(
+              relationship,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
       ],
     );
   }
