@@ -54,7 +54,7 @@ class _UpcomingRenewalsScreenState extends State<UpcomingRenewalsScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: const Text('Upcoming Renewals'),
+        title: const Text('Upcoming Items'),
       ),
       body: SafeArea(
         child: _items.isEmpty

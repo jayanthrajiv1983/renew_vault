@@ -13,7 +13,7 @@ abstract final class AppBrand {
   static const bool isBeta = true;
 
   static const String description =
-      'Securely track renewals, warranties, insurance, documents, taxes, and subscriptions.';
+      'Securely track items, warranties, insurance, documents, taxes, and subscriptions.';
 
   /// Primary brand blue — Material 3 seed color.
   static const Color primaryBlue = Color(0xFF2563EB);

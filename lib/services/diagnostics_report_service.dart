@@ -139,7 +139,7 @@ class DiagnosticsReportService {
         'Notifications: ${enabledDisabled(data.notificationsEnabled)}',
       )
       ..writeln('Last Backup: ${data.lastBackupDate}')
-      ..writeln('Renewals: ${data.totalRenewals}')
+      ..writeln('Items: ${data.totalRenewals}')
       ..writeln('Family Members: ${data.totalFamilyMembers}')
       ..writeln('Attachments: ${data.totalAttachments}')
       ..writeln()

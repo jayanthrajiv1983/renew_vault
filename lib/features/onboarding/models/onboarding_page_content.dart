@@ -25,11 +25,11 @@ const onboardingPages = <OnboardingPageContent>[
     title: 'Welcome to Renew Vault',
     subtitle: 'Your life, organized.',
     description:
-        'Track warranties, insurance, documents, and renewals in one secure place.',
+        'Track warranties, insurance, documents, and more in one secure place.',
     iconStyle: OnboardingIconStyle.shieldCalendar,
   ),
   OnboardingPageContent(
-    title: 'Never Miss a Renewal',
+    title: 'Never Miss What Matters',
     description:
         'Receive smart reminders before important documents and policies expire.',
     iconStyle: OnboardingIconStyle.notifications,
@@ -43,7 +43,7 @@ const onboardingPages = <OnboardingPageContent>[
   OnboardingPageContent(
     title: 'Scan Documents Instantly',
     description:
-        'Use intelligent OCR to automatically extract renewal details.',
+        'Use intelligent OCR to automatically extract item details.',
     iconStyle: OnboardingIconStyle.cameraOcr,
   ),
   OnboardingPageContent(

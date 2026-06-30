@@ -121,7 +121,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment per renewal.',
+          'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment per item.',
         ),
       ),
     );
@@ -134,7 +134,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
         insetPadding: dialogInsetPadding(context),
         title: const Text('Replace attachment?'),
         content: const Text(
-          'Free plan allows one attachment per renewal. '
+          'Free plan allows one attachment per item. '
           'Replace the current attachment with the new file?',
         ),
         actions: [
@@ -302,7 +302,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
         content: Text(
           isDetail
               ? 'Delete "${attachment.fileName}"? This cannot be undone.'
-              : 'Remove "${attachment.fileName}" from this renewal?',
+              : 'Remove "${attachment.fileName}" from this item?',
         ),
         actions: [
           TextButton(
@@ -431,7 +431,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
           const SizedBox(height: AppSpacing.cardSpacing),
           Text(
             _isDetail
-                ? 'No attachments yet. Add a photo or PDF to keep records with this renewal.'
+                ? 'No attachments yet. Add a photo or PDF to keep records with this item.'
                 : 'No attachments yet. Add a photo or PDF before saving.',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,

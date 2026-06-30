@@ -23,7 +23,7 @@ PermissionEducationContent permissionEducationContentFor(AppPermissionType type)
       ),
     AppPermissionType.notification => const PermissionEducationContent(
         title: 'Notifications',
-        description: 'Used to remind you about important renewals.',
+        description: 'Used to remind you about important items.',
         icon: Icons.notifications_active_rounded,
       ),
     AppPermissionType.storage => const PermissionEducationContent(

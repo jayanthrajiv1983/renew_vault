@@ -18,7 +18,7 @@ class AttachmentLimitReachedException implements Exception {
 
   @override
   String toString() =>
-      'Attachment limit reached ($maxAttachments per renewal).';
+      'Attachment limit reached ($maxAttachments per item).';
 }
 
 class AttachmentSaveResult {

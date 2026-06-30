@@ -346,7 +346,7 @@ class _BackupScreenState extends State<BackupScreen> {
                 horizontal: AppSpacing.cardPadding,
               ),
               child: Text(
-                'Regular backups help protect your renewal data if you change devices or reinstall the app.',
+                'Regular backups help protect your item data if you change devices or reinstall the app.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),

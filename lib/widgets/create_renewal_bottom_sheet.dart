@@ -29,7 +29,7 @@ Future<void> showCreateRenewalBottomSheet(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Create New Renewal',
+                'Add Item',
                 style: Theme.of(sheetContext).textTheme.titleLarge,
               ),
               AppSpacing.gapSection,

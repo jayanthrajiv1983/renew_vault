@@ -54,7 +54,7 @@ class NotificationService {
       const channel = AndroidNotificationChannel(
         _channelId,
         _channelName,
-        description: 'Renewal reminder notifications',
+        description: 'Item reminder notifications',
         importance: Importance.defaultImportance,
       );
 

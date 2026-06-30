@@ -47,7 +47,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _storage = StorageService.instance;
+  final _scrollController = ScrollController();
   List<RenewalItem> _items = [];
+
+  bool _fabExtended = true;
+  double _lastScrollOffset = 0;
 
   String? _selectedCategory;
   HomeFilterStatus? _selectedStatus;
@@ -66,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     SettingsService.instance.addListener(_onSettingsChanged);
     PendingDeleteController.instance.addListener(_loadItems);
     _applySortFromSettings();
@@ -89,9 +94,61 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     SettingsService.instance.removeListener(_onSettingsChanged);
     PendingDeleteController.instance.removeListener(_loadItems);
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) {
+      return;
+    }
+
+    final currentOffset = _scrollController.offset;
+    const topThreshold = 48.0;
+    const directionDelta = 4.0;
+
+    if (currentOffset <= topThreshold) {
+      if (!_fabExtended) {
+        setState(() => _fabExtended = true);
+      }
+    } else if (currentOffset > _lastScrollOffset + directionDelta) {
+      if (_fabExtended) {
+        setState(() => _fabExtended = false);
+      }
+    } else if (currentOffset < _lastScrollOffset - directionDelta) {
+      if (!_fabExtended) {
+        setState(() => _fabExtended = true);
+      }
+    }
+
+    _lastScrollOffset = currentOffset;
+  }
+
+  Widget _buildFloatingActionButton() {
+    const tooltip = 'Add Item';
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 200),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: _fabExtended
+          ? FloatingActionButton.extended(
+              key: const ValueKey('fab-extended'),
+              tooltip: tooltip,
+              onPressed: _openCreateRenewal,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Item'),
+            )
+          : FloatingActionButton(
+              key: const ValueKey('fab-collapsed'),
+              tooltip: tooltip,
+              onPressed: _openCreateRenewal,
+              child: const Icon(Icons.add_rounded),
+            ),
+    );
   }
 
   void _onSettingsChanged() {
@@ -296,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                   Text(
-                    'Filter Renewals',
+                    'Filter Items',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: AppSpacing.sectionSpacing),
@@ -444,7 +501,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Sort Renewals',
+                  'Sort Items',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: AppSpacing.fieldLabelGap),
@@ -575,6 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SlidableAutoCloseBehavior(
             child: _items.isEmpty
             ? ListView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: listScrollPadding(context, top: AppSpacing.sectionSpacing),
                 children: [
@@ -598,6 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               )
             : ListView(
+                controller: _scrollController,
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: listScrollPadding(
                   context,
@@ -711,8 +770,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (expiringSoon.isEmpty)
                   EmptyStateWidget.compact(
                     title: _hasActiveFilters
-                        ? 'No upcoming renewals match filters'
-                        : 'No upcoming renewals',
+                        ? 'No upcoming items match filters'
+                        : 'No upcoming items',
                   )
                 else
                   ...expiringSoon.map(
@@ -722,12 +781,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       onItemChanged: _loadItems,
                     ),
                   ),
-                const SectionHeader(title: 'All Renewals'),
+                const SectionHeader(title: 'All Items'),
                 if (filteredItems.isEmpty)
                   EmptyStateWidget.compact(
                     title: _hasActiveFilters
-                        ? 'No renewals match filters'
-                        : 'No renewals added yet',
+                        ? 'No items match filters'
+                        : 'No items added yet',
                   )
                 else
                   ...filteredItems.map(
@@ -743,10 +802,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openCreateRenewal,
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 }
@@ -862,8 +918,8 @@ class _OverdueAlertBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final message = count == 1
-        ? 'You have 1 expired renewal'
-        : 'You have $count expired renewals';
+        ? 'You have 1 expired item'
+        : 'You have $count expired items';
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),

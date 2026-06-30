@@ -55,8 +55,8 @@ class InsightsService {
       insights.add(
         InsightItem(
           message: thisMonthCount == 1
-              ? 'You have 1 renewal expiring this month.'
-              : 'You have $thisMonthCount renewals expiring this month.',
+              ? 'You have 1 item expiring this month.'
+              : 'You have $thisMonthCount items expiring this month.',
           icon: Icons.calendar_month_outlined,
           priority: InsightPriority.high,
         ),
@@ -67,7 +67,7 @@ class InsightsService {
     if (topOwner != null) {
       insights.add(
         InsightItem(
-          message: '${topOwner.key} has the highest number of renewals.',
+          message: '${topOwner.key} has the highest number of items.',
           icon: Icons.people_outline,
           priority: InsightPriority.medium,
         ),
@@ -80,7 +80,7 @@ class InsightsService {
         InsightItem(
           message:
               '${_pluralizeCategory(topCategory.category)} account for '
-              '${topCategory.percent}% of all renewals.',
+              '${topCategory.percent}% of all items.',
           icon: categoryIcon(topCategory.category),
           priority: InsightPriority.medium,
         ),
@@ -91,7 +91,7 @@ class InsightsService {
       insights.add(
         InsightItem(
           message:
-              'Estimated annual renewal expenses: '
+              'Estimated annual expenses: '
               '${_formatCurrency(data.estimatedAnnualSpending)}.',
           icon: Icons.payments_outlined,
           priority: InsightPriority.low,

@@ -773,7 +773,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   subtitle: const Text(
 
-                    'Sort renewals by closest expiry date by default',
+                    'Sort items by closest expiry date by default',
 
                   ),
 
@@ -847,7 +847,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: const Text('Enable Notifications'),
 
-                  subtitle: const Text('Schedule renewal reminder alerts'),
+                  subtitle: const Text('Schedule item reminder alerts'),
 
                   value: _enableNotifications,
 
@@ -889,9 +889,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   ),
 
-                  title: const Text('Upcoming Renewals'),
+                  title: const Text('Upcoming Items'),
 
-                  subtitle: const Text('Renewals with reminders on the way'),
+                  subtitle: const Text('Items with reminders on the way'),
 
                   trailing: const Icon(Icons.chevron_right),
 
@@ -905,7 +905,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   title: 'Default Reminder Intervals',
 
-                  subtitle: 'Applied when adding new renewals',
+                  subtitle: 'Applied when adding new items',
 
                   selectedDays: _defaultReminderDays,
 

@@ -92,7 +92,7 @@ Future<bool> showRestoreSummaryDialog(
         children: [
           const Text('Backup contains:'),
           const SizedBox(height: AppSpacing.fieldLabelGap),
-          Text('- ${preview.renewalCount} Renewals'),
+          Text('- ${preview.renewalCount} Items'),
           Text('- ${preview.familyMemberCount} Family Members'),
           Text('- ${preview.attachmentCount} Attachments'),
           const SizedBox(height: AppSpacing.cardSpacing),
@@ -130,7 +130,7 @@ Future<bool> showRestoreDataReplacementDialog(
       ),
       title: const Text('Replace Current Data?'),
       content: Text(
-        'Restoring "$backupName" will replace all renewal data on this device. '
+        'Restoring "$backupName" will replace all item data on this device. '
         'This action cannot be undone.',
       ),
       actions: [

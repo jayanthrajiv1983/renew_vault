@@ -36,7 +36,7 @@ class ItemActions {
       context: context,
       builder: (context) => AlertDialog(
         insetPadding: dialogInsetPadding(context),
-        title: const Text('Delete renewal?'),
+        title: const Text('Delete item?'),
         content: Text(
           'Delete "${item.title}"? You can undo this for a few seconds after deleting.',
         ),

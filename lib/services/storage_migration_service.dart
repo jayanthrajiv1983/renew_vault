@@ -108,7 +108,7 @@ class StorageMigrationService {
         return StorageMigrationResult.failure(
           message:
               'Your existing local data could not be upgraded to encrypted '
-              'storage. Your renewals, family members, and settings may '
+              'storage. Your items, family members, and settings may '
               'still be on this device, but the app cannot read them safely.',
           error: encryptedError,
         );

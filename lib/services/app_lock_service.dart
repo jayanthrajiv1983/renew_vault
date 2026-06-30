@@ -14,7 +14,7 @@ class AppLockService {
   static const backgroundLockThreshold = Duration(seconds: 30);
 
   static const authenticateReason =
-      'Unlock Renew Vault to access your renewals';
+      'Unlock Renew Vault to access your items';
 
   final LocalAuthentication _auth = LocalAuthentication();
 

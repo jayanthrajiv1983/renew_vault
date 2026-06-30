@@ -4,14 +4,15 @@ import 'package:flutter/scheduler.dart';
 import '../models/renewal_item.dart';
 import '../services/family_service.dart';
 import '../theme/app_spacing.dart';
-import '../utils/metadata_utils.dart';
+import '../utils/category_fields_builder.dart';
 import '../utils/form_padding.dart';
 import '../utils/item_actions.dart';
+import '../utils/metadata_utils.dart';
 import '../constants/categories.dart';
 import '../constants/reminder_intervals.dart';
+import '../shared/widgets/category_details_card.dart';
 import '../widgets/attachments_section.dart';
 import '../widgets/item_detail_section.dart';
-import '../widgets/metadata_display.dart';
 import '../widgets/owner_avatar.dart';
 import '../widgets/renewal_card.dart';
 import 'add_item_screen.dart';
@@ -105,8 +106,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     final statusColor = getStatusColor(daysRemaining);
     final statusText = getStatusText(daysRemaining);
     final sortedReminderDays = [...item.reminderDays]..sort((a, b) => b.compareTo(a));
-    final hasCategoryDetails =
-        metadataForCategory(item.category, item.metadata).isNotEmpty;
+    final categoryFields = categoryFieldsFor(item.category, item.metadata);
+    final hasCategoryDetails = categoryFields.isNotEmpty;
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
@@ -229,7 +230,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   index: 3,
                   child: _DetailInfoRow(
                     icon: Icons.calendar_today_outlined,
-                    label: 'Renewal Date',
+                    label: 'Expiry Date',
                     value: formatMetadataDate(item.renewalDate),
                     valueColor: theme.colorScheme.primary,
                   ),
@@ -242,16 +243,13 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               opacity: _categoryDetailsFade,
               child: SlideTransition(
                 position: _categoryDetailsSlide,
-                child: ItemDetailSection(
-                  title: 'Category Details',
+                child: CategoryDetailsCard(
+                  fields: categoryFields,
                   borderRadius:
                       BorderRadius.circular(AppSpacing.sectionSpacing),
                   elevation: AppSpacing.cardElevation,
                   surfaceTintColor: theme.colorScheme.surfaceTint,
-                  child: MetadataDisplay(
-                    category: item.category,
-                    metadata: item.metadata,
-                  ),
+                  animationIndexOffset: 4,
                 ),
               ),
             ),

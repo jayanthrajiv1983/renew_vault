@@ -212,7 +212,7 @@ class CategoryFormController {
           if (Categories.isInsuranceCategory(category)) {
             return 'Please select a policy expiry date';
           }
-          return 'Please select a renewal date';
+          return 'Please select a date';
       }
     }
     return null;

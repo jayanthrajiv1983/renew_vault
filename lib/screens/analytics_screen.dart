@@ -223,7 +223,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   child: Padding(
                     padding: AppSpacing.cardInsets,
                     child: EmptyStateWidget.compact(
-                      title: 'No upcoming renewals',
+                      title: 'No upcoming items',
                     ),
                   ),
                 )
@@ -247,7 +247,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Estimated annual renewal spending: '
+                        'Estimated annual spending: '
                         '\$${_formatCurrency(_data.estimatedAnnualSpending)}',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,

@@ -290,7 +290,7 @@ class _AppDiagnosticsScreenState extends State<AppDiagnosticsScreen>
             ),
             _divider(),
             _diagnosticTile(
-              title: 'Total Renewals',
+              title: 'Total Items',
               value: '${data.totalRenewals}',
             ),
             _divider(),

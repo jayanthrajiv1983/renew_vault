@@ -247,7 +247,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         builder: (context) => AlertDialog(
           title: const Text('Replace attachment?'),
           content: const Text(
-            'Free plan allows one attachment per renewal. '
+            'Free plan allows one attachment per item. '
             'Replace the current attachment with the new file?',
           ),
           actions: [
@@ -385,7 +385,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget build(BuildContext context) {
     return SafeFormScaffold(
       appBar: AppBar(
-        title: Text(_isEditMode ? 'Edit Renewal' : 'Add Item'),
+        title: Text(_isEditMode ? 'Edit Item' : 'Add Item'),
       ),
       primaryLabel: _isEditMode ? 'Update' : 'Save',
       onPrimary: _save,

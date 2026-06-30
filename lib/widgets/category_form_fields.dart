@@ -128,7 +128,7 @@ class _ApplianceFormFields extends StatelessWidget {
         ),
         AppSpacing.gapField,
         DateFormField(
-          label: 'Renewal Date',
+          label: 'Expiry Date',
           value: controller.renewalDate,
           required: true,
           onChanged: (date) {
@@ -259,7 +259,7 @@ class _VehicleFormFields extends StatelessWidget {
         ),
         AppSpacing.gapField,
         DateFormField(
-          label: 'Renewal Date',
+          label: 'Expiry Date',
           value: controller.renewalDate,
           required: true,
           onChanged: (date) {
@@ -411,7 +411,7 @@ class _OtherFormFields extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DateFormField(
-      label: 'Renewal Date',
+      label: 'Expiry Date',
       value: controller.renewalDate,
       required: true,
       onChanged: (date) {

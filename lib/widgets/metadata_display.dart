@@ -1,23 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../theme/app_spacing.dart';
-import '../utils/metadata_utils.dart';
-import 'category_detail_row.dart';
+import '../shared/widgets/category_details_card.dart';
+import '../utils/category_fields_builder.dart';
 
+/// Displays category-specific metadata using the shared [CategoryDetailsCard].
+///
+/// Prefer [CategoryDetailsCard] directly when you control the surrounding
+/// section chrome and entry animations.
 class MetadataDisplay extends StatelessWidget {
   const MetadataDisplay({
     super.key,
     required this.category,
     required this.metadata,
+    this.animateFields = true,
   });
 
   final String category;
   final Map<String, dynamic> metadata;
+  final bool animateFields;
 
   @override
   Widget build(BuildContext context) {
-    final sections = metadataSectionsForCategory(category, metadata);
-    if (sections.isEmpty) {
+    final fields = categoryFieldsFor(category, metadata);
+    if (fields.isEmpty) {
       return Text(
         'No additional details',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -26,101 +31,10 @@ class MetadataDisplay extends StatelessWidget {
       );
     }
 
-    if (sections.length == 1) {
-      return _MetadataSectionContent(entries: sections.first.entries);
-    }
-
-    return _MetadataExpansionSections(sections: sections);
-  }
-}
-
-class _MetadataExpansionSections extends StatelessWidget {
-  const _MetadataExpansionSections({required this.sections});
-
-  final List<PopulatedMetadataSection> sections;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final sectionShape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-    );
-
-    return Theme(
-      data: theme.copyWith(
-        dividerColor: Colors.transparent,
-        expansionTileTheme: ExpansionTileThemeData(
-          backgroundColor: colorScheme.surfaceContainerLow,
-          collapsedBackgroundColor: colorScheme.surfaceContainerLow,
-          iconColor: colorScheme.onSurfaceVariant,
-          collapsedIconColor: colorScheme.onSurfaceVariant,
-          textColor: colorScheme.onSurface,
-          collapsedTextColor: colorScheme.onSurface,
-          shape: sectionShape,
-          collapsedShape: sectionShape,
-          tilePadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.cardSpacing,
-            vertical: AppSpacing.fieldLabelGap,
-          ),
-          expandedAlignment: Alignment.centerLeft,
-          childrenPadding: const EdgeInsets.fromLTRB(
-            AppSpacing.cardSpacing,
-            0,
-            AppSpacing.cardSpacing,
-            AppSpacing.cardSpacing,
-          ),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < sections.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.fieldLabelGap),
-            ExpansionTile(
-              initiallyExpanded: true,
-              title: Text(
-                sections[i].title,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              children: [
-                _MetadataSectionContent(entries: sections[i].entries),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MetadataSectionContent extends StatelessWidget {
-  const _MetadataSectionContent({required this.entries});
-
-  final List<MapEntry<String, dynamic>> entries;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < entries.length; i++) ...[
-          if (i > 0)
-            Divider(
-              height: 1,
-              color: Theme.of(context).colorScheme.outlineVariant.withValues(
-                    alpha: 0.5,
-                  ),
-            ),
-          CategoryDetailRow(
-            icon: metadataIcon(entries[i].key),
-            label: metadataLabel(entries[i].key),
-            value: formatMetadataValue(entries[i].key, entries[i].value),
-          ),
-        ],
-      ],
+    return CategoryDetailsCard(
+      fields: fields,
+      animateFields: animateFields,
+      wrapSection: false,
     );
   }
 }
