@@ -20,6 +20,7 @@ class DiagnosticsReportData {
   const DiagnosticsReportData({
     required this.appVersion,
     required this.buildNumber,
+    required this.releaseChannel,
     required this.packageName,
     required this.buildMode,
     required this.platform,
@@ -40,6 +41,7 @@ class DiagnosticsReportData {
 
   final String appVersion;
   final String buildNumber;
+  final String releaseChannel;
   final String packageName;
   final String buildMode;
   final String platform;
@@ -88,6 +90,9 @@ class DiagnosticsReportService {
     return DiagnosticsReportData(
       appVersion: appInfo.versionSync ?? 'Unknown',
       buildNumber: appInfo.buildNumberSync ?? 'Unknown',
+      releaseChannel: appInfo.releaseChannel.isEmpty
+          ? 'Stable'
+          : appInfo.releaseChannel,
       packageName: appInfo.packageNameSync ?? 'Unknown',
       buildMode: kDebugMode ? 'Debug' : 'Release',
       platform: deviceInfo.platform,
@@ -119,9 +124,7 @@ class DiagnosticsReportService {
         version: data.appVersion,
         buildNumber: data.buildNumber,
       ))
-      ..writeln(
-        'Release Channel: ${AppInfoService.instance.releaseChannel.isEmpty ? 'Stable' : AppInfoService.instance.releaseChannel}',
-      )
+      ..writeln('Release Channel: ${data.releaseChannel}')
       ..writeln('Package Name: ${data.packageName}')
       ..writeln('Build Mode: ${data.buildMode}')
       ..writeln()

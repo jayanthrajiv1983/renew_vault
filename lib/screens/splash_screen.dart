@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/services/logging_service.dart';
+import '../features/onboarding/screens/onboarding_screen.dart';
+import '../features/onboarding/services/onboarding_service.dart';
 import '../screens/home_screen.dart';
 import '../services/app_lock_service.dart';
 import '../services/settings_service.dart';
@@ -97,8 +99,11 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     LoggingService.instance.logInfo('APP', 'Application startup complete');
+    final nextScreen = OnboardingService.instance.isCompleted
+        ? const HomeScreen()
+        : const OnboardingScreen();
     await Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(builder: (_) => const HomeScreen()),
+      MaterialPageRoute<void>(builder: (_) => nextScreen),
     );
   }
 
@@ -245,7 +250,10 @@ class _SplashScreenState extends State<SplashScreen>
                         }
                         await navigator.pushReplacement(
                           MaterialPageRoute<void>(
-                            builder: (_) => const HomeScreen(),
+                            builder: (_) =>
+                                OnboardingService.instance.isCompleted
+                                    ? const HomeScreen()
+                                    : const OnboardingScreen(),
                           ),
                         );
                       },

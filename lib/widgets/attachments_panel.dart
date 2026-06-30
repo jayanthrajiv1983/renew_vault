@@ -6,6 +6,8 @@ import 'package:open_filex/open_filex.dart';
 import '../core/services/logging_service.dart';
 import '../core/services/crashlytics_service.dart';
 import '../constants/attachment_limits.dart';
+import '../features/permissions/models/app_permission_type.dart';
+import '../features/permissions/services/permission_education_coordinator.dart';
 import '../models/attachment_metadata.dart';
 import '../models/renewal_item.dart';
 import '../services/attachment_service.dart';
@@ -169,6 +171,17 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
       return;
     }
 
+    final permissionType = _permissionTypeForPicker(picker);
+    if (permissionType != null) {
+      final permissionOutcome = await PermissionEducationCoordinator.prepare(
+        context,
+        permissionType,
+      );
+      if (permissionOutcome != PermissionFlowOutcome.proceed || !mounted) {
+        return;
+      }
+    }
+
     final needsReplace = AttachmentService.instance.shouldOfferReplace(
       _attachments.length,
       isPremium: widget.isPremium,
@@ -243,6 +256,23 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
         setState(() => _isBusy = false);
       }
     }
+  }
+
+  AppPermissionType? _permissionTypeForPicker(
+    Future<AttachmentSaveResult?> Function(
+      RenewalItem item, {
+      bool isPremium,
+    }) picker,
+  ) {
+    if (picker == AttachmentService.instance.pickFromCamera ||
+        picker == AttachmentService.instance.pickFromScan) {
+      return AppPermissionType.camera;
+    }
+    if (picker == AttachmentService.instance.pickFromGallery ||
+        picker == AttachmentService.instance.pickPdf) {
+      return AppPermissionType.storage;
+    }
+    return null;
   }
 
   Future<void> _openAttachment(AttachmentMetadata attachment) async {

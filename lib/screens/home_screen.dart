@@ -19,6 +19,7 @@ import '../widgets/renew_vault_logo.dart';
 import '../widgets/renewal_card.dart';
 import '../widgets/slidable_renewal_card.dart';
 import '../widgets/backup_reminder_banner.dart';
+import '../widgets/app_review_dialog.dart';
 import '../widgets/crash_reporting_consent_dialog.dart';
 import '../widgets/section_header.dart';
 import '../widgets/summary_stat_card.dart';
@@ -69,9 +70,13 @@ class _HomeScreenState extends State<HomeScreen> {
     PendingDeleteController.instance.addListener(_loadItems);
     _applySortFromSettings();
     _initializeData();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       NotificationNavigationService.instance.consumePendingNavigation(context);
-      maybeShowCrashReportingConsentPrompt(context);
+      await maybeShowCrashReportingConsentPrompt(context);
+      if (!mounted) {
+        return;
+      }
+      await maybeShowAppReviewPrompt(context);
     });
   }
 

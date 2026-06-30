@@ -21,6 +21,7 @@ import 'family_service.dart';
 import 'hive_encryption_service.dart';
 import 'milestone_service.dart';
 import 'ocr_correction_service.dart';
+import 'app_info_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
 
@@ -77,8 +78,13 @@ class BackupService {
   static const _backupJsonName = 'backup.json';
 
   Map<String, dynamic> buildBackupPayload() {
+    final appInfo = AppInfoService.instance;
+    final releaseChannel = appInfo.releaseChannel;
     return {
       'version': supportedVersion,
+      'appVersion': appInfo.versionSync ?? 'Unknown',
+      'buildNumber': appInfo.buildNumberSync ?? 'Unknown',
+      if (releaseChannel.isNotEmpty) 'releaseChannel': releaseChannel,
       'exportedAt': DateTime.now().toUtc().toIso8601String(),
       'renewals': StorageService.instance
           .getAll()

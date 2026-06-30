@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 
+import '../features/permissions/models/app_permission_type.dart';
+import '../features/permissions/services/permission_education_coordinator.dart';
 import '../models/add_item_prefill.dart';
 import '../models/attachment_metadata.dart';
 import '../screens/add_item_screen.dart';
@@ -26,6 +28,17 @@ abstract final class RenewalCreationFlow {
   }) async {
     final source = await showOcrSourcePicker(context);
     if (source == null || !context.mounted) {
+      return null;
+    }
+
+    final permissionType = source == ImageSource.camera
+        ? AppPermissionType.camera
+        : AppPermissionType.storage;
+    final permissionOutcome = await PermissionEducationCoordinator.prepare(
+      context,
+      permissionType,
+    );
+    if (permissionOutcome != PermissionFlowOutcome.proceed || !context.mounted) {
       return null;
     }
 
@@ -57,6 +70,18 @@ abstract final class RenewalCreationFlow {
     bool hasExistingData = false,
     String currentCategory = 'Appliance',
   }) async {
+    if (!context.mounted) {
+      return null;
+    }
+
+    final permissionOutcome = await PermissionEducationCoordinator.prepare(
+      context,
+      AppPermissionType.storage,
+    );
+    if (permissionOutcome != PermissionFlowOutcome.proceed || !context.mounted) {
+      return null;
+    }
+
     final result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: const ['pdf', 'jpg', 'jpeg', 'png'],

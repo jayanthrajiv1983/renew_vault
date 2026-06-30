@@ -26,6 +26,9 @@ import 'services/storage_service.dart';
 import 'widgets/app_lock_gate.dart';
 import 'widgets/privacy_protection_gate.dart';
 import 'widgets/storage_migration_failure_app.dart';
+import 'features/onboarding/services/onboarding_service.dart';
+import 'features/permissions/services/permission_education_service.dart';
+import 'services/app_review_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -46,6 +49,9 @@ Future<void> main() async {
   await LoggingService.instance.init();
   await AppInfoService.instance.init();
   await SettingsService.instance.init();
+  await OnboardingService.instance.init();
+  await PermissionEducationService.instance.init();
+  await AppReviewService.instance.init();
 
   var crashlyticsReady = false;
   try {

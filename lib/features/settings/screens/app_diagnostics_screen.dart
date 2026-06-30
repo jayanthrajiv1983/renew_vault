@@ -213,13 +213,18 @@ class _AppDiagnosticsScreenState extends State<AppDiagnosticsScreen>
           title: 'App Information',
           children: [
             _diagnosticTile(
-              title: 'App Version',
+              title: 'Version',
               value: data.appVersion,
             ),
             _divider(),
             _diagnosticTile(
               title: 'Build Number',
               value: data.buildNumber,
+            ),
+            _divider(),
+            _diagnosticTile(
+              title: 'Release Channel',
+              value: data.releaseChannel,
             ),
             _divider(),
             _diagnosticTile(

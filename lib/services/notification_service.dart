@@ -63,8 +63,6 @@ class NotificationService {
               AndroidFlutterLocalNotificationsPlugin>();
 
       await androidPlugin?.createNotificationChannel(channel);
-      await androidPlugin?.requestNotificationsPermission();
-      await androidPlugin?.requestExactAlarmsPermission();
 
       _initialized = true;
     } catch (error, stack) {
@@ -206,6 +204,19 @@ class NotificationService {
       );
       rethrow;
     }
+  }
+
+  Future<void> requestSystemPermissions() async {
+    final androidPlugin = _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.requestNotificationsPermission();
+    await androidPlugin?.requestExactAlarmsPermission();
+    LoggingService.instance.logInfo(
+      'PERMISSIONS',
+      'Notification system permissions requested',
+    );
   }
 
   Future<void> cancelNotification(int id) async {

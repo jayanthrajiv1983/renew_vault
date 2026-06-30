@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 
 
+import '../features/permissions/models/app_permission_type.dart';
+import '../features/permissions/services/permission_education_coordinator.dart';
 import '../providers/theme_provider.dart';
 
 import '../services/app_info_service.dart';
@@ -36,6 +38,8 @@ import '../widgets/section_header.dart';
 import '../features/settings/screens/app_diagnostics_screen.dart';
 import '../features/settings/screens/beta_tester_tools_screen.dart';
 import '../features/settings/screens/debug_logs_screen.dart';
+import '../features/settings/screens/legal_document_screen.dart';
+import '../theme/app_brand.dart';
 import 'backup_screen.dart';
 import 'family_members_screen.dart';
 import 'notifications_screen.dart';
@@ -153,6 +157,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
 
     try {
+      final permissionOutcome = await PermissionEducationCoordinator.prepare(
+        context,
+        AppPermissionType.storage,
+      );
+      if (permissionOutcome != PermissionFlowOutcome.proceed || !mounted) {
+        return;
+      }
+
       final pickResult = await BackupService.instance.pickBackupFile(
         allowedExtensions: allowedExtensions,
       );
@@ -263,6 +275,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _setEnableNotifications(bool value) async {
 
+    if (value) {
+      final permissionOutcome = await PermissionEducationCoordinator.prepare(
+        context,
+        AppPermissionType.notification,
+      );
+      if (permissionOutcome != PermissionFlowOutcome.proceed || !mounted) {
+        return;
+      }
+    }
+
     await _settings.setEnableNotifications(value);
 
     await NotificationService.instance.rescheduleAllReminders();
@@ -296,6 +318,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
   Future<void> _setEnableAppLock(bool value) async {
+
+    if (value) {
+      final permissionOutcome = await PermissionEducationCoordinator.prepare(
+        context,
+        AppPermissionType.biometric,
+      );
+      if (permissionOutcome != PermissionFlowOutcome.proceed || !mounted) {
+        return;
+      }
+
+      final authenticated = await AppLockService.instance.authenticate();
+      if (!authenticated) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Authentication failed. App lock was not enabled.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      if (!mounted) {
+        return;
+      }
+    }
 
     await _settings.setAppLockEnabled(value);
 
@@ -502,6 +551,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       MaterialPageRoute(
         builder: (context) => const BetaTesterToolsScreen(),
       ),
+    );
+  }
+
+  Future<void> _openLegalDocument(LegalDocument document) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(document: document),
+      ),
+    );
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    if (SettingsScreen.privacyPolicyUrl.isNotEmpty) {
+      await _openUrl(
+        SettingsScreen.privacyPolicyUrl,
+        fallbackMessage: 'Privacy policy link coming soon',
+      );
+      return;
+    }
+    await _openLegalDocument(LegalDocument.privacyPolicy);
+  }
+
+  Future<void> _openTermsAndConditions() async {
+    if (SettingsScreen.termsUrl.isNotEmpty) {
+      await _openUrl(
+        SettingsScreen.termsUrl,
+        fallbackMessage: 'Terms of service link coming soon',
+      );
+      return;
+    }
+    await _openLegalDocument(LegalDocument.termsAndConditions);
+  }
+
+  Future<void> _openOpenSourceLicenses() async {
+    final version = AppInfoService.instance.formattedVersionStringSync ??
+        await AppInfoService.instance.formattedVersionString;
+    if (!mounted) {
+      return;
+    }
+    showLicensePage(
+      context: context,
+      applicationName: AppBrand.name,
+      applicationVersion: version,
     );
   }
 
@@ -1259,6 +1351,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
+          _sectionHeader('Privacy & Legal'),
+
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: Icon(
+                    Icons.privacy_tip_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: const Text('Privacy Policy'),
+                  subtitle: const Text('How we handle your data'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openPrivacyPolicy,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: Icon(
+                    Icons.description_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: const Text('Terms & Conditions'),
+                  subtitle: const Text('Rules for using Renew Vault'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openTermsAndConditions,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  leading: Icon(
+                    Icons.code_outlined,
+                    color: theme.colorScheme.primary,
+                  ),
+                  title: const Text('Open Source Licenses'),
+                  subtitle: const Text('Third-party software acknowledgements'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _openOpenSourceLicenses,
+                ),
+              ],
+            ),
+          ),
+
+          AppSpacing.gapSection,
+
           _sectionHeader('About'),
 
           Card(
@@ -1300,46 +1435,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       _AboutVersionInfo(theme: theme),
 
                     ],
-
-                  ),
-
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-
-                  leading: const Icon(Icons.privacy_tip_outlined),
-
-                  title: const Text('Privacy Policy'),
-
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-
-                  onTap: () => _openUrl(
-
-                    SettingsScreen.privacyPolicyUrl,
-
-                    fallbackMessage: 'Privacy policy link coming soon',
-
-                  ),
-
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-
-                  leading: const Icon(Icons.description_outlined),
-
-                  title: const Text('Terms of Service'),
-
-                  trailing: const Icon(Icons.open_in_new, size: 18),
-
-                  onTap: () => _openUrl(
-
-                    SettingsScreen.termsUrl,
-
-                    fallbackMessage: 'Terms of service link coming soon',
 
                   ),
 
