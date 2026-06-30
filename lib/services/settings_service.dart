@@ -221,8 +221,6 @@ class SettingsService extends ChangeNotifier {
 
     final enabled = value is bool ? value : true;
 
-    debugPrint('App Lock Enabled: $enabled (read)');
-
     return enabled;
 
   }
@@ -233,7 +231,6 @@ class SettingsService extends ChangeNotifier {
 
     await _box?.put(enableAppLockKey, enabled);
 
-    debugPrint('App Lock Enabled: $enabled (write)');
     LoggingService.instance.logInfo(
       'SETTINGS',
       'App lock changed: ${enabled ? 'Enabled' : 'Disabled'}',

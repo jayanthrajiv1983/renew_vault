@@ -108,6 +108,8 @@ class RenewalCard extends StatelessWidget {
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -115,16 +117,22 @@ class RenewalCard extends StatelessWidget {
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         OwnerAvatar(ownerName: item.owner),
                         const SizedBox(width: AppSpacing.fieldLabelGap),
-                        Text(
-                          item.owner,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+                        Expanded(
+                          child: Text(
+                            item.owner,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -133,11 +141,16 @@ class RenewalCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.cardSpacing),
-              Text(
-                statusText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: statusColor,
-                  fontWeight: FontWeight.w500,
+              Flexible(
+                child: Text(
+                  statusText,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
                 ),
               ),
             ],

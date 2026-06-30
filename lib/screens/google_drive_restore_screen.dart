@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../services/google_drive_backup_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/backup_flow.dart';
 import '../utils/form_padding.dart';
 import '../utils/format_helpers.dart';
@@ -89,6 +90,9 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
   }
 
   Future<void> _signInToGoogle() async {
+    if (_isSigningIn) {
+      return;
+    }
     setState(() => _isSigningIn = true);
     try {
       final account = await GoogleDriveBackupService.instance.signIn();
@@ -101,9 +105,7 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      AppSnackBar.show(context, error.message);
     } finally {
       if (mounted) {
         setState(() => _isSigningIn = false);
@@ -183,6 +185,8 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             Expanded(child: _buildBody(theme)),
@@ -216,60 +220,25 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
     }
 
     if (_googleAccount == null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Sign in with Google to view backups in your Drive.',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sectionSpacing),
-              FilledButton.icon(
-                onPressed: _isSigningIn ? null : _signInToGoogle,
-                icon: _isSigningIn
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      )
-                    : const Icon(Icons.login, size: 18),
-                label: const Text('Sign in with Google'),
-              ),
-            ],
-          ),
-        ),
+      return EmptyStateWidget(
+        icon: EmptyStateWidget.mutedIcon(context, Icons.cloud_outlined),
+        title: 'Sign in to Google Drive',
+        subtitle: 'View and restore encrypted backups from your Drive.',
+        buttonText: 'Sign in with Google',
+        onButtonPressed: _signInToGoogle,
+        semanticLabel:
+            'Sign in to Google Drive. View and restore encrypted backups from your Drive. Sign in with Google.',
       );
     }
 
     if (_loadError != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.cardPadding),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _loadError!,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: theme.colorScheme.error),
-              ),
-              const SizedBox(height: AppSpacing.sectionSpacing),
-              FilledButton(
-                onPressed: _loadBackups,
-                child: const Text('Try again'),
-              ),
-            ],
-          ),
-        ),
+      return EmptyStateWidget(
+        icon: EmptyStateWidget.mutedIcon(context, Icons.error_outline),
+        title: 'Could not load backups',
+        subtitle: _loadError!,
+        buttonText: 'Try again',
+        onButtonPressed: _loadBackups,
+        semanticLabel: 'Could not load backups. Try again.',
       );
     }
 
@@ -278,7 +247,7 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
         icon: EmptyStateWidget.mutedIcon(context, Icons.cloud_off_outlined),
         title: 'No backups found',
         subtitle:
-            'Upload an encrypted backup to the RenewVault Backups folder in Google Drive.',
+            'Upload an encrypted backup to the Renew Vault Backups folder in Google Drive.',
         semanticLabel:
             'No backups found. Upload an encrypted backup to Google Drive first.',
       );
@@ -320,7 +289,11 @@ class _GoogleDriveRestoreScreenState extends State<GoogleDriveRestoreScreen> {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          subtitle: Text(subtitle),
+          subtitle: Text(
+            subtitle,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
           trailing: isSelected
               ? Icon(
                   Icons.check_circle,

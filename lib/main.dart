@@ -29,8 +29,10 @@ import 'widgets/storage_migration_failure_app.dart';
 import 'features/onboarding/services/onboarding_service.dart';
 import 'features/permissions/services/permission_education_service.dart';
 import 'services/app_review_service.dart';
+import 'services/security_audit_service.dart';
 
 Future<void> main() async {
+  final startupStopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
 
@@ -87,10 +89,29 @@ Future<void> main() async {
   await OcrCorrectionService.instance.init();
   await ThemeProvider.instance.init();
   await NotificationService().initialize();
-  await NotificationService.instance.rescheduleAllReminders();
-  await AutomaticBackupReminderService.instance.reschedule();
   MicrointeractionService.instance;
   runApp(const RenewVaultApp());
+  startupStopwatch.stop();
+  LoggingService.instance.logPerf(
+    'app_init',
+    startupStopwatch.elapsedMilliseconds,
+  );
+  _runDeferredStartupTasks();
+}
+
+Future<void> _runDeferredStartupTasks() async {
+  final stopwatch = Stopwatch()..start();
+  try {
+    await NotificationService.instance.rescheduleAllReminders();
+    await AutomaticBackupReminderService.instance.reschedule();
+    await SecurityAuditService.instance.runOnceAtStartup();
+  } finally {
+    stopwatch.stop();
+    LoggingService.instance.logPerf(
+      'deferred_startup',
+      stopwatch.elapsedMilliseconds,
+    );
+  }
 }
 
 class RenewVaultApp extends StatelessWidget {

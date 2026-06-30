@@ -6,6 +6,7 @@ import '../services/family_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../widgets/owner_avatar.dart';
 import '../widgets/safe_form_scaffold.dart';
@@ -47,8 +48,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
 
   Future<void> _confirmDelete(FamilyMember member) async {
     if (member.id == 'self') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('The default Self member cannot be deleted')),
+      AppSnackBar.show(
+        context,
+        'The default Self member cannot be deleted',
       );
       return;
     }
@@ -109,8 +111,16 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                 final member = _members[index];
                 return ListTile(
                   leading: OwnerAvatar(ownerName: member.name, radius: 20),
-                  title: Text(member.name),
-                  subtitle: Text(member.relationship),
+                  title: Text(
+                    member.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    member.relationship,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -177,20 +187,16 @@ class _FamilyMemberFormScreenState extends State<_FamilyMemberFormScreen> {
   }
 
   Future<void> _save() async {
-    debugPrint('Save button tapped');
-
     FocusScope.of(context).unfocus();
 
     final formState = _formKey.currentState;
     if (formState == null || !formState.validate()) {
-      debugPrint('Form validation failed');
       return;
     }
 
     setState(() => _isSaving = true);
 
     try {
-      debugPrint('Creating family member');
       final member = FamilyMember(
         id: _isEditMode
             ? widget.member!.id
@@ -200,10 +206,8 @@ class _FamilyMemberFormScreenState extends State<_FamilyMemberFormScreen> {
         photoPath: widget.member?.photoPath,
       );
 
-      debugPrint('Saving to Hive');
       await _familyService.save(member);
 
-      debugPrint('Save successful');
       if (!_isEditMode) {
         LoggingService.instance.logInfo('FAMILY', 'Family member added');
       }
@@ -223,16 +227,17 @@ class _FamilyMemberFormScreenState extends State<_FamilyMemberFormScreen> {
 
       Navigator.of(context).pop(true);
     } catch (error, stackTrace) {
-      debugPrint('Save failed: $error');
-      debugPrint('$stackTrace');
+      LoggingService.instance.logError(
+        'FAMILY',
+        'Failed to save family member',
+        exception: error,
+        stackTrace: stackTrace,
+        operation: 'Save Failed',
+      );
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save family member: $error'),
-        ),
-      );
+      AppSnackBar.show(context, 'Failed to save family member: $error');
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);

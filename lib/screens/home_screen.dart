@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
+import '../core/services/logging_service.dart';
 import '../models/renewal_item.dart';
 import '../models/sort_option.dart';
 import '../services/category_migration_service.dart';
@@ -38,6 +39,9 @@ enum HomeFilterStatus { expiringSoon, expired, safe }
 /// Minimum width to show AppBar title text alongside the logo (tablet / wide).
 const _kAppBarTitleBreakpoint = 600.0;
 
+/// Bottom inset so extended FAB does not cover list content.
+const _kFabScrollClearance = 120.0;
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -48,7 +52,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _storage = StorageService.instance;
   final _scrollController = ScrollController();
+  final _screenOpenedAt = Stopwatch()..start();
   List<RenewalItem> _items = [];
+  List<RenewalItem> _expiringSoonList = [];
+  List<RenewalItem> _filteredItemsList = [];
+  int _expiredCount = 0;
+  int _expiringSoonCount = 0;
+  int _safeCount = 0;
 
   bool _fabExtended = true;
   double _lastScrollOffset = 0;
@@ -76,6 +86,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _applySortFromSettings();
     _initializeData();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      LoggingService.instance.logPerf(
+        'home_screen_first_frame',
+        _screenOpenedAt.elapsedMilliseconds,
+      );
       NotificationNavigationService.instance.consumePendingNavigation(context);
       await maybeShowCrashReportingConsentPrompt(context);
       if (!mounted) {
@@ -161,19 +175,59 @@ class _HomeScreenState extends State<HomeScreen> {
     final saved = SettingsService.instance.getSortOption();
     _explicitSort =
         saved == null || saved == SortOption.nearestExpiry ? null : saved;
+    _recomputeLists();
+  }
+
+  void _recomputeLists() {
+    final filtered = _applyFilters(_items);
+    _filteredItemsList = sortRenewals(filtered, _effectiveSort);
+
+    final today = dateOnly(DateTime.now());
+    final cutoff = today.add(const Duration(days: 30));
+    final expiring = filtered.where((item) {
+      final renewalDay = dateOnly(item.renewalDate);
+      return !renewalDay.isBefore(today) && !renewalDay.isAfter(cutoff);
+    }).toList();
+    _expiringSoonList =
+        sortRenewals(expiring, _effectiveSort).take(5).toList();
+
+    _expiredCount = 0;
+    _expiringSoonCount = 0;
+    _safeCount = 0;
+    for (final item in _items) {
+      final days = getDaysRemaining(item.renewalDate);
+      if (days < 0) {
+        _expiredCount++;
+      } else if (days <= 30) {
+        _expiringSoonCount++;
+      } else {
+        _safeCount++;
+      }
+    }
   }
 
   void _setExplicitSort(SortOption? option) {
     final explicit =
         option == null || option == SortOption.nearestExpiry ? null : option;
-    setState(() => _explicitSort = explicit);
+    setState(() {
+      _explicitSort = explicit;
+      _recomputeLists();
+    });
     SettingsService.instance.setSortOption(explicit);
   }
 
   Future<void> _loadItems() async {
+    final stopwatch = Stopwatch()..start();
     setState(() {
       _items = _storage.getAll();
+      _recomputeLists();
     });
+    stopwatch.stop();
+    LoggingService.instance.logPerf(
+      'home_load_items',
+      stopwatch.elapsedMilliseconds,
+      metadata: {'count': _items.length},
+    );
   }
 
   Future<void> _openAnalyticsScreen() async {
@@ -469,6 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               _selectedCategory = tempCategory;
                               _selectedStatus = tempStatus;
                               _selectedOwner = tempOwner;
+                              _recomputeLists();
                             });
                             Navigator.of(sheetContext).pop();
                           },
@@ -540,45 +595,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  List<RenewalItem> get _expiringSoon {
-    final today = dateOnly(DateTime.now());
-    final cutoff = today.add(const Duration(days: 30));
+  List<RenewalItem> get _expiringSoon => _expiringSoonList;
 
-    final expiring = _applyFilters(_items).where((item) {
-      final renewalDay = dateOnly(item.renewalDate);
-      return !renewalDay.isBefore(today) && !renewalDay.isAfter(cutoff);
-    }).toList();
+  List<RenewalItem> get _filteredItems => _filteredItemsList;
 
-    return sortRenewals(expiring, _effectiveSort).take(5).toList();
-  }
+  int _countExpiringSoon() => _expiringSoonCount;
 
-  List<RenewalItem> get _filteredItems =>
-      sortRenewals(_applyFilters(_items), _effectiveSort);
+  int _countExpired() => _expiredCount;
 
-  int _countExpiringSoon() {
-    return _items
-        .where((item) {
-          final days = getDaysRemaining(item.renewalDate);
-          return days >= 0 && days <= 30;
-        })
-        .length;
-  }
-
-  int _countExpired() {
-    return _items
-        .where((item) => getDaysRemaining(item.renewalDate) < 0)
-        .length;
-  }
-
-  int _countSafe() {
-    return _items
-        .where((item) => getDaysRemaining(item.renewalDate) > 30)
-        .length;
-  }
+  int _countSafe() => _safeCount;
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final expiringSoon = _expiringSoon;
     final filteredItems = _filteredItems;
     final expiredCount = _countExpired();
@@ -630,180 +658,296 @@ class _HomeScreenState extends State<HomeScreen> {
         child: RefreshIndicator(
           onRefresh: _loadItems,
           child: SlidableAutoCloseBehavior(
-            child: _items.isEmpty
-            ? ListView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: listScrollPadding(context, top: AppSpacing.sectionSpacing),
-                children: [
-                  if (backupReminderBanner != null) backupReminderBanner,
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height * 0.65,
-                    child: EmptyStateWidget(
-                      icon: EmptyStateWidget.mutedIcon(
-                        context,
-                        Icons.event_note,
-                      ),
-                      title: 'No items yet',
-                      subtitle:
-                          "Start organizing your life's essentials by adding your first item.",
-                      buttonText: 'Add Item',
-                      onButtonPressed: _openCreateRenewal,
-                      semanticLabel:
-                          "No items yet. Start organizing your life's essentials by adding your first item. Add Item.",
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: _items.isEmpty
+                  ? _buildEmptyStateSlivers(
+                      context,
+                      backupReminderBanner: backupReminderBanner,
+                    )
+                  : _buildContentSlivers(
+                      context,
+                      backupReminderBanner: backupReminderBanner,
+                      expiringSoon: expiringSoon,
+                      filteredItems: filteredItems,
+                      expiredCount: expiredCount,
+                      showCategoryEmptyState: showCategoryEmptyState,
                     ),
-                  ),
-                ],
-              )
-            : ListView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: listScrollPadding(
-                  context,
-                  top: 0,
-                  includeFabClearance: true,
-                ),
-                children: [
-                if (backupReminderBanner != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.sectionSpacing),
-                    child: backupReminderBanner,
-                  ),
-                if (_explicitSort != null)
-                  _SortChipBar(
-                    sortLabel: _explicitSort!.label,
-                    onClear: () => _setExplicitSort(null),
-                  ),
-                if (_hasActiveFilters)
-                  _ActiveFiltersBar(
-                    selectedCategory: _selectedCategory,
-                    selectedStatus: _selectedStatus,
-                    selectedOwner: _selectedOwner,
-                    statusLabel: _selectedStatus == null
-                        ? null
-                        : _statusFilterLabel(_selectedStatus!),
-                    onClearCategory: () {
-                      setState(() => _selectedCategory = null);
-                    },
-                    onClearStatus: () {
-                      setState(() => _selectedStatus = null);
-                    },
-                    onClearOwner: () {
-                      setState(() => _selectedOwner = null);
-                    },
-                    onCategoryTap: _selectedCategory == null
-                        ? null
-                        : () => _openCategoryItems(_selectedCategory!),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.only(
-                    top: AppSpacing.sectionSpacing,
-                    bottom: AppSpacing.fieldLabelGap,
-                  ),
-                  child: GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: AppSpacing.cardSpacing,
-                    crossAxisSpacing: AppSpacing.cardSpacing,
-                    childAspectRatio: 1.55,
-                    children: [
-                      SummaryStatCard(
-                        label: 'Total Items',
-                        count: _items.length,
-                        countColor: AppColors.statTotal(colorScheme),
-                        onTap: () => _openFilteredItems(
-                          title: 'Total Items',
-                          filter: ItemFilter.all,
-                        ),
-                      ),
-                      SummaryStatCard(
-                        label: 'Expiring Soon',
-                        count: _countExpiringSoon(),
-                        countColor: AppColors.statExpiringSoon,
-                        onTap: () => _openFilteredItems(
-                          title: 'Expiring Soon',
-                          filter: ItemFilter.expiringSoon,
-                        ),
-                      ),
-                      SummaryStatCard(
-                        label: 'Expired',
-                        count: _countExpired(),
-                        countColor: AppColors.statExpired,
-                        onTap: () => _openFilteredItems(
-                          title: 'Expired',
-                          filter: ItemFilter.expired,
-                        ),
-                      ),
-                      SummaryStatCard(
-                        label: 'Safe',
-                        count: _countSafe(),
-                        countColor: AppColors.statSafe,
-                        onTap: () => _openFilteredItems(
-                          title: 'Safe',
-                          filter: ItemFilter.safe,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (showCategoryEmptyState)
-                  SizedBox(
-                    height: MediaQuery.sizeOf(context).height * 0.45,
-                    child: CategoryEmptyState(
-                      category: _selectedCategory!,
-                      onAddItem: () =>
-                          _openAddItemForCategory(_selectedCategory!),
-                    ),
-                  )
-                else ...[
-                if (expiredCount >= 1 &&
-                    SettingsService.instance.getShowExpiredBanner())
-                  _OverdueAlertBanner(
-                    count: expiredCount,
-                    onTap: () => _openFilteredItems(
-                      title: 'Expired',
-                      filter: ItemFilter.expired,
-                    ),
-                  ),
-                const SectionHeader(title: 'Expiring Soon'),
-                if (expiringSoon.isEmpty)
-                  EmptyStateWidget.compact(
-                    title: _hasActiveFilters
-                        ? 'No upcoming items match filters'
-                        : 'No upcoming items',
-                  )
-                else
-                  ...expiringSoon.map(
-                    (item) => SlidableRenewalCard(
-                      item: item,
-                      onTap: () => _openItemDetail(item),
-                      onItemChanged: _loadItems,
-                    ),
-                  ),
-                const SectionHeader(title: 'All Items'),
-                if (filteredItems.isEmpty)
-                  EmptyStateWidget.compact(
-                    title: _hasActiveFilters
-                        ? 'No items match filters'
-                        : 'No items added yet',
-                  )
-                else
-                  ...filteredItems.map(
-                    (item) => SlidableRenewalCard(
-                      item: item,
-                      onTap: () => _openItemDetail(item),
-                      onItemChanged: _loadItems,
-                    ),
-                  ),
-                ],
-                ],
-              ),
+            ),
           ),
         ),
       ),
       floatingActionButton: _buildFloatingActionButton(),
     );
+  }
+
+  List<Widget> _buildEmptyStateSlivers(
+    BuildContext context, {
+    required Widget? backupReminderBanner,
+  }) {
+    return [
+      SliverPadding(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sectionSpacing,
+          AppSpacing.sectionSpacing,
+          AppSpacing.sectionSpacing,
+          _kFabScrollClearance,
+        ),
+        sliver: SliverFillRemaining(
+          hasScrollBody: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (backupReminderBanner != null) ...[
+                backupReminderBanner,
+                const SizedBox(height: AppSpacing.sectionSpacing),
+              ],
+              Expanded(
+                child: EmptyStateWidget(
+                  icon: EmptyStateWidget.mutedIcon(
+                    context,
+                    Icons.event_note,
+                  ),
+                  title: 'No items yet',
+                  subtitle:
+                      "Start organizing your life's essentials by adding your first item.",
+                  buttonText: 'Add Item',
+                  onButtonPressed: _openCreateRenewal,
+                  semanticLabel:
+                      "No items yet. Start organizing your life's essentials by adding your first item. Add Item.",
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+
+  SliverPadding _horizontalSliverPadding({
+    required Widget sliver,
+    double top = 0,
+    double bottom = 0,
+  }) {
+    return SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.sectionSpacing,
+        top,
+        AppSpacing.sectionSpacing,
+        bottom,
+      ),
+      sliver: sliver,
+    );
+  }
+
+  Widget _buildDashboardHeader({
+    required BuildContext context,
+    required Widget? backupReminderBanner,
+    required int expiredCount,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final showOverdueBanner = expiredCount >= 1 &&
+        SettingsService.instance.getShowExpiredBanner();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_explicitSort != null)
+          _SortChipBar(
+            sortLabel: _explicitSort!.label,
+            onClear: () => _setExplicitSort(null),
+          ),
+        if (_hasActiveFilters)
+          _ActiveFiltersBar(
+            selectedCategory: _selectedCategory,
+            selectedStatus: _selectedStatus,
+            selectedOwner: _selectedOwner,
+            statusLabel: _selectedStatus == null
+                ? null
+                : _statusFilterLabel(_selectedStatus!),
+            onClearCategory: () {
+              setState(() {
+                _selectedCategory = null;
+                _recomputeLists();
+              });
+            },
+            onClearStatus: () {
+              setState(() {
+                _selectedStatus = null;
+                _recomputeLists();
+              });
+            },
+            onClearOwner: () {
+              setState(() {
+                _selectedOwner = null;
+                _recomputeLists();
+              });
+            },
+            onCategoryTap: _selectedCategory == null
+                ? null
+                : () => _openCategoryItems(_selectedCategory!),
+          ),
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppSpacing.cardSpacing,
+          crossAxisSpacing: AppSpacing.cardSpacing,
+          childAspectRatio: 1.55,
+          children: [
+            SummaryStatCard(
+              label: 'Total Items',
+              count: _items.length,
+              countColor: AppColors.statTotal(colorScheme),
+              onTap: () => _openFilteredItems(
+                title: 'Total Items',
+                filter: ItemFilter.all,
+              ),
+            ),
+            SummaryStatCard(
+              label: 'Expiring Soon',
+              count: _countExpiringSoon(),
+              countColor: AppColors.statExpiringSoon,
+              onTap: () => _openFilteredItems(
+                title: 'Expiring Soon',
+                filter: ItemFilter.expiringSoon,
+              ),
+            ),
+            SummaryStatCard(
+              label: 'Expired',
+              count: _countExpired(),
+              countColor: AppColors.statExpired,
+              onTap: () => _openFilteredItems(
+                title: 'Expired',
+                filter: ItemFilter.expired,
+              ),
+            ),
+            SummaryStatCard(
+              label: 'Safe',
+              count: _countSafe(),
+              countColor: AppColors.statSafe,
+              onTap: () => _openFilteredItems(
+                title: 'Safe',
+                filter: ItemFilter.safe,
+              ),
+            ),
+          ],
+        ),
+        if (backupReminderBanner != null) ...[
+          const SizedBox(height: AppSpacing.sectionSpacing),
+          backupReminderBanner,
+        ],
+        if (showOverdueBanner) ...[
+          const SizedBox(height: AppSpacing.sectionSpacing),
+          _OverdueAlertBanner(
+            count: expiredCount,
+            onTap: () => _openFilteredItems(
+              title: 'Expired',
+              filter: ItemFilter.expired,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _buildContentSlivers(
+    BuildContext context, {
+    required Widget? backupReminderBanner,
+    required List<RenewalItem> expiringSoon,
+    required List<RenewalItem> filteredItems,
+    required int expiredCount,
+    required bool showCategoryEmptyState,
+  }) {
+    return [
+      _horizontalSliverPadding(
+        top: AppSpacing.sectionSpacing,
+        sliver: SliverToBoxAdapter(
+          child: _buildDashboardHeader(
+            context: context,
+            backupReminderBanner: backupReminderBanner,
+            expiredCount: expiredCount,
+          ),
+        ),
+      ),
+      if (showCategoryEmptyState)
+        _horizontalSliverPadding(
+          top: AppSpacing.sectionSpacing,
+          bottom: _kFabScrollClearance,
+          sliver: SliverToBoxAdapter(
+            child: CategoryEmptyState(
+              category: _selectedCategory!,
+              onAddItem: () => _openAddItemForCategory(_selectedCategory!),
+            ),
+          ),
+        )
+      else ...[
+        _horizontalSliverPadding(
+          sliver: const SliverToBoxAdapter(
+            child: SectionHeader(title: 'Expiring Soon'),
+          ),
+        ),
+        if (expiringSoon.isEmpty)
+          _horizontalSliverPadding(
+            sliver: SliverToBoxAdapter(
+              child: EmptyStateWidget.compact(
+                title: _hasActiveFilters
+                    ? 'No upcoming items match filters'
+                    : 'No upcoming items',
+              ),
+            ),
+          )
+        else
+          _horizontalSliverPadding(
+            sliver: SliverList.builder(
+              itemCount: expiringSoon.length,
+              itemBuilder: (context, index) {
+                final item = expiringSoon[index];
+                return SlidableRenewalCard(
+                  key: ValueKey('expiring-${item.id}'),
+                  item: item,
+                  onTap: () => _openItemDetail(item),
+                  onItemChanged: _loadItems,
+                );
+              },
+            ),
+          ),
+        _horizontalSliverPadding(
+          sliver: const SliverToBoxAdapter(
+            child: SectionHeader(title: 'All Items'),
+          ),
+        ),
+        if (filteredItems.isEmpty)
+          _horizontalSliverPadding(
+            bottom: _kFabScrollClearance,
+            sliver: SliverToBoxAdapter(
+              child: EmptyStateWidget.compact(
+                title: _hasActiveFilters
+                    ? 'No items match filters'
+                    : 'No items added yet',
+              ),
+            ),
+          )
+        else
+          _horizontalSliverPadding(
+            bottom: _kFabScrollClearance,
+            sliver: SliverList.builder(
+              itemCount: filteredItems.length,
+              itemBuilder: (context, index) {
+                final item = filteredItems[index];
+                return SlidableRenewalCard(
+                  key: ValueKey('all-${item.id}'),
+                  item: item,
+                  onTap: () => _openItemDetail(item),
+                  onItemChanged: _loadItems,
+                );
+              },
+            ),
+          ),
+      ],
+    ];
   }
 }
 
@@ -841,7 +985,11 @@ class _SortChipBar extends StatelessWidget {
       child: Align(
         alignment: Alignment.centerLeft,
         child: InputChip(
-          label: Text('Sort: $sortLabel'),
+          label: Text(
+            'Sort: $sortLabel',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           onDeleted: onClear,
         ),
       ),
@@ -881,7 +1029,11 @@ class _ActiveFiltersBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
               child: InputChip(
-                label: Text('Category: $selectedCategory'),
+                label: Text(
+                  'Category: $selectedCategory',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onPressed: onCategoryTap,
                 onDeleted: onClearCategory,
               ),
@@ -890,13 +1042,21 @@ class _ActiveFiltersBar extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
               child: InputChip(
-                label: Text('Status: $statusLabel'),
+                label: Text(
+                  'Status: $statusLabel',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onDeleted: onClearStatus,
               ),
             ),
           if (selectedOwner != null)
             InputChip(
-              label: Text('Owner: $selectedOwner'),
+              label: Text(
+                'Owner: $selectedOwner',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               onDeleted: onClearOwner,
             ),
         ],

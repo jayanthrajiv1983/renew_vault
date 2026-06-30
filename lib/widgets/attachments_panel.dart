@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -13,8 +11,10 @@ import '../models/renewal_item.dart';
 import '../services/attachment_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/metadata_utils.dart';
+import 'cached_attachment_thumbnail.dart';
 import 'item_detail_section.dart';
 
 enum AttachmentsPanelMode { form, detail }
@@ -118,12 +118,9 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment per item.',
-        ),
-      ),
+    AppSnackBar.show(
+      context,
+      'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment per item.',
     );
   }
 
@@ -247,9 +244,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
         operation: 'Add Failed',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not add attachment: $error')),
-        );
+        AppSnackBar.show(context, 'Could not add attachment: $error');
       }
     } finally {
       if (mounted) {
@@ -281,14 +276,11 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.message.isNotEmpty
-              ? result.message
-              : 'Could not open attachment.',
-        ),
-      ),
+    AppSnackBar.show(
+      context,
+      result.message.isNotEmpty
+          ? result.message
+          : 'Could not open attachment.',
     );
   }
 
@@ -353,14 +345,11 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
         operation: 'Delete Failed',
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isDetail
-                  ? 'Could not delete attachment: $error'
-                  : 'Could not remove attachment: $error',
-            ),
-          ),
+        AppSnackBar.show(
+          context,
+          isDetail
+              ? 'Could not delete attachment: $error'
+              : 'Could not remove attachment: $error',
         );
       }
     } finally {
@@ -531,7 +520,7 @@ class _AttachmentTile extends StatelessWidget {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: _isImage
-          ? _AttachmentThumbnail(attachment: attachment)
+          ? CachedAttachmentThumbnail(attachment: attachment)
           : CircleAvatar(
               backgroundColor: colorScheme.secondaryContainer,
               child: Icon(
@@ -566,49 +555,6 @@ class _AttachmentTile extends StatelessWidget {
         ],
       ),
       onTap: onOpen,
-    );
-  }
-}
-
-class _AttachmentThumbnail extends StatelessWidget {
-  const _AttachmentThumbnail({required this.attachment});
-
-  final AttachmentMetadata attachment;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return FutureBuilder<File>(
-      future: AttachmentService.instance.resolveAttachmentFile(attachment),
-      builder: (context, snapshot) {
-        final file = snapshot.data;
-        if (file != null && file.existsSync()) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-            child: Image.file(
-              file,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return _fallbackIcon(colorScheme);
-              },
-            ),
-          );
-        }
-        return _fallbackIcon(colorScheme);
-      },
-    );
-  }
-
-  Widget _fallbackIcon(ColorScheme colorScheme) {
-    return CircleAvatar(
-      backgroundColor: colorScheme.secondaryContainer,
-      child: Icon(
-        Icons.image,
-        color: colorScheme.onSecondaryContainer,
-      ),
     );
   }
 }

@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../../services/diagnostics_report_service.dart';
+import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../utils/app_snackbar.dart';
 import '../../../utils/form_padding.dart';
 import '../../../utils/format_helpers.dart';
 
@@ -92,11 +94,7 @@ class _AppDiagnosticsScreenState extends State<AppDiagnosticsScreen>
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Diagnostics copied to clipboard.'),
-      ),
-    );
+    AppSnackBar.show(context, 'Diagnostics copied to clipboard.');
   }
 
   Future<void> _shareDiagnostics() async {
@@ -118,12 +116,24 @@ class _AppDiagnosticsScreenState extends State<AppDiagnosticsScreen>
     final theme = Theme.of(context);
     return ListTile(
       title: Text(title),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      trailing: value != null
+      subtitle: subtitle != null
           ? Text(
-              value,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              subtitle,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            )
+          : null,
+      trailing: value != null
+          ? ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 160),
+              child: Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.end,
               ),
             )
           : null,
@@ -188,14 +198,16 @@ class _AppDiagnosticsScreenState extends State<AppDiagnosticsScreen>
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
-                ? Center(
-                    child: Padding(
-                      padding: listScrollPadding(context),
-                      child: Text(
-                        'Could not load diagnostics.\n$_error',
-                        textAlign: TextAlign.center,
-                      ),
+                ? EmptyStateWidget(
+                    icon: EmptyStateWidget.mutedIcon(
+                      context,
+                      Icons.error_outline,
                     ),
+                    title: 'Could not load diagnostics',
+                    subtitle: _error,
+                    buttonText: 'Try again',
+                    onButtonPressed: _loadDiagnostics,
+                    semanticLabel: 'Could not load diagnostics. Try again.',
                   )
                 : _buildContent(),
       ),

@@ -13,7 +13,6 @@ class AppLockController extends ChangeNotifier {
 
   void onAppLockPreferenceChanged(bool enabled) {
     _preferenceEnabled = enabled;
-    debugPrint('App Lock Enabled: $enabled (preference changed)');
     notifyListeners();
   }
 }

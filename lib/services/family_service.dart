@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../models/family_member.dart';
@@ -19,18 +18,9 @@ class FamilyService {
       return;
     }
 
-    debugPrint('FamilyService: initializing');
-    try {
-      _box = await HiveEncryptionService.instance.openBox(_boxName);
-      debugPrint('FamilyService: box opened');
-      _initialized = true;
-      await ensureDefaultSelf();
-      debugPrint('FamilyService: init complete');
-    } catch (error, stackTrace) {
-      debugPrint('FamilyService: init failed: $error');
-      debugPrint('$stackTrace');
-      rethrow;
-    }
+    _box = await HiveEncryptionService.instance.openBox(_boxName);
+    _initialized = true;
+    await ensureDefaultSelf();
   }
 
   List<FamilyMember> getAll() {

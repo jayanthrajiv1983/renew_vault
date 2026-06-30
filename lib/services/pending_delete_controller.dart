@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/services/logging_service.dart';
 import '../models/renewal_item.dart';
+import '../theme/app_spacing.dart';
 import '../utils/haptic_feedback.dart';
 import 'storage_service.dart';
 
@@ -98,6 +99,10 @@ class PendingDeleteController extends ChangeNotifier {
       SnackBar(
         content: const Text('Item deleted'),
         duration: _snackBarDuration,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.cardBorderRadius,
+        ),
         action: SnackBarAction(
           label: 'UNDO',
           onPressed: () => undo(id),
@@ -136,7 +141,7 @@ class PendingDeleteController extends ChangeNotifier {
     pending.timer.cancel();
     _snackBarQueue.remove(id);
     await StorageService.instance.permanentlyDeleteStashedItem(pending.item);
-    LoggingService.instance.logInfo('RENEWALS', 'Renewal deleted');
+    LoggingService.instance.logInfo('RENEWALS', 'Item deleted');
     notifyListeners();
   }
 }

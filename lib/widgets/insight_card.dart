@@ -13,7 +13,7 @@ class InsightCard extends StatelessWidget {
 
   static const double _radius = 20;
   static const double _elevation = 2;
-  static const EdgeInsets _padding = EdgeInsets.all(20);
+  static const EdgeInsets _padding = AppSpacing.cardInsets;
 
   Color _accentColor(ColorScheme colorScheme) {
     switch (insight.priority) {

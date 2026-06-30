@@ -26,6 +26,8 @@ class _SplashScreenState extends State<SplashScreen>
   static const _animationDuration = Duration(milliseconds: 900);
   static const _navigateDelay = Duration(milliseconds: 1800);
 
+  final _splashStopwatch = Stopwatch()..start();
+
   late final AnimationController _controller;
   late final Animation<double> _logoFade;
   late final Animation<double> _logoScale;
@@ -85,10 +87,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _startup() async {
     if (SettingsService.instance.getAppLockEnabled()) {
-      debugPrint('Splash: app lock enabled, requesting authentication');
       final authenticated = await _authenticateForStartup();
       if (!authenticated || !mounted) {
-        debugPrint('Splash: authentication failed, staying on splash');
         return;
       }
     }
@@ -99,6 +99,10 @@ class _SplashScreenState extends State<SplashScreen>
     }
 
     LoggingService.instance.logInfo('APP', 'Application startup complete');
+    LoggingService.instance.logPerf(
+      'splash_to_home',
+      _splashStopwatch.elapsedMilliseconds,
+    );
     final nextScreen = OnboardingService.instance.isCompleted
         ? const HomeScreen()
         : const OnboardingScreen();

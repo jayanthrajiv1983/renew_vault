@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../constants/attachment_limits.dart';
 import '../models/attachment_metadata.dart';
 import '../models/renewal_item.dart';
+import 'attachment_encryption_service.dart';
 
 class AttachmentLimitReachedException implements Exception {
   AttachmentLimitReachedException(this.maxAttachments);
@@ -110,9 +111,29 @@ class AttachmentService {
     return attachmentsDir;
   }
 
-  Future<File> resolveAttachmentFile(AttachmentMetadata attachment) async {
+  Future<File> resolveStoredAttachmentFile(AttachmentMetadata attachment) async {
     final appDir = await getApplicationDocumentsDirectory();
     return File(p.join(appDir.path, attachment.localPath));
+  }
+
+  /// Returns a decrypted readable file for display, open, or copy operations.
+  Future<File> resolveAttachmentFile(AttachmentMetadata attachment) async {
+    final storedFile = await resolveStoredAttachmentFile(attachment);
+    return AttachmentEncryptionService.instance.decryptToReadableFile(
+      storedFile: storedFile,
+      cacheKey: attachment.id,
+    );
+  }
+
+  /// Raw on-disk bytes (encrypted when migration is complete).
+  Future<List<int>> readStoredAttachmentBytes(
+    AttachmentMetadata attachment,
+  ) async {
+    final file = await resolveStoredAttachmentFile(attachment);
+    if (!await file.exists()) {
+      return const [];
+    }
+    return file.readAsBytes();
   }
 
   String _relativePath(String renewalItemId, String attachmentId, String ext) {
@@ -144,6 +165,9 @@ class AttachmentService {
     final destinationFile = File(p.join(appDir.path, relativePath));
     await destinationFile.parent.create(recursive: true);
     await sourceFile.copy(destinationFile.path);
+    await AttachmentEncryptionService.instance.encryptFileInPlace(
+      destinationFile,
+    );
 
     final metadata = AttachmentMetadata(
       id: attachmentId,

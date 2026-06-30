@@ -112,7 +112,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(item.title),
+        title: Text(
+          item.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           TextButton(
             onPressed: () => _openEditScreen(context),
@@ -284,7 +288,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           if (item.notes.isNotEmpty)
             ItemDetailSection(
               title: 'Notes',
-              child: Text(item.notes),
+              child: Text(
+                item.notes,
+                maxLines: 20,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
               ],
             ),
@@ -481,6 +489,8 @@ class _DetailInfoRow extends StatelessWidget {
                         color: valueColor ?? colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
               ],
             ),
@@ -552,6 +562,8 @@ class _OwnerInfoValue extends StatelessWidget {
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w600,
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if (showRelationship)
           Padding(

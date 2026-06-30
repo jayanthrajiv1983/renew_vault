@@ -3,10 +3,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../models/backup_history_entry.dart';
+import '../core/services/logging_service.dart';
 import '../services/backup_history_service.dart';
 import '../services/backup_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/format_helpers.dart';
 
@@ -30,7 +32,14 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
+    final stopwatch = Stopwatch()..start();
     final entries = await _historyService.getBackupHistory();
+    stopwatch.stop();
+    LoggingService.instance.logPerf(
+      'backup_history_load',
+      stopwatch.elapsedMilliseconds,
+      metadata: {'entries': entries.length},
+    );
     if (!mounted) {
       return;
     }
@@ -58,9 +67,7 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
       final message = entry.isCloud
           ? 'Cloud backups must be downloaded from ${entry.displayDestination} to share'
           : 'Backup file no longer available on this device';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppSnackBar.show(context, message);
       return;
     }
 
@@ -106,9 +113,7 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
     final snackMessage = entry.isLocal
         ? 'Backup removed from history and device'
         : 'Backup removed from history (${entry.displayDestination} file unchanged)';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(snackMessage)),
-    );
+    AppSnackBar.show(context, snackMessage);
   }
 
   List<_TimelineItem> _buildTimelineItems() {

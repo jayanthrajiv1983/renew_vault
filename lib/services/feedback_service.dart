@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../utils/app_snackbar.dart';
 import 'app_info_service.dart';
 
 enum FeedbackType {
@@ -61,23 +62,17 @@ Timestamp: ${DateTime.now().toIso8601String()}
     final body = await buildEmailBody(darkModeEnabled: darkModeEnabled);
     final emailUri = buildMailtoUri(subject: type.subject, body: body);
 
-    debugPrint('Launching email URI: $emailUri');
-
     try {
       final launched = await launchUrl(
         emailUri,
         mode: LaunchMode.externalApplication,
       );
       if (!launched) {
-        debugPrint('launchUrl returned false for email URI: $emailUri');
         await _handleEmailLaunchFailure(context);
         return false;
       }
       return true;
-    } catch (e, stackTrace) {
-      debugPrint('Failed to launch email URI: $emailUri');
-      debugPrint('Error: $e');
-      debugPrint('Stack trace: $stackTrace');
+    } catch (_) {
       await _handleEmailLaunchFailure(context);
       return false;
     }
@@ -94,13 +89,10 @@ Timestamp: ${DateTime.now().toIso8601String()}
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'No email application is installed on this device.\n'
-          'Email address copied to clipboard',
-        ),
-      ),
+    AppSnackBar.show(
+      context,
+      'No email application is installed on this device.\n'
+      'Email address copied to clipboard',
     );
   }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../core/services/logging_service.dart';
@@ -28,12 +29,14 @@ import '../services/settings_service.dart';
 
 import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/backup_flow.dart';
 import '../widgets/restore_progress_dialog.dart';
 import '../widgets/renew_vault_logo.dart';
 import '../widgets/reminder_interval_picker.dart';
 import '../widgets/section_header.dart';
+import '../widgets/security_status_tiles.dart';
 
 import '../features/settings/screens/app_diagnostics_screen.dart';
 import '../features/settings/screens/beta_tester_tools_screen.dart';
@@ -218,10 +221,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Backup ${actionLabel.toLowerCase()}d successfully'),
-        ),
+      AppSnackBar.show(
+        context,
+        'Backup ${actionLabel.toLowerCase()}d successfully',
       );
       Navigator.of(context).pop(true);
     } on BackupValidationException catch (error, stack) {
@@ -331,12 +333,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final authenticated = await AppLockService.instance.authenticate();
       if (!authenticated) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Authentication failed. App lock was not enabled.',
-              ),
-            ),
+          AppSnackBar.show(
+            context,
+            'Authentication failed. App lock was not enabled.',
           );
         }
         return;
@@ -359,14 +358,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          authenticated
-              ? 'Authentication successful'
-              : 'Authentication failed',
-        ),
-      ),
+    AppSnackBar.show(
+      context,
+      authenticated
+          ? 'Authentication successful'
+          : 'Authentication failed',
     );
   }
 
@@ -464,11 +460,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text(fallbackMessage)),
-
-      );
+      AppSnackBar.show(context, fallbackMessage);
 
       return;
 
@@ -486,11 +478,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-
-        SnackBar(content: Text('Could not open $url')),
-
-      );
+      AppSnackBar.show(context, 'Could not open $url');
 
     }
 
@@ -936,6 +924,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               children: [
 
+                SecurityStatusTiles(appLockEnabled: _enableAppLock),
+
+              ],
+
+            ),
+
+          ),
+
+          AppSpacing.gapSection,
+
+          Card(
+
+            child: Column(
+
+              children: [
+
                 SwitchListTile(
 
                   secondary: Icon(
@@ -1313,38 +1317,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _openAppDiagnosticsScreen,
                 ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: theme.colorScheme.secondaryContainer,
-                    child: Icon(
-                      Icons.article_outlined,
-                      color: theme.colorScheme.onSecondaryContainer,
+                if (!kReleaseMode) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.secondaryContainer,
+                      child: Icon(
+                        Icons.article_outlined,
+                        color: theme.colorScheme.onSecondaryContainer,
+                      ),
                     ),
-                  ),
-                  title: const Text('Debug Logs'),
-                  subtitle: const Text(
-                    'View and export application event logs',
-                  ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _openDebugLogsScreen,
-                ),
-                const Divider(height: 1),
-                ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: theme.colorScheme.tertiaryContainer,
-                    child: Icon(
-                      Icons.science_rounded,
-                      color: theme.colorScheme.onTertiaryContainer,
+                    title: const Text('Debug Logs'),
+                    subtitle: const Text(
+                      'View and export application event logs',
                     ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openDebugLogsScreen,
                   ),
-                  title: const Text('Beta Tester Tools'),
-                  subtitle: const Text(
-                    'Run tests for notifications, OCR, backup, and more',
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: theme.colorScheme.tertiaryContainer,
+                      child: Icon(
+                        Icons.science_rounded,
+                        color: theme.colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                    title: const Text('Beta Tester Tools'),
+                    subtitle: const Text(
+                      'Run tests for notifications, OCR, backup, and more',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _openBetaTesterToolsScreen,
                   ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _openBetaTesterToolsScreen,
-                ),
+                ],
               ],
             ),
           ),

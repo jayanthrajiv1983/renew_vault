@@ -66,45 +66,56 @@ class _OnboardingPageViewItemState extends State<OnboardingPageViewItem>
       opacity: _fade,
       child: SlideTransition(
         position: _slide,
-        child: Padding(
+        child: SingleChildScrollView(
           padding: AppSpacing.screenInsets,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              OnboardingIcon(
-                style: widget.content.iconStyle,
-                colorScheme: colorScheme,
-              ),
-              const SizedBox(height: AppSpacing.screenPadding + 8),
-              Text(
-                widget.content.title,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.sizeOf(context).height * 0.55,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                OnboardingIcon(
+                  style: widget.content.iconStyle,
+                  colorScheme: colorScheme,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              if (widget.content.subtitle != null) ...[
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                const SizedBox(height: AppSpacing.screenPadding + 8),
                 Text(
-                  widget.content.subtitle!,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                  widget.content.title,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.2,
                   ),
                   textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (widget.content.subtitle != null) ...[
+                  const SizedBox(height: AppSpacing.fieldLabelGap),
+                  Text(
+                    widget.content.subtitle!,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.sectionSpacing),
+                Text(
+                  widget.content.description,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 6,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const SizedBox(height: AppSpacing.sectionSpacing),
-              Text(
-                widget.content.description,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
+            ),
           ),
         ),
       ),

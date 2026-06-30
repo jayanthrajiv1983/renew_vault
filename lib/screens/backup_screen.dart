@@ -5,6 +5,7 @@ import '../services/google_drive_backup_service.dart';
 import '../services/settings_service.dart';
 import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/backup_flow.dart';
 import '../utils/format_helpers.dart';
 import '../utils/form_padding.dart';
@@ -75,9 +76,7 @@ class _BackupScreenState extends State<BackupScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      AppSnackBar.show(context, error.message);
     } finally {
       if (mounted) {
         setState(() => _isSigningIn = false);
@@ -132,9 +131,7 @@ class _BackupScreenState extends State<BackupScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
+      AppSnackBar.show(context, error.message);
     } finally {
       if (mounted) {
         setState(() => _isCloudUploading = false);
@@ -248,6 +245,8 @@ class _BackupScreenState extends State<BackupScreen> {
                       googleEmail == null
                           ? 'Sign in with Google to upload encrypted backups to your Drive.'
                           : 'Signed in as $googleEmail',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   if (lastCloudBackupLabel != null)

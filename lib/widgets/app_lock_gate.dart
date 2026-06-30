@@ -45,10 +45,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _lockController.addListener(_onAppLockPreferenceChanged);
-    debugPrint(
-      'AppLockGate init: lockActive=${widget.lockActive}, '
-      'appLockEnabled=${_lockService.isAppLockEnabled()}',
-    );
     // Cold-start auth is handled by SplashScreen; gate locks on resume/settings.
     _isUnlocked = true;
     _loadDeviceCapabilities();
@@ -57,9 +53,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(covariant AppLockGate oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!oldWidget.lockActive && widget.lockActive) {
-      debugPrint('AppLockGate: lockActive became true');
-    }
   }
 
   @override
@@ -72,10 +65,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
   Future<void> _loadDeviceCapabilities() async {
     _deviceSupported = await _lockService.isDeviceSupported();
     _hasBiometrics = await _lockService.canCheckBiometrics();
-    final availableBiometrics = await _lockService.getAvailableBiometrics();
-    debugPrint('AppLockGate device supported: $_deviceSupported');
-    debugPrint('AppLockGate can check biometrics: $_hasBiometrics');
-    debugPrint('AppLockGate available biometrics: $availableBiometrics');
     if (mounted) {
       setState(() {});
     }
@@ -83,7 +72,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    debugPrint('AppLockGate lifecycle: $state');
 
     if (_isPromptingAuth || _lockService.authInProgress) {
       return;
@@ -109,7 +97,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     }
 
     if (_lockService.isLockRequiredOnResume()) {
-      debugPrint('AppLockGate: resume lock required (>30s background)');
       _lockService.markLocked();
       if (mounted) {
         setState(() => _isUnlocked = false);
@@ -126,15 +113,9 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
         _isUnlocked ||
         _isPromptingAuth ||
         _lockService.authInProgress) {
-      debugPrint(
-        'AppLockGate: prompt skipped '
-        '(mounted=$mounted, enforce=$_shouldEnforceLock, '
-        'unlocked=$_isUnlocked, prompting=$_isPromptingAuth)',
-      );
       return;
     }
 
-    debugPrint('AppLockGate: prompting authentication');
     setState(() => _isPromptingAuth = true);
 
     final authenticated = await _lockService.authenticate();
@@ -150,7 +131,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
         _lockService.clearBackgroundTime();
       } else {
         _isUnlocked = false;
-        debugPrint('AppLockGate: authentication failed, overlay remains');
       }
     });
   }
@@ -164,8 +144,6 @@ class _AppLockGateState extends State<AppLockGate> with WidgetsBindingObserver {
     if (enabled == null) {
       return;
     }
-
-    debugPrint('AppLockGate: preference changed enabled=$enabled');
 
     if (!enabled) {
       setState(() => _isUnlocked = true);

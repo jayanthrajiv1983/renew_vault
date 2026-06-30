@@ -18,6 +18,7 @@ import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../widgets/attachment_form_section.dart';
 import '../widgets/category_form_fields.dart';
 import '../widgets/forms/category_form_controller.dart';
@@ -157,9 +158,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             ? 'Scan applied. Review fields and save when ready.'
             : null);
     if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      AppSnackBar.show(context, message);
     }
   }
 
@@ -298,9 +297,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not attach file: $e')),
-        );
+        AppSnackBar.show(context, 'Could not attach file: $e');
       }
     }
   }
@@ -312,9 +309,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
 
     final dateError = _categoryFormController.validatePrimaryDate(_category);
     if (dateError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(dateError)),
-      );
+      AppSnackBar.show(context, dateError);
       return;
     }
 
@@ -349,7 +344,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     await StorageService.instance.save(item);
     LoggingService.instance.logInfo(
       'RENEWALS',
-      _isEditMode ? 'Renewal updated' : 'Renewal created',
+      _isEditMode ? 'Item updated' : 'Item created',
     );
     _saved = true;
 

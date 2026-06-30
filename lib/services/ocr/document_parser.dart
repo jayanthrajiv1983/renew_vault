@@ -259,7 +259,6 @@ abstract class DocumentParser {
       excludeFormatted: _resolveIssueDateFormatted(normalized, categorizedDates),
     );
 
-    print('Selected expiry date: ${selected?.extractedValue ?? '(none)'}');
     return selected;
   }
 
@@ -490,14 +489,7 @@ abstract class DocumentParser {
   }
 
   static void _logCategorizedDates(List<CategorizedDate> categorizedDates) {
-    if (categorizedDates.isEmpty) {
-      print('Categorized dates: (none)');
-      return;
-    }
-    final entries = categorizedDates
-        .map((match) => '${match.formatted} -> ${match.type.label}')
-        .join(', ');
-    print('Categorized dates: $entries');
+    // Intentionally no-op: date values must not be logged.
   }
 
   int scoreField({

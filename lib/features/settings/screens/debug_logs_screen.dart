@@ -7,6 +7,7 @@ import '../../../models/app_log.dart';
 import '../../../shared/widgets/empty_state_widget.dart';
 import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
+import '../../../utils/app_snackbar.dart';
 import '../../../utils/form_padding.dart';
 
 class DebugLogsScreen extends StatefulWidget {
@@ -39,9 +40,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('No logs to export.')),
-    );
+    AppSnackBar.show(context, 'No logs to export.');
   }
 
   Future<void> _exportLogs() async {
@@ -58,9 +57,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debug logs exported successfully.')),
-    );
+    AppSnackBar.show(context, 'Debug logs exported successfully.');
   }
 
   Future<void> _shareLogs() async {
@@ -87,9 +84,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debug logs shared successfully.')),
-    );
+    AppSnackBar.show(context, 'Debug logs shared successfully.');
   }
 
   Future<void> _confirmClearLogs() async {
@@ -126,9 +121,7 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Debug logs cleared successfully.')),
-    );
+    AppSnackBar.show(context, 'Debug logs cleared successfully.');
   }
 
   ({Color background, Color foreground}) _levelColors(
@@ -212,6 +205,8 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
             Text(
               log.message,
               style: theme.textTheme.bodyMedium,
+              maxLines: 8,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

@@ -133,6 +133,12 @@ abstract final class AppTheme {
           ),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppSpacing.cardBorderRadius,
+        ),
+      ),
     );
   }
 }

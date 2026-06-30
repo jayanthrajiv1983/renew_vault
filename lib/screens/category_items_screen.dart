@@ -75,7 +75,11 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(widget.category),
+        title: Text(
+          widget.category,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       body: SafeArea(
         child: _items.isEmpty

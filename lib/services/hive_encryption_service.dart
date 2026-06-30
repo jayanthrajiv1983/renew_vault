@@ -19,6 +19,7 @@ class HiveEncryptionService {
     'family_members',
     'settings',
     'ocr_corrections',
+    'app_logs',
   ];
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(

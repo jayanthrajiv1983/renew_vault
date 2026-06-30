@@ -2,9 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../../models/app_log.dart';
+import '../../services/hive_encryption_service.dart';
 import 'crashlytics_service.dart';
 
-/// Centralized application logging backed by an unencrypted Hive box.
+/// Centralized application logging backed by an encrypted Hive box.
 ///
 /// **Security:** Never log sensitive data — document numbers, passport or
 /// policy numbers, OCR text, attachment paths, or personal information.
@@ -24,6 +25,9 @@ class LoggingService {
   static const levelError = 'ERROR';
   static const levelDebug = 'DEBUG';
 
+  /// Performance metrics — durations and counts only, no PII.
+  static const categoryPerf = 'PERF';
+
   Box<AppLog>? _box;
   int _nextKey = 0;
   bool _initialized = false;
@@ -37,7 +41,7 @@ class LoggingService {
       Hive.registerAdapter(AppLogAdapter());
     }
 
-    _box = await Hive.openBox<AppLog>(_boxName);
+    _box = await HiveEncryptionService.instance.openBox<AppLog>(_boxName);
     _restoreNextKey();
     _initialized = true;
   }
@@ -68,8 +72,27 @@ class LoggingService {
     }
   }
 
-  void logDebug(String category, String message) =>
-      _log(levelDebug, category, message);
+  void logDebug(String category, String message) {
+    if (kReleaseMode) {
+      return;
+    }
+    _log(levelDebug, category, message);
+  }
+
+  /// Logs a timing metric with optional numeric metadata (no PII).
+  void logPerf(
+    String operation,
+    int durationMs, {
+    Map<String, Object>? metadata,
+  }) {
+    final parts = <String>['duration=${durationMs}ms'];
+    if (metadata != null) {
+      for (final entry in metadata.entries) {
+        parts.add('${entry.key}=${entry.value}');
+      }
+    }
+    logInfo(categoryPerf, '$operation ${parts.join(' ')}');
+  }
 
   /// Returns persisted logs ordered **newest first** (descending key order).
   List<AppLog> getLogs() {

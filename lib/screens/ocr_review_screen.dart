@@ -7,6 +7,7 @@ import '../services/ocr/ocr_extraction_result.dart';
 import '../services/ocr/ocr_form_mapper.dart';
 import '../services/ocr_correction_service.dart';
 import '../theme/app_spacing.dart';
+import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../widgets/forms/category_form_controller.dart';
 import '../widgets/forms/date_form_field.dart';
@@ -171,9 +172,7 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
 
   Future<void> _acceptAll() async {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a title')),
-      );
+      AppSnackBar.show(context, 'Please enter a title');
       return;
     }
 
@@ -433,6 +432,8 @@ class _DocumentDetectionCard extends StatelessWidget {
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (confidencePercent != null) ...[
                     const SizedBox(height: AppSpacing.cardSpacing),

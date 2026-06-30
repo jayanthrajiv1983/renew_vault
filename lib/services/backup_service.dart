@@ -16,6 +16,7 @@ import '../models/family_member.dart';
 import '../models/ocr_correction.dart';
 import '../models/renewal_item.dart';
 import 'attachment_service.dart';
+import 'attachment_encryption_service.dart';
 import 'category_migration_service.dart';
 import 'family_service.dart';
 import 'hive_encryption_service.dart';
@@ -106,6 +107,7 @@ class BackupService {
   Future<File> exportEncryptedBackup({
     BackupProgressCallback? onProgress,
   }) async {
+    final stopwatch = Stopwatch()..start();
     LoggingService.instance.logInfo('BACKUP', 'Backup started');
     onProgress?.call(BackupProgressStep.creatingBackup, 0.1);
 
@@ -123,7 +125,20 @@ class BackupService {
     await file.writeAsBytes(encryptedBytes, flush: true);
 
     onProgress?.call(BackupProgressStep.preparingFile, 1.0);
-    LoggingService.instance.logInfo('BACKUP', 'Backup completed');
+    stopwatch.stop();
+    final renewals = StorageService.instance.getAll();
+    var attachmentCount = 0;
+    for (final renewal in renewals) {
+      attachmentCount += renewal.attachments.length;
+    }
+    LoggingService.instance.logPerf(
+      'backup_export',
+      stopwatch.elapsedMilliseconds,
+      metadata: {
+        'attachments': attachmentCount,
+        'bytes': encryptedBytes.length,
+      },
+    );
     return file;
   }
 
@@ -185,6 +200,7 @@ class BackupService {
     BackupPreview preview, {
     RestoreProgressCallback? onProgress,
   }) async {
+    final stopwatch = Stopwatch()..start();
     LoggingService.instance.logInfo('BACKUP', 'Restore started');
     try {
       onProgress?.call(RestoreProgressStep.restoringData, 0.1);
@@ -202,8 +218,21 @@ class BackupService {
       await CategoryMigrationService.instance.runMigrationIfNeeded();
 
       onProgress?.call(RestoreProgressStep.restoringData, 1.0);
-      LoggingService.instance.logInfo('BACKUP', 'Restore completed');
+      stopwatch.stop();
+      LoggingService.instance.logPerf(
+        'backup_restore',
+        stopwatch.elapsedMilliseconds,
+        metadata: {
+          'items': (preview.data['renewals'] as List?)?.length ?? 0,
+          'hasAttachments': preview.archive != null,
+        },
+      );
     } on Exception catch (error, stack) {
+      stopwatch.stop();
+      LoggingService.instance.logPerf(
+        'backup_restore_failed',
+        stopwatch.elapsedMilliseconds,
+      );
       LoggingService.instance.logError(
         CrashlyticsService.featureRestore,
         'Restore failed',
@@ -423,9 +452,9 @@ class BackupService {
 
     for (final renewal in renewals) {
       for (final attachment in renewal.attachments) {
-        final file = await attachmentService.resolveAttachmentFile(attachment);
-        if (await file.exists()) {
-          final bytes = await file.readAsBytes();
+        final bytes =
+            await attachmentService.readStoredAttachmentBytes(attachment);
+        if (bytes.isNotEmpty) {
           final zipPath = attachment.localPath.replaceAll('\\', '/');
           archive.addFile(ArchiveFile(zipPath, bytes.length, bytes));
         }
@@ -664,6 +693,9 @@ class BackupService {
       final destination = File(p.join(appDir.path, normalizedName));
       await destination.parent.create(recursive: true);
       await destination.writeAsBytes(file.content as List<int>);
+      await AttachmentEncryptionService.instance.encryptFileInPlace(
+        destination,
+      );
     }
   }
 

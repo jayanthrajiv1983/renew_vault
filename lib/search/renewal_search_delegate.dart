@@ -112,20 +112,21 @@ class RenewalSearchDelegate extends SearchDelegate<void> {
         }
 
         return SlidableAutoCloseBehavior(
-          child: ListView(
+          child: ListView.builder(
             padding: listScrollPadding(context, top: AppSpacing.fieldLabelGap),
-            children: refreshedResults
-                .map(
-                  (item) => SlidableRenewalCard(
-                    item: item,
-                    onTap: () => _openItemDetail(context, item),
-                    onItemChanged: () {
-                      onItemChanged?.call();
-                      showSuggestions(context);
-                    },
-                  ),
-                )
-                .toList(),
+            itemCount: refreshedResults.length,
+            itemBuilder: (context, index) {
+              final item = refreshedResults[index];
+              return SlidableRenewalCard(
+                key: ValueKey(item.id),
+                item: item,
+                onTap: () => _openItemDetail(context, item),
+                onItemChanged: () {
+                  onItemChanged?.call();
+                  showSuggestions(context);
+                },
+              );
+            },
           ),
         );
       },
