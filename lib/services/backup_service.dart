@@ -48,6 +48,7 @@ enum BackupProgressStep {
 enum RestoreProgressStep {
   readingBackup('Reading Backup...'),
   decrypting('Decrypting...'),
+  verifyingBackup('Verifying Backup...'),
   restoringData('Restoring Data...');
 
   const RestoreProgressStep(this.label);
@@ -462,6 +463,21 @@ class BackupService {
     }
     return bytes;
   }
+
+  void checkRvbackupHeader(List<int> rawBytes) =>
+      _validateRvbackupHeader(rawBytes);
+
+  Future<List<int>> decryptRvbackup(List<int> rawBytes) =>
+      _decryptRvbackupBytes(rawBytes);
+
+  Map<String, dynamic> parseBackupJsonFromArchive(Archive archive) =>
+      _extractBackupJsonFromArchive(archive);
+
+  BackupPreview buildPreviewFromData(
+    Map<String, dynamic> data, {
+    Archive? archive,
+  }) =>
+      _buildPreviewFromData(data, archive: archive);
 
   void _validateRvbackupHeader(List<int> rawBytes) {
     if (rawBytes.length < _magicBytes.length + 1 + 16) {

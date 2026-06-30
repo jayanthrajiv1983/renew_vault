@@ -16,3 +16,30 @@ String formatBackupDateTime(DateTime dateTime) {
   final minute = local.minute.toString().padLeft(2, '0');
   return '${local.year}-$month-$day $hour:$minute';
 }
+
+String formatBackupDateHeader(DateTime dateTime) {
+  final local = dateTime.toLocal();
+  const months = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
+  return '${months[local.month - 1]} ${local.day}, ${local.year}';
+}
+
+bool isSameBackupDay(DateTime a, DateTime b) {
+  final localA = a.toLocal();
+  final localB = b.toLocal();
+  return localA.year == localB.year &&
+      localA.month == localB.month &&
+      localA.day == localB.day;
+}

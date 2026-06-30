@@ -12,7 +12,16 @@
           "package_name": "com.example.homecare_vault"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "564382357375-noslpgk77qk21mving491g3ma6h24acg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.homecare_vault",
+            "certificate_hash": "3ef86ef18ac6c2f2e5d05a0386baf7b5b52680d7"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBtwCSjOM5j-FH440W_VWcKzi8fBP0rf80"

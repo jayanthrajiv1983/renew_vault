@@ -1,9 +1,54 @@
 import 'package:flutter/material.dart';
 
+import '../models/backup_integrity_result.dart';
 import '../models/backup_preview.dart';
 import '../services/backup_service.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
+
+/// Material 3 progress dialog while verifying backup integrity before restore.
+/// Returns a [BackupIntegrityResult] on completion.
+Future<BackupIntegrityResult?> showBackupVerificationProgressDialog(
+  BuildContext context,
+  Future<BackupIntegrityResult> Function(RestoreProgressCallback onProgress)
+      task,
+) async {
+  return showDialog<BackupIntegrityResult>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => _BackupVerificationProgressDialog(task: task),
+  );
+}
+
+/// Shows whether pre-restore integrity verification passed or failed.
+Future<void> showBackupVerificationResultDialog(
+  BuildContext context, {
+  required bool success,
+}) {
+  final theme = Theme.of(context);
+  return showDialog<void>(
+    context: context,
+    builder: (context) => AlertDialog(
+      insetPadding: dialogInsetPadding(context),
+      icon: Icon(
+        success ? Icons.verified_outlined : Icons.error_outline,
+        color: success ? theme.colorScheme.primary : theme.colorScheme.error,
+      ),
+      title: Text(success ? 'Backup Verified' : 'Backup Corrupted'),
+      content: Text(
+        success
+            ? 'Backup verified successfully'
+            : 'Backup appears corrupted',
+      ),
+      actions: [
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('OK'),
+        ),
+      ],
+    ),
+  );
+}
 
 /// Material 3 progress dialog while reading and decrypting a backup for preview.
 /// Returns a [BackupPreview] on success, or an [Exception] on failure.
@@ -69,6 +114,40 @@ Future<bool> showRestoreSummaryDialog(
   return result ?? false;
 }
 
+/// Warns that restoring will replace all current on-device data.
+Future<bool> showRestoreDataReplacementDialog(
+  BuildContext context, {
+  required String backupName,
+}) async {
+  final theme = Theme.of(context);
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      insetPadding: dialogInsetPadding(context),
+      icon: Icon(
+        Icons.warning_amber_rounded,
+        color: theme.colorScheme.error,
+      ),
+      title: const Text('Replace Current Data?'),
+      content: Text(
+        'Restoring "$backupName" will replace all renewal data on this device. '
+        'This action cannot be undone.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Continue'),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}
+
 /// Material 3 error dialog for invalid or corrupted backup files.
 Future<void> showRestoreErrorDialog(
   BuildContext context, {
@@ -93,6 +172,81 @@ Future<void> showRestoreErrorDialog(
       ],
     ),
   );
+}
+
+class _BackupVerificationProgressDialog extends StatefulWidget {
+  const _BackupVerificationProgressDialog({required this.task});
+
+  final Future<BackupIntegrityResult> Function(
+    RestoreProgressCallback onProgress,
+  ) task;
+
+  @override
+  State<_BackupVerificationProgressDialog> createState() =>
+      _BackupVerificationProgressDialogState();
+}
+
+class _BackupVerificationProgressDialogState
+    extends State<_BackupVerificationProgressDialog> {
+  RestoreProgressStep _step = RestoreProgressStep.verifyingBackup;
+  double _progress = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _runTask();
+  }
+
+  Future<void> _runTask() async {
+    try {
+      final result = await widget.task((step, progress) {
+        if (!mounted) {
+          return;
+        }
+        setState(() {
+          _step = step;
+          _progress = progress;
+        });
+      });
+
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(result);
+    } on Exception {
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(
+        BackupIntegrityResult.failure(BackupIntegrityCheck.fileReadable),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      insetPadding: dialogInsetPadding(context),
+      title: const Text('Verifying Backup'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            _step.label,
+            style: theme.textTheme.bodyLarge,
+          ),
+          const SizedBox(height: AppSpacing.cardSpacing),
+          LinearProgressIndicator(
+            value: _progress > 0 ? _progress : null,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _RestorePreviewProgressDialog extends StatefulWidget {

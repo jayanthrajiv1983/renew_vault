@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../core/services/logging_service.dart';
 import '../core/services/crashlytics_service.dart';
 import '../models/renewal_item.dart';
+import 'notification_navigation_service.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
 
@@ -38,7 +39,17 @@ class NotificationService {
           AndroidInitializationSettings('@mipmap/ic_launcher');
       const initSettings = InitializationSettings(android: androidSettings);
 
-      await _plugin.initialize(initSettings);
+      await _plugin.initialize(
+        initSettings,
+        onDidReceiveNotificationResponse: _onNotificationResponse,
+      );
+
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      final launchResponse = launchDetails?.notificationResponse;
+      if (launchDetails?.didNotificationLaunchApp == true &&
+          launchResponse != null) {
+        _onNotificationResponse(launchResponse);
+      }
 
       const channel = AndroidNotificationChannel(
         _channelId,
@@ -113,11 +124,16 @@ class NotificationService {
     await _plugin.show(_testNotificationId, title, body, details);
   }
 
+  void _onNotificationResponse(NotificationResponse response) {
+    NotificationNavigationService.instance.handlePayload(response.payload);
+  }
+
   Future<void> scheduleNotification({
     required int id,
     required String title,
     required String body,
     required tz.TZDateTime scheduledDate,
+    String? payload,
   }) async {
     try {
       const androidDetails = AndroidNotificationDetails(
@@ -133,6 +149,7 @@ class NotificationService {
         scheduledDate,
         details,
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        payload: payload,
       );
       LoggingService.instance.logInfo(
         'NOTIFICATIONS',
@@ -142,6 +159,47 @@ class NotificationService {
       LoggingService.instance.logError(
         CrashlyticsService.featureNotifications,
         'Notification scheduling failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Scheduling Failed',
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> scheduleRecurringNotification({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required DateTimeComponents matchComponents,
+    String? payload,
+  }) async {
+    try {
+      const androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+      );
+      const details = NotificationDetails(android: androidDetails);
+
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: matchComponents,
+        payload: payload,
+      );
+      LoggingService.instance.logInfo(
+        'NOTIFICATIONS',
+        'Recurring notification scheduled (id hash: $id)',
+      );
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureNotifications,
+        'Recurring notification scheduling failed',
         exception: error,
         stackTrace: stack,
         operation: 'Scheduling Failed',

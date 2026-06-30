@@ -6,6 +6,7 @@ import '../models/sort_option.dart';
 import '../services/category_migration_service.dart';
 import '../services/family_service.dart';
 import '../services/pending_delete_controller.dart';
+import '../services/notification_navigation_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
@@ -69,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _applySortFromSettings();
     _initializeData();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      NotificationNavigationService.instance.consumePendingNavigation(context);
       maybeShowCrashReportingConsentPrompt(context);
     });
   }

@@ -2,30 +2,32 @@ import 'package:flutter/material.dart';
 
 import '../core/services/logging_service.dart';
 import '../core/services/crashlytics_service.dart';
+import '../models/backup_frequency.dart';
 import '../models/backup_reminder_interval.dart';
 
 import 'package:url_launcher/url_launcher.dart';
 
 
 
-import '../models/backup_preview.dart';
 import '../providers/theme_provider.dart';
 
 import '../services/app_info_service.dart';
+import '../services/backup_integrity_service.dart';
 import '../services/backup_service.dart';
 
 import '../services/app_lock_service.dart';
 
 import '../services/feedback_service.dart';
 
+import '../services/automatic_backup_reminder_service.dart';
 import '../services/notification_service.dart';
 
 import '../services/settings_service.dart';
 
 import '../shared/widgets/success_overlay.dart';
 import '../theme/app_spacing.dart';
-import '../utils/backup_flow.dart';
 import '../utils/form_padding.dart';
+import '../utils/backup_flow.dart';
 import '../widgets/restore_progress_dialog.dart';
 import '../widgets/renew_vault_logo.dart';
 import '../widgets/reminder_interval_picker.dart';
@@ -34,7 +36,7 @@ import '../widgets/section_header.dart';
 import '../features/settings/screens/app_diagnostics_screen.dart';
 import '../features/settings/screens/beta_tester_tools_screen.dart';
 import '../features/settings/screens/debug_logs_screen.dart';
-import 'backup_history_screen.dart';
+import 'backup_screen.dart';
 import 'family_members_screen.dart';
 import 'notifications_screen.dart';
 import 'upcoming_renewals_screen.dart';
@@ -71,8 +73,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
 
-  bool _isBackingUp = false;
-
   bool _isRestoring = false;
 
   bool _isImporting = false;
@@ -95,9 +95,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late BackupReminderInterval _backupReminderInterval;
 
+  late BackupFrequency _backupFrequency;
 
 
-  bool get _isBusy => _isBackingUp || _isRestoring || _isImporting;
+
+  bool get _isBusy => _isRestoring || _isImporting;
 
 
 
@@ -131,20 +133,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     _backupReminderInterval = _settings.getBackupReminderInterval();
 
-  }
+    _backupFrequency = _settings.getBackupFrequency();
 
-
-
-  Future<void> _backupData() async {
-    setState(() => _isBackingUp = true);
-
-    try {
-      await runEncryptedBackupFlow(context);
-    } finally {
-      if (mounted) {
-        setState(() => _isBackingUp = false);
-      }
-    }
   }
 
 
@@ -171,39 +161,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return;
       }
 
-      final previewResult = await showRestorePreviewProgressDialog(
+      final preview = await verifyBackupBeforeRestore(
         context,
-        (onProgress) => BackupService.instance.previewPickedBackup(
+        (onProgress) => BackupIntegrityService.instance.verifyPickedBackup(
           pickResult,
           onProgress: onProgress,
         ),
       );
 
-      if (!mounted) {
+      if (!mounted || preview == null) {
         return;
       }
 
-      if (previewResult is BackupValidationException) {
-        await showRestoreErrorDialog(
-          context,
-          message: previewResult.message,
-        );
-        return;
-      }
-
-      if (previewResult is Exception) {
-        await showRestoreErrorDialog(
-          context,
-          message: previewResult.toString(),
-        );
-        return;
-      }
-
-      if (previewResult is! BackupPreview) {
-        return;
-      }
-
-      final confirmed = await showRestoreSummaryDialog(context, previewResult);
+      final confirmed = await showRestoreSummaryDialog(context, preview);
       if (confirmed != true || !mounted) {
         return;
       }
@@ -211,7 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final restored = await showRestoreApplyProgressDialog(
         context,
         (onProgress) => BackupService.instance.restoreFromPreview(
-          previewResult,
+          preview,
           onProgress: onProgress,
         ),
       );
@@ -297,6 +267,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     await NotificationService.instance.rescheduleAllReminders();
 
+    await AutomaticBackupReminderService.instance.reschedule();
+
     setState(() => _enableNotifications = value);
 
   }
@@ -376,6 +348,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _setBackupReminderInterval(BackupReminderInterval interval) async {
     await _settings.setBackupReminderInterval(interval);
     setState(() => _backupReminderInterval = interval);
+  }
+
+  Future<void> _setBackupFrequency(BackupFrequency frequency) async {
+    await _settings.setBackupFrequency(frequency);
+    await AutomaticBackupReminderService.instance.reschedule();
+    setState(() => _backupFrequency = frequency);
   }
 
   void _openBackupReminderSheet() {
@@ -479,10 +457,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Future<void> _openBackupHistoryScreen() async {
+  Future<void> _openBackupScreen() async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const BackupHistoryScreen(),
+        builder: (context) => const BackupScreen(),
       ),
     );
   }
@@ -976,6 +954,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
+          _sectionHeader('Automatic Backup'),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.cardPadding,
+                AppSpacing.cardPadding,
+                AppSpacing.cardPadding,
+                AppSpacing.fieldLabelGap,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Reminder Frequency',
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  const SizedBox(height: AppSpacing.fieldLabelGap),
+                  Text(
+                    'Schedule a notification reminding you to back up your vault',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.cardSpacing),
+                  DropdownButtonFormField<BackupFrequency>(
+                    value: _backupFrequency,
+                    decoration: const InputDecoration(
+                      labelText: 'Frequency',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: BackupFrequency.values
+                        .map(
+                          (frequency) => DropdownMenuItem(
+                            value: frequency,
+                            child: Text(frequency.label),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      _setBackupFrequency(value);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          AppSpacing.gapSection,
+
           _sectionHeader('Data Management'),
 
           Card(
@@ -1016,39 +1047,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   leading: CircleAvatar(
 
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-
-                    child: Icon(
-
-                      Icons.history,
-
-                      color: theme.colorScheme.onSurfaceVariant,
-
-                    ),
-
-                  ),
-
-                  title: const Text('Backup History'),
-
-                  subtitle: const Text('View past backups and share again'),
-
-                  trailing: const Icon(Icons.chevron_right),
-
-                  onTap: _openBackupHistoryScreen,
-
-                ),
-
-                const Divider(height: 1),
-
-                ListTile(
-
-                  leading: CircleAvatar(
-
                     backgroundColor: theme.colorScheme.primaryContainer,
 
                     child: Icon(
 
-                      Icons.save,
+                      Icons.backup_rounded,
 
                       color: theme.colorScheme.onPrimaryContainer,
 
@@ -1056,19 +1059,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   ),
 
-                  title: const Text('Backup Data'),
+                  title: const Text('Backup & Restore'),
 
                   subtitle: const Text(
-                    'Create encrypted backup and save or share via Drive, iCloud, email, etc.',
+                    'Backup data, Google Drive, and backup history',
                   ),
 
-                  trailing: _busyTrailing(_isBackingUp) ??
+                  trailing: const Icon(Icons.chevron_right),
 
-                      const Icon(Icons.chevron_right),
-
-                  enabled: !_isBusy,
-
-                  onTap: _isBusy ? null : _backupData,
+                  onTap: _openBackupScreen,
 
                 ),
 

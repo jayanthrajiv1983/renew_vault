@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,6 +24,8 @@ class BackupHistoryService {
     required String filePath,
     required int fileSizeBytes,
     String? destination,
+    BackupStorageType storageType = BackupStorageType.local,
+    String? cloudFileId,
   }) async {
     final entry = BackupHistoryEntry(
       id: _uuid.v4(),
@@ -30,6 +34,8 @@ class BackupHistoryService {
       filePath: filePath,
       fileSizeBytes: fileSizeBytes,
       destination: destination,
+      storageType: storageType,
+      cloudFileId: cloudFileId,
     );
     await addEntry(entry);
   }
@@ -62,6 +68,20 @@ class BackupHistoryService {
       _historyKey,
       updated.map((item) => item.toJson()).toList(),
     );
+  }
+
+  /// Removes a history entry and, for local backups, deletes the file on device.
+  ///
+  /// Cloud backup files on Google Drive are not deleted — only the history
+  /// record is removed.
+  Future<void> deleteEntry(BackupHistoryEntry entry) async {
+    if (entry.isLocal && entry.filePath.isNotEmpty) {
+      final file = File(entry.filePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+    await deleteBackupHistoryEntry(entry.id);
   }
 
   Future<void> updateDestination(String id, String? destination) async {

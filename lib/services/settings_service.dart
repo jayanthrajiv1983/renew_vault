@@ -9,6 +9,7 @@ import '../core/services/logging_service.dart';
 
 
 
+import '../models/backup_frequency.dart';
 import '../models/backup_reminder_interval.dart';
 
 import '../models/renewal_item.dart';
@@ -49,7 +50,11 @@ class SettingsService extends ChangeNotifier {
 
   static const backupReminderIntervalKey = 'backupReminderInterval';
 
+  static const automaticBackupFrequencyKey = 'automaticBackupFrequency';
+
   static const lastBackupAtKey = 'lastBackupAt';
+
+  static const lastCloudBackupAtKey = 'lastCloudBackupAt';
 
   static const backupReminderDismissedAtKey = 'backupReminderDismissedAt';
 
@@ -349,6 +354,19 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
   }
 
+  BackupFrequency getBackupFrequency() {
+    final value = _box?.get(automaticBackupFrequencyKey);
+    if (value is String) {
+      return BackupFrequency.fromName(value);
+    }
+    return BackupFrequency.monthly;
+  }
+
+  Future<void> setBackupFrequency(BackupFrequency frequency) async {
+    await _box?.put(automaticBackupFrequencyKey, frequency.name);
+    notifyListeners();
+  }
+
   DateTime? getLastBackupAt() {
     final value = _box?.get(lastBackupAtKey);
     if (value is String) {
@@ -362,6 +380,22 @@ class SettingsService extends ChangeNotifier {
 
   Future<void> setLastBackupAt(DateTime time) async {
     await _box?.put(lastBackupAtKey, time.toUtc().toIso8601String());
+    notifyListeners();
+  }
+
+  DateTime? getLastCloudBackupAt() {
+    final value = _box?.get(lastCloudBackupAtKey);
+    if (value is String) {
+      return DateTime.tryParse(value);
+    }
+    if (value is int) {
+      return DateTime.fromMillisecondsSinceEpoch(value);
+    }
+    return null;
+  }
+
+  Future<void> setLastCloudBackupAt(DateTime time) async {
+    await _box?.put(lastCloudBackupAtKey, time.toUtc().toIso8601String());
     notifyListeners();
   }
 

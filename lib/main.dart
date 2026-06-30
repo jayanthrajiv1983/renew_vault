@@ -12,6 +12,7 @@ import 'services/app_info_service.dart';
 import 'services/app_lock_service.dart';
 import 'services/family_service.dart';
 import 'services/milestone_service.dart';
+import 'services/automatic_backup_reminder_service.dart';
 import 'services/notification_service.dart';
 import 'services/ocr_correction_service.dart';
 import 'services/settings_service.dart';
@@ -81,6 +82,7 @@ Future<void> main() async {
   await ThemeProvider.instance.init();
   await NotificationService().initialize();
   await NotificationService.instance.rescheduleAllReminders();
+  await AutomaticBackupReminderService.instance.reschedule();
   MicrointeractionService.instance;
   runApp(const RenewVaultApp());
 }

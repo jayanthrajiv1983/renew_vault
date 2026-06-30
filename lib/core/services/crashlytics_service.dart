@@ -18,6 +18,7 @@ class CrashlyticsService {
 
   static const featureOcr = 'OCR';
   static const featureBackup = 'BACKUP';
+  static const featureCloud = 'CLOUD';
   static const featureRestore = 'RESTORE';
   static const featureAttachments = 'ATTACHMENTS';
   static const featureNotifications = 'NOTIFICATIONS';
