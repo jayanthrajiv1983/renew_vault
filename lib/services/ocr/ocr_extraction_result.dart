@@ -9,7 +9,11 @@ class OcrExtractionResult {
   final String extractedValue;
   final int confidence;
 
+  int get confidencePercent => confidence.clamp(0, 100);
+
   bool get isHighConfidence => confidence > 70;
+
+  bool get isLowConfidence => confidence < 60;
 
   bool get isAutoApplicable {
     if (fieldName == 'expiryDate') {

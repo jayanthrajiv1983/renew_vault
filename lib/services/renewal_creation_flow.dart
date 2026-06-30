@@ -107,16 +107,21 @@ abstract final class RenewalCreationFlow {
     required Future<AddItemPrefill?> Function() onRetake,
   }) async {
     var overlayShown = false;
+    OcrScanOverlayController? overlay;
     try {
       LoggingService.instance.logInfo('OCR', 'Scan started');
 
       if (context.mounted) {
         overlayShown = true;
-        showOcrScanningOverlay(context);
+        overlay = showOcrScanningOverlay(context);
       }
 
-      final result = await OcrService.fastScanAndParse(imagePath);
-      LoggingService.instance.logInfo('OCR', 'Scan completed');
+      final pipelineResult = await OcrService.scanWithProgress(
+        imagePath,
+        onProgress: overlay?.update,
+      );
+      final result = pipelineResult.result;
+
       final correctedFields =
           OcrCorrectionService.instance.applyLearnedCorrections(
         result.fields,
@@ -126,10 +131,18 @@ abstract final class RenewalCreationFlow {
         rawText: result.rawText,
         documentType: result.documentType,
         fields: correctedFields,
+        classification: result.classification,
       );
 
-      if (overlayShown && context.mounted) {
-        dismissOcrScanningOverlay(context);
+      if (overlayShown && context.mounted && overlay != null) {
+        overlay.update(
+          OcrScanProgress(
+            stage: OcrScanStage.completed,
+            progress: 1,
+            completionMessage: pipelineResult.completionMessage,
+          ),
+        );
+        await overlay.showCompletionAndDismiss(context);
         overlayShown = false;
       }
 
@@ -188,7 +201,7 @@ abstract final class RenewalCreationFlow {
         operation: 'Scan Failed',
       );
       if (overlayShown && context.mounted) {
-        dismissOcrScanningOverlay(context);
+        overlay?.dismiss(context);
         overlayShown = false;
       }
       if (context.mounted) {
@@ -199,7 +212,7 @@ abstract final class RenewalCreationFlow {
       return null;
     } finally {
       if (overlayShown && context.mounted) {
-        dismissOcrScanningOverlay(context);
+        overlay?.dismiss(context);
       }
     }
   }

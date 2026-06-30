@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 
+import '../../features/ocr/services/document_classifier_service.dart'
+    show DocumentClassificationResult, DocumentClassifierService;
+import '../../features/ocr/services/document_extractors/document_extraction_service.dart';
 import 'aadhaar_parser.dart';
 import 'document_parser.dart';
 import 'document_type.dart';
@@ -16,11 +19,13 @@ class OcrEngineResult {
     required this.rawText,
     required this.documentType,
     required this.fields,
+    this.classification,
   });
 
   final String rawText;
   final DocumentType documentType;
   final List<OcrExtractionResult> fields;
+  final DocumentClassificationResult? classification;
 
   bool get hasAnyFields => fields.isNotEmpty;
 
@@ -38,6 +43,19 @@ class OcrEngineResult {
     }
     return null;
   }
+}
+
+/// Intermediate result from generic parsing (isolate-safe, no logging).
+class OcrGenericParseResult {
+  const OcrGenericParseResult({
+    required this.normalizedText,
+    required this.documentType,
+    required this.genericFields,
+  });
+
+  final String normalizedText;
+  final DocumentType documentType;
+  final List<OcrExtractionResult> genericFields;
 }
 
 class OcrEngine {
@@ -114,18 +132,23 @@ class OcrEngine {
 
   static final _textHelpers = _GenericDocumentParser();
 
-  /// Single ML Kit pass + single full-document parser pass (fast scan path).
-  static Future<OcrEngineResult> fastScanAndParse(String path) async {
+  /// ML Kit text recognition only (must run on main isolate).
+  static Future<String> recognizeTextAtPath(String path) async {
     final inputImage = InputImage.fromFilePath(path);
     final recognized = await _textRecognizer.processImage(inputImage);
-    return compute(processTextFast, recognized.text);
+    return recognized.text;
+  }
+
+  /// Single ML Kit pass + single full-document parser pass (fast scan path).
+  static Future<OcrEngineResult> fastScanAndParse(String path) async {
+    final text = await recognizeTextAtPath(path);
+    return compute(processTextFast, text);
   }
 
   /// Runs OCR on [path], then executes three extraction passes and merges results.
   static Future<OcrEngineResult> scanAndParse(String path) async {
-    final inputImage = InputImage.fromFilePath(path);
-    final recognized = await _textRecognizer.processImage(inputImage);
-    return scanAndParseText(recognized.text);
+    final text = await recognizeTextAtPath(path);
+    return compute(scanAndParseText, text);
   }
 
   static Future<OcrEngineResult> processImage(String path) async {
@@ -142,10 +165,13 @@ class OcrEngine {
       dateFields,
     ]);
 
-    return OcrEngineResult(
-      rawText: normalized,
-      documentType: fullPass.documentType,
-      fields: mergedFields,
+    return _withClassification(
+      OcrEngineResult(
+        rawText: normalized,
+        documentType: fullPass.documentType,
+        fields: mergedFields,
+      ),
+      normalized,
     );
   }
 
@@ -194,15 +220,52 @@ class OcrEngine {
       labelProximity,
     ]);
 
-    return OcrEngineResult(
-      rawText: normalized,
-      documentType: fullPass.documentType,
-      fields: mergedFields,
+    return _withClassification(
+      OcrEngineResult(
+        rawText: normalized,
+        documentType: fullPass.documentType,
+        fields: mergedFields,
+      ),
+      normalized,
     );
   }
 
   static OcrEngineResult processText(String text) {
     return scanAndParseText(text);
+  }
+
+  /// Generic field parse without classification (isolate-safe).
+  static OcrGenericParseResult parseGenericFromText(String text) {
+    final normalized = _textHelpers.normalizeText(text);
+    final fullPass = _passFullDocument(normalized);
+    final dateFields = _passFastDateFields(normalized);
+    final mergedFields = _mergeResults([
+      fullPass.fields,
+      dateFields,
+    ]);
+    return OcrGenericParseResult(
+      normalizedText: normalized,
+      documentType: fullPass.documentType,
+      genericFields: mergedFields,
+    );
+  }
+
+  static DocumentClassificationResult classifyFromText(String text) {
+    return DocumentClassifierService.classify(text);
+  }
+
+  static List<OcrExtractionResult> extractFieldsFromText({
+    required String text,
+    required DocumentClassificationResult? classification,
+    required List<OcrExtractionResult> genericFields,
+    bool logDecisions = true,
+  }) {
+    return DocumentExtractionService.extractWithFallback(
+      ocrText: text,
+      classification: classification,
+      genericFields: genericFields,
+      logDecisions: logDecisions,
+    );
   }
 
   static OcrEngineResult _passFullDocument(String text) {
@@ -312,6 +375,24 @@ class OcrEngine {
       }
     }
     return _GenericDocumentParser();
+  }
+
+  static OcrEngineResult _withClassification(
+    OcrEngineResult result,
+    String normalizedText,
+  ) {
+    final classification = classifyFromText(normalizedText);
+    final fields = extractFieldsFromText(
+      text: normalizedText,
+      classification: classification,
+      genericFields: result.fields,
+    );
+    return OcrEngineResult(
+      rawText: result.rawText,
+      documentType: result.documentType,
+      fields: fields,
+      classification: classification,
+    );
   }
 
   static void dispose() {

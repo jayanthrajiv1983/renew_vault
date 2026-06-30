@@ -1,4 +1,5 @@
-import 'document_type.dart';
+import 'document_type.dart' as legacy;
+import '../../features/ocr/services/document_classifier_service.dart';
 import 'ocr_engine.dart';
 import 'ocr_extraction_result.dart';
 
@@ -28,7 +29,11 @@ class OcrReviewData {
 /// Maps OCR engine output to renewal form fields.
 abstract final class OcrFormMapper {
   static String inferTitle(OcrEngineResult result) {
-    if (result.documentType != DocumentType.unknown) {
+    final classified = result.classification;
+    if (classified != null && classified.type != DocumentType.unknown) {
+      return classified.displayType;
+    }
+    if (result.documentType != legacy.DocumentType.unknown) {
       return result.documentType.label;
     }
     return 'Scanned Document';
@@ -39,14 +44,22 @@ abstract final class OcrFormMapper {
     required List<String> allowedCategories,
     String? fallback,
   }) {
+    final classified = result.classification;
+    if (classified != null && classified.type != DocumentType.unknown) {
+      final suggested = classified.type.suggestedCategory();
+      if (suggested != null && allowedCategories.contains(suggested)) {
+        return suggested;
+      }
+    }
+
     final category = switch (result.documentType) {
-      DocumentType.vehicleRc => 'Vehicle Insurance',
-      DocumentType.insurancePolicy => 'Health Insurance',
-      DocumentType.drivingLicense ||
-      DocumentType.passport ||
-      DocumentType.panCard ||
-      DocumentType.aadhaarCard ||
-      DocumentType.unknown =>
+      legacy.DocumentType.vehicleRc => 'Vehicle Insurance',
+      legacy.DocumentType.insurancePolicy => 'Health Insurance',
+      legacy.DocumentType.drivingLicense ||
+      legacy.DocumentType.passport ||
+      legacy.DocumentType.panCard ||
+      legacy.DocumentType.aadhaarCard ||
+      legacy.DocumentType.unknown =>
         'Document',
     };
     if (allowedCategories.contains(category)) {
@@ -118,12 +131,12 @@ abstract final class OcrFormMapper {
       issueDate: parseOcrDate(fieldValue(result, 'issueDate')),
       expiryDate: parseOcrDate(fieldValue(result, 'expiryDate')),
       authority: fieldValue(result, 'authority'),
-      documentTypeKey: result.documentType.name,
+      documentTypeKey: result.classification?.type.name ?? result.documentType.name,
       rawOcrValues: rawOcrValues,
     );
   }
 
   static bool isLowConfidence(OcrExtractionResult field) {
-    return !field.isAutoApplicable;
+    return field.isLowConfidence;
   }
 }

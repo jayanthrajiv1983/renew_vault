@@ -8,7 +8,6 @@ import '../services/ocr/ocr_form_mapper.dart';
 import '../services/ocr_correction_service.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
-import '../widgets/form_action_bar.dart';
 import '../widgets/forms/category_form_controller.dart';
 import '../widgets/forms/date_form_field.dart';
 
@@ -65,6 +64,18 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
     super.dispose();
   }
 
+  String get _detectedDocumentType {
+    final classification = widget.result.classification;
+    if (classification != null) {
+      return classification.displayType;
+    }
+    return widget.result.documentType.label;
+  }
+
+  int? get _classificationConfidencePercent {
+    return widget.result.classification?.confidencePercent;
+  }
+
   OcrExtractionResult? _fieldResult(String fieldName) {
     return widget.result.fieldNamed(fieldName);
   }
@@ -85,38 +96,72 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
     );
   }
 
+  bool _isFieldLowConfidence(String fieldName) {
+    final field = _fieldResult(fieldName);
+    if (field == null) {
+      return false;
+    }
+    return field.isLowConfidence && !_isLearned(fieldName, field.extractedValue);
+  }
+
+  Widget _wrapLowConfidenceField(String fieldName, Widget child) {
+    if (!_isFieldLowConfidence(fieldName)) {
+      return child;
+    }
+
+    final theme = Theme.of(context);
+    final errorColor = theme.colorScheme.error;
+    final borderRadius = AppSpacing.cardBorderRadius;
+    final decorationTheme = theme.inputDecorationTheme.copyWith(
+      enabledBorder: OutlineInputBorder(
+        borderRadius: borderRadius,
+        borderSide: BorderSide(
+          color: errorColor.withValues(alpha: 0.55),
+          width: 1.5,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: borderRadius,
+        borderSide: BorderSide(color: errorColor, width: 2),
+      ),
+    );
+
+    return Theme(
+      data: theme.copyWith(inputDecorationTheme: decorationTheme),
+      child: child,
+    );
+  }
+
   Widget _confidenceHint(String fieldName) {
     final field = _fieldResult(fieldName);
     if (field == null) {
       return const SizedBox.shrink();
     }
+    final theme = Theme.of(context);
     final isLearned = _isLearned(fieldName, field.extractedValue);
-    final isLow = OcrFormMapper.isLowConfidence(field) && !isLearned;
+    final isLow = field.isLowConfidence && !isLearned;
     final color = isLearned
-        ? Theme.of(context).colorScheme.tertiary
+        ? theme.colorScheme.tertiary
         : isLow
-            ? Theme.of(context).colorScheme.error
-            : Theme.of(context).colorScheme.onSurfaceVariant;
+            ? theme.colorScheme.error
+            : theme.colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          Icon(
-            isLearned
-                ? Icons.auto_fix_high
-                : isLow
-                    ? Icons.warning_amber_rounded
-                    : Icons.check_circle_outline,
-            size: 14,
-            color: color,
-          ),
-          const SizedBox(width: 4),
+          if (isLow) ...[
+            _VerifyBadge(theme: theme),
+            const SizedBox(width: 8),
+          ] else if (isLearned) ...[
+            Icon(Icons.auto_fix_high, size: 14, color: color),
+            const SizedBox(width: 4),
+          ],
           Expanded(
             child: Text(
-              '${field.confidence}% confidence'
-              '${isLearned ? ' — learned' : isLow ? ' — verify manually' : ''}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: color),
+              'Confidence: ${field.confidencePercent}%'
+              '${isLearned ? ' — learned correction' : ''}',
+              style: theme.textTheme.labelSmall?.copyWith(color: color),
             ),
           ),
         ],
@@ -124,7 +169,7 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
     );
   }
 
-  Future<void> _confirm() async {
+  Future<void> _acceptAll() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a title')),
@@ -181,9 +226,17 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
     );
   }
 
+  void _rescan() {
+    Navigator.pop(context, OcrReviewOutcome.retake);
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final classificationConfidence = _classificationConfidencePercent;
+    final isClassificationLow =
+        classificationConfidence != null && classificationConfidence < 60;
 
     return Scaffold(
       appBar: AppBar(
@@ -198,117 +251,390 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Detected: ${widget.result.documentType.label}',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: AppSpacing.cardSpacing),
-                  AspectRatio(
-                    aspectRatio: 4 / 3,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-                        border: Border.all(
-                          color: theme.colorScheme.outlineVariant,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-                        child: Image.file(
-                          File(widget.imagePath),
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Text(
-                                'Could not load scan preview.',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
+                  _DocumentDetectionCard(
+                    documentType: _detectedDocumentType,
+                    confidencePercent: classificationConfidence,
+                    isLowConfidence: isClassificationLow,
                   ),
                   const SizedBox(height: AppSpacing.sectionSpacing),
-                  Text(
-                    'Review and edit extracted fields before applying to the form.',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: AppSpacing.cardSpacing),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Title',
-                      border: OutlineInputBorder(),
-                    ),
-                    textCapitalization: TextCapitalization.words,
-                  ),
-                  AppSpacing.gapField,
-                  DropdownMenuFormField<String>(
-                    key: ValueKey('ocr-category-$_category'),
-                    initialSelection: _category,
-                    label: const Text('Category'),
-                    dropdownMenuEntries: widget.categories
-                        .map(
-                          (category) => DropdownMenuEntry(
-                            value: category,
-                            label: category,
+                  _ScanPreviewCard(imagePath: widget.imagePath),
+                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  Card(
+                    child: Padding(
+                      padding: AppSpacing.cardInsets,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Extracted Fields',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        )
-                        .toList(),
-                    onSelected: (value) {
-                      if (value != null) {
-                        setState(() => _category = value);
-                      }
-                    },
-                  ),
-                  AppSpacing.gapField,
-                  TextFormField(
-                    controller: _documentNumberController,
-                    decoration: InputDecoration(
-                      labelText: OcrFormMapper.fieldLabel('documentNumber'),
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  _confidenceHint('documentNumber'),
-                  AppSpacing.gapField,
-                  DateFormField(
-                    label: OcrFormMapper.fieldLabel('issueDate'),
-                    value: _issueDate,
-                    onChanged: (date) => setState(() => _issueDate = date),
-                  ),
-                  _confidenceHint('issueDate'),
-                  AppSpacing.gapField,
-                  DateFormField(
-                    label: OcrFormMapper.fieldLabel('expiryDate'),
-                    value: _expiryDate,
-                    onChanged: (date) => setState(() => _expiryDate = date),
-                  ),
-                  _confidenceHint('expiryDate'),
-                  if (_category == 'Document') ...[
-                    AppSpacing.gapField,
-                    TextFormField(
-                      controller: _authorityController,
-                      decoration: InputDecoration(
-                        labelText: OcrFormMapper.fieldLabel('authority'),
-                        border: const OutlineInputBorder(),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Edit any value before accepting the scan.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sectionSpacing),
+                          TextFormField(
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'Title',
+                              prefixIcon: Icon(Icons.title_outlined),
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          AppSpacing.gapField,
+                          DropdownMenuFormField<String>(
+                            key: ValueKey('ocr-category-$_category'),
+                            initialSelection: _category,
+                            label: const Text('Category'),
+                            leadingIcon: const Icon(Icons.category_outlined),
+                            dropdownMenuEntries: widget.categories
+                                .map(
+                                  (category) => DropdownMenuEntry(
+                                    value: category,
+                                    label: category,
+                                  ),
+                                )
+                                .toList(),
+                            onSelected: (value) {
+                              if (value != null) {
+                                setState(() => _category = value);
+                              }
+                            },
+                          ),
+                          AppSpacing.gapField,
+                          _wrapLowConfidenceField(
+                            'documentNumber',
+                            TextFormField(
+                              controller: _documentNumberController,
+                              decoration: InputDecoration(
+                                labelText: OcrFormMapper.fieldLabel(
+                                  'documentNumber',
+                                ),
+                                prefixIcon: const Icon(Icons.tag_outlined),
+                              ),
+                            ),
+                          ),
+                          _confidenceHint('documentNumber'),
+                          AppSpacing.gapField,
+                          _wrapLowConfidenceField(
+                            'expiryDate',
+                            DateFormField(
+                              label: OcrFormMapper.fieldLabel('expiryDate'),
+                              value: _expiryDate,
+                              onChanged: (date) =>
+                                  setState(() => _expiryDate = date),
+                            ),
+                          ),
+                          _confidenceHint('expiryDate'),
+                          if (_category == 'Document') ...[
+                            AppSpacing.gapField,
+                            _wrapLowConfidenceField(
+                              'issueDate',
+                              DateFormField(
+                                label: OcrFormMapper.fieldLabel('issueDate'),
+                                value: _issueDate,
+                                onChanged: (date) =>
+                                    setState(() => _issueDate = date),
+                              ),
+                            ),
+                            _confidenceHint('issueDate'),
+                            AppSpacing.gapField,
+                            _wrapLowConfidenceField(
+                              'authority',
+                              TextFormField(
+                                controller: _authorityController,
+                                decoration: InputDecoration(
+                                  labelText: OcrFormMapper.fieldLabel(
+                                    'authority',
+                                  ),
+                                  prefixIcon: const Icon(
+                                    Icons.account_balance_outlined,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            _confidenceHint('authority'),
+                          ],
+                        ],
                       ),
                     ),
-                    _confidenceHint('authority'),
-                  ],
+                  ),
                 ],
               ),
             ),
           ),
-          FormActionBar(
-            primaryLabel: 'Confirm & Apply',
-            onPrimary: _confirm,
-            onCancel: () => Navigator.pop(context, OcrReviewOutcome.retake),
-            cancelLabel: 'Retake',
-            secondaryStyle: FormActionSecondaryStyle.outlined,
+          _ReviewActionBar(
+            onAcceptAll: _acceptAll,
+            onRescan: _rescan,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DocumentDetectionCard extends StatelessWidget {
+  const _DocumentDetectionCard({
+    required this.documentType,
+    required this.confidencePercent,
+    required this.isLowConfidence,
+  });
+
+  final String documentType;
+  final int? confidencePercent;
+  final bool isLowConfidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      color: isLowConfidence
+          ? colorScheme.errorContainer.withValues(alpha: 0.35)
+          : colorScheme.primaryContainer.withValues(alpha: 0.35),
+      child: Padding(
+        padding: AppSpacing.cardInsets,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: isLowConfidence
+                  ? colorScheme.errorContainer
+                  : colorScheme.primaryContainer,
+              child: Icon(
+                Icons.document_scanner_outlined,
+                color: isLowConfidence
+                    ? colorScheme.onErrorContainer
+                    : colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sectionSpacing),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Detected Document Type',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    documentType,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (confidencePercent != null) ...[
+                    const SizedBox(height: AppSpacing.cardSpacing),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _ConfidenceChip(
+                          label: 'Classification',
+                          confidencePercent: confidencePercent!,
+                          isLowConfidence: isLowConfidence,
+                        ),
+                        if (isLowConfidence)
+                          _VerifyBadge(theme: theme),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanPreviewCard extends StatelessWidget {
+  const _ScanPreviewCard({required this.imagePath});
+
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ColoredBox(
+          color: colorScheme.surfaceContainerHighest,
+          child: Image.file(
+            File(imagePath),
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.broken_image_outlined,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Could not load scan preview',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfidenceChip extends StatelessWidget {
+  const _ConfidenceChip({
+    required this.label,
+    required this.confidencePercent,
+    required this.isLowConfidence,
+  });
+
+  final String label;
+  final int confidencePercent;
+  final bool isLowConfidence;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final background = isLowConfidence
+        ? colorScheme.errorContainer
+        : colorScheme.secondaryContainer;
+    final foreground = isLowConfidence
+        ? colorScheme.onErrorContainer
+        : colorScheme.onSecondaryContainer;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+      ),
+      child: Text(
+        '$label: $confidencePercent%',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: foreground,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _VerifyBadge extends StatelessWidget {
+  const _VerifyBadge({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            size: 14,
+            color: colorScheme.onErrorContainer,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Verify',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onErrorContainer,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewActionBar extends StatelessWidget {
+  const _ReviewActionBar({
+    required this.onAcceptAll,
+    required this.onRescan,
+  });
+
+  final VoidCallback onAcceptAll;
+  final VoidCallback onRescan;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Material(
+      color: theme.colorScheme.surface,
+      elevation: AppSpacing.cardElevation,
+      shadowColor: theme.colorScheme.shadow.withValues(alpha: 0.12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.screenPadding,
+              AppSpacing.cardSpacing,
+              AppSpacing.screenPadding,
+              AppSpacing.screenPadding + viewInsets,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                FilledButton.icon(
+                  onPressed: onAcceptAll,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: const Text('Accept All'),
+                ),
+                const SizedBox(height: AppSpacing.fieldLabelGap),
+                OutlinedButton.icon(
+                  onPressed: onRescan,
+                  icon: const Icon(Icons.document_scanner_outlined),
+                  label: const Text('Rescan'),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

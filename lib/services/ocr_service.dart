@@ -3,10 +3,14 @@ import 'dart:io';
 import 'image_preprocessor.dart';
 import 'ocr/ocr_engine.dart';
 import 'ocr/ocr_extraction_result.dart';
+import 'ocr/ocr_scan_pipeline.dart';
 
 export 'ocr/document_type.dart';
 export 'ocr/ocr_engine.dart';
 export 'ocr/ocr_extraction_result.dart';
+export 'ocr/ocr_performance_metrics.dart';
+export 'ocr/ocr_scan_pipeline.dart';
+export 'ocr/ocr_scan_stage.dart';
 
 /// Legacy wrapper around [OcrEngine] for backward compatibility.
 class OcrService {
@@ -24,6 +28,14 @@ class OcrService {
   /// Fast scan: one ML Kit pass, one parser pass, no learned corrections.
   static Future<OcrEngineResult> fastScanAndParse(String path) {
     return OcrEngine.fastScanAndParse(path);
+  }
+
+  /// Staged scan with background isolates and progress reporting.
+  static Future<OcrScanPipelineResult> scanWithProgress(
+    String path, {
+    OcrProgressCallback? onProgress,
+  }) {
+    return OcrScanPipeline.scan(path, onProgress: onProgress);
   }
 
   /// Alias for [fastScanAndParse].

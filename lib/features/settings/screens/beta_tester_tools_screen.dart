@@ -185,30 +185,40 @@ class _BetaTesterToolsScreenState extends State<BetaTesterToolsScreen> {
       }
 
       var overlayShown = false;
-      final stopwatch = Stopwatch()..start();
+      OcrScanOverlayController? overlay;
 
       try {
         if (mounted) {
           overlayShown = true;
-          showOcrScanningOverlay(context);
+          overlay = showOcrScanningOverlay(context);
         }
 
-        final result = await OcrService.fastScanAndParse(image.path);
-        stopwatch.stop();
+        final pipelineResult = await OcrService.scanWithProgress(
+          image.path,
+          onProgress: overlay?.update,
+        );
+        final result = pipelineResult.result;
 
-        if (overlayShown && mounted) {
-          dismissOcrScanningOverlay(context);
+        if (overlayShown && mounted && overlay != null) {
+          overlay.update(
+            OcrScanProgress(
+              stage: OcrScanStage.completed,
+              progress: 1,
+              completionMessage: pipelineResult.completionMessage,
+            ),
+          );
+          await overlay.showCompletionAndDismiss(context);
           overlayShown = false;
         }
 
         final fieldCount = result.fields
             .where((field) => field.extractedValue.trim().isNotEmpty)
             .length;
-        final processingMs = stopwatch.elapsedMilliseconds;
+        final metrics = pipelineResult.metrics;
 
         LoggingService.instance.logInfo(
           'BETA_TOOLS',
-          'OCR test passed (${processingMs}ms, $fieldCount fields)',
+          'OCR test passed (${metrics.totalMs}ms, $fieldCount fields)',
         );
 
         await _recordHealthResult(BetaTestCategory.ocr, true);
@@ -216,14 +226,14 @@ class _BetaTesterToolsScreenState extends State<BetaTesterToolsScreen> {
           await _showBetaResultDialog(
             context,
             success: true,
-            message: 'OCR completed successfully.',
+            message: pipelineResult.completionMessage,
             details:
-                'Processing time: ${processingMs}ms\nExtracted fields: $fieldCount',
+                'Processing time: ${metrics.totalMs}ms\nExtracted fields: $fieldCount',
           );
         }
       } finally {
         if (overlayShown && mounted) {
-          dismissOcrScanningOverlay(context);
+          overlay?.dismiss(context);
         }
       }
     } catch (error) {
