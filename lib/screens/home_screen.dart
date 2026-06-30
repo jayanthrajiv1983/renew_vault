@@ -10,7 +10,6 @@ import '../services/pending_delete_controller.dart';
 import '../services/notification_navigation_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../utils/backup_flow.dart';
 import '../utils/sort_helper.dart';
@@ -23,7 +22,8 @@ import '../widgets/backup_reminder_banner.dart';
 import '../widgets/app_review_dialog.dart';
 import '../widgets/crash_reporting_consent_dialog.dart';
 import '../widgets/section_header.dart';
-import '../widgets/summary_stat_card.dart';
+import '../widgets/dashboard_stat_card.dart';
+import '../widgets/hero_insight_card.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../widgets/create_renewal_bottom_sheet.dart';
 import '../widgets/category_empty_state.dart';
@@ -746,7 +746,6 @@ class _HomeScreenState extends State<HomeScreen> {
     required Widget? backupReminderBanner,
     required int expiredCount,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     final showOverdueBanner = expiredCount >= 1 &&
         SettingsService.instance.getShowExpiredBanner();
 
@@ -789,51 +788,82 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? null
                 : () => _openCategoryItems(_selectedCategory!),
           ),
-        GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSpacing.cardSpacing,
-          crossAxisSpacing: AppSpacing.cardSpacing,
-          childAspectRatio: 1.55,
-          children: [
-            SummaryStatCard(
-              label: 'Total Items',
-              count: _items.length,
-              countColor: AppColors.statTotal(colorScheme),
-              onTap: () => _openFilteredItems(
-                title: 'Total Items',
-                filter: ItemFilter.all,
-              ),
-            ),
-            SummaryStatCard(
-              label: 'Expiring Soon',
-              count: _countExpiringSoon(),
-              countColor: AppColors.statExpiringSoon,
-              onTap: () => _openFilteredItems(
-                title: 'Expiring Soon',
-                filter: ItemFilter.expiringSoon,
-              ),
-            ),
-            SummaryStatCard(
-              label: 'Expired',
-              count: _countExpired(),
-              countColor: AppColors.statExpired,
-              onTap: () => _openFilteredItems(
-                title: 'Expired',
-                filter: ItemFilter.expired,
-              ),
-            ),
-            SummaryStatCard(
-              label: 'Safe',
-              count: _countSafe(),
-              countColor: AppColors.statSafe,
-              onTap: () => _openFilteredItems(
-                title: 'Safe',
-                filter: ItemFilter.safe,
-              ),
-            ),
-          ],
+        HeroInsightCard(
+          expiredCount: expiredCount,
+          expiringSoonCount: _countExpiringSoon(),
+          onReviewExpired: () => _openFilteredItems(
+            title: 'Expired',
+            filter: ItemFilter.expired,
+          ),
+          onViewUpcoming: () => _openFilteredItems(
+            title: 'Expiring Soon',
+            filter: ItemFilter.expiringSoon,
+          ),
+          onViewVault: () => _openFilteredItems(
+            title: 'Total Items',
+            filter: ItemFilter.all,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sectionSpacing),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount =
+                constraints.maxWidth >= 840 ? 4 : 2;
+
+            return GridView.count(
+              crossAxisCount: crossAxisCount,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: AppSpacing.cardSpacing,
+              crossAxisSpacing: AppSpacing.cardSpacing,
+              // Fixed row height fits label + value + subtitle with 16px padding.
+              mainAxisExtent: 115,
+              children: [
+                DashboardStatCard(
+                  type: DashboardStatType.totalItems,
+                  label: 'Total Items',
+                  count: _items.length,
+                  animationIndex: 0,
+                  onTap: () => _openFilteredItems(
+                    title: 'Total Items',
+                    filter: ItemFilter.all,
+                  ),
+                ),
+                DashboardStatCard(
+                  type: DashboardStatType.expiringSoon,
+                  label: 'Expiring Soon',
+                  count: _countExpiringSoon(),
+                  subtitle: 'Requires attention',
+                  animationIndex: 1,
+                  onTap: () => _openFilteredItems(
+                    title: 'Expiring Soon',
+                    filter: ItemFilter.expiringSoon,
+                  ),
+                ),
+                DashboardStatCard(
+                  type: DashboardStatType.expired,
+                  label: 'Expired',
+                  count: _countExpired(),
+                  animationIndex: 2,
+                  onTap: () => _openFilteredItems(
+                    title: 'Expired',
+                    filter: ItemFilter.expired,
+                  ),
+                ),
+                DashboardStatCard(
+                  type: DashboardStatType.safe,
+                  label: 'Safe',
+                  count: _countSafe(),
+                  subtitle: 'All good',
+                  animationIndex: 3,
+                  onTap: () => _openFilteredItems(
+                    title: 'Safe',
+                    filter: ItemFilter.safe,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         if (backupReminderBanner != null) ...[
           const SizedBox(height: AppSpacing.sectionSpacing),
