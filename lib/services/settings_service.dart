@@ -59,6 +59,11 @@ class SettingsService extends ChangeNotifier {
 
   static const milestonesBootstrappedKey = 'milestonesBootstrapped';
 
+  static const crashReportingEnabledKey = 'crashReportingEnabled';
+
+  static const crashReportingConsentPromptShownKey =
+      'crashReportingConsentPromptShown';
+
 
 
   Box? _box;
@@ -466,6 +471,32 @@ class SettingsService extends ChangeNotifier {
   Future<void> setMilestonesBootstrapped(bool bootstrapped) async {
     await _box?.put(milestonesBootstrappedKey, bootstrapped);
     notifyListeners();
+  }
+
+  bool getCrashReportingEnabled() {
+    final value = _box?.get(crashReportingEnabledKey);
+    if (value is bool) {
+      return value;
+    }
+    return false;
+  }
+
+  Future<void> setCrashReportingEnabled(bool enabled) async {
+    await _box?.put(crashReportingEnabledKey, enabled);
+    notifyListeners();
+  }
+
+  bool getCrashReportingConsentPromptShown() {
+    return _box?.get(crashReportingConsentPromptShownKey) == true;
+  }
+
+  Future<void> setCrashReportingConsentPromptShown(bool shown) async {
+    await _box?.put(crashReportingConsentPromptShownKey, shown);
+    notifyListeners();
+  }
+
+  bool shouldShowCrashReportingConsentPrompt() {
+    return !getCrashReportingConsentPromptShown();
   }
 
   Future<void> applySettings(Map<String, dynamic> settings) async {

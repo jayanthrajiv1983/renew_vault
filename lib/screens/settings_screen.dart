@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../models/backup_reminder_interval.dart';
 
 import 'package:url_launcher/url_launcher.dart';
@@ -89,6 +91,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   late bool _hideAppContentsInRecents;
 
+  late bool _crashReportingEnabled;
+
   late BackupReminderInterval _backupReminderInterval;
 
 
@@ -122,6 +126,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _enableAppLock = _settings.getAppLockEnabled();
 
     _hideAppContentsInRecents = _settings.getHideAppContentsInRecents();
+
+    _crashReportingEnabled = _settings.getCrashReportingEnabled();
 
     _backupReminderInterval = _settings.getBackupReminderInterval();
 
@@ -236,12 +242,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
       Navigator.of(context).pop(true);
-    } on BackupValidationException catch (error) {
+    } on BackupValidationException catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureRestore,
+        'Restore validation failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Restore Failed',
+      );
       if (!mounted) {
         return;
       }
       await showRestoreErrorDialog(context, message: error.message);
-    } on Exception catch (error) {
+    } on Exception catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureRestore,
+        'Restore failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Restore Failed',
+      );
       if (!mounted) {
         return;
       }
@@ -337,6 +357,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() => _hideAppContentsInRecents = value);
 
+  }
+
+
+
+  Future<void> _setCrashReportingEnabled(bool value) async {
+    await _settings.setCrashReportingEnabled(value);
+    await CrashlyticsService.instance.updateConsent(value);
+    LoggingService.instance.logInfo(
+      'APP',
+      'Crash reporting consent: ${value ? 'granted' : 'denied'}',
+    );
+    setState(() => _crashReportingEnabled = value);
   }
 
 
@@ -826,7 +858,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           AppSpacing.gapSection,
 
-          _sectionHeader('Security'),
+          _sectionHeader('Privacy & Security'),
 
           Card(
 
@@ -907,6 +939,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   value: _hideAppContentsInRecents,
 
                   onChanged: _setHideAppContentsInRecents,
+
+                ),
+
+                const Divider(height: 1),
+
+                SwitchListTile(
+
+                  secondary: Icon(
+
+                    Icons.bug_report_outlined,
+
+                    color: theme.colorScheme.primary,
+
+                  ),
+
+                  title: const Text('Share Anonymous Crash Reports'),
+
+                  subtitle: const Text(
+
+                    'Send anonymous crash data to help improve app stability. No personal documents or sensitive information are shared.',
+
+                  ),
+
+                  value: _crashReportingEnabled,
+
+                  onChanged: _setCrashReportingEnabled,
 
                 ),
 

@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../models/backup_preview.dart';
 import '../models/family_member.dart';
 import '../models/ocr_correction.dart';
@@ -195,8 +196,14 @@ class BackupService {
 
       onProgress?.call(RestoreProgressStep.restoringData, 1.0);
       LoggingService.instance.logInfo('BACKUP', 'Restore completed');
-    } on Exception {
-      LoggingService.instance.logError('BACKUP', 'Restore failed');
+    } on Exception catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureRestore,
+        'Restore failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Restore Failed',
+      );
       rethrow;
     }
   }

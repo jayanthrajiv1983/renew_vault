@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'firebase_options.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'theme/app_brand.dart';
@@ -16,6 +18,7 @@ import 'services/settings_service.dart';
 import 'services/storage_migration_service.dart';
 import 'services/pending_delete_controller.dart';
 import 'shared/services/microinteraction_service.dart';
+import 'core/services/crashlytics_service.dart';
 import 'core/services/logging_service.dart';
 import 'core/widgets/app_lifecycle_logger.dart';
 import 'services/storage_service.dart';
@@ -41,10 +44,37 @@ Future<void> main() async {
 
   await LoggingService.instance.init();
   await AppInfoService.instance.init();
+  await SettingsService.instance.init();
+
+  var crashlyticsReady = false;
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    await CrashlyticsService.instance.init(
+      crashReportingEnabled: SettingsService.instance.getCrashReportingEnabled(),
+    );
+    crashlyticsReady = true;
+  } catch (e, st) {
+    assert(() {
+      debugPrint('Firebase/Crashlytics init skipped: $e\n$st');
+      return true;
+    }());
+  }
+
+  if (crashlyticsReady) {
+    await CrashlyticsService.instance.configureCustomKeys();
+    LoggingService.instance.logInfo(
+      'APP',
+      SettingsService.instance.getCrashReportingEnabled()
+          ? 'Crashlytics initialized (consent granted)'
+          : 'Crashlytics initialized (consent not granted)',
+    );
+  }
+
   LoggingService.instance.logInfo('APP', 'Application started');
   await StorageService.instance.init();
   await FamilyService.instance.init();
-  await SettingsService.instance.init();
   await MilestoneService.instance.bootstrapIfNeeded();
   await AppLockService.instance.init();
   await OcrCorrectionService.instance.init();

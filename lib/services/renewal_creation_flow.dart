@@ -8,6 +8,7 @@ import '../models/attachment_metadata.dart';
 import '../screens/add_item_screen.dart';
 import '../screens/ocr_review_screen.dart';
 import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../widgets/ocr/ocr_scan_helpers.dart';
 import 'ocr/ocr_form_mapper.dart';
 import 'ocr_service.dart';
@@ -178,8 +179,14 @@ abstract final class RenewalCreationFlow {
         fileType: fileType,
         launchMode: launchMode,
       );
-    } catch (e) {
-      LoggingService.instance.logError('OCR', 'Scan failed');
+    } catch (e, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureOcr,
+        'Scan failed',
+        exception: e,
+        stackTrace: stack,
+        operation: 'Scan Failed',
+      );
       if (overlayShown && context.mounted) {
         dismissOcrScanningOverlay(context);
         overlayShown = false;

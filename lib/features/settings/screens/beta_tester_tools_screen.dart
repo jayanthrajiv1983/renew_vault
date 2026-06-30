@@ -1,11 +1,13 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/services/crashlytics_service.dart';
 import '../../../core/services/log_export_service.dart';
 import '../../../core/services/logging_service.dart';
 import '../../../services/app_lock_service.dart';
@@ -335,6 +337,142 @@ class _BetaTesterToolsScreenState extends State<BetaTesterToolsScreen> {
     }
   }
 
+  String _crashReportingCollectionHint() {
+    final crashlytics = CrashlyticsService.instance;
+    if (!crashlytics.hasUserConsent) {
+      return 'Enable crash reporting in Settings → Privacy & Security for reports to upload.';
+    }
+    if (!kReleaseMode) {
+      return 'Debug build: Crashlytics collection is disabled; reports will not upload.';
+    }
+    return 'Test sent. Check the Firebase Crashlytics console for the report.';
+  }
+
+  Future<void> _showCrashReportingTestPicker() async {
+    final action = await showDialog<_CrashReportingTestAction>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        insetPadding: dialogInsetPadding(dialogContext),
+        title: const Text('Test Crash Reporting'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Choose a test type. Non-fatal sends a report without closing the app.',
+            ),
+            const SizedBox(height: AppSpacing.fieldSpacing),
+            ListTile(
+              leading: const Icon(Icons.error_outline_rounded),
+              title: const Text('Send Test Non-Fatal Error'),
+              subtitle: const Text('Records a non-fatal error to Crashlytics.'),
+              onTap: () => Navigator.of(dialogContext)
+                  .pop(_CrashReportingTestAction.nonFatal),
+            ),
+            ListTile(
+              leading: Icon(
+                Icons.warning_amber_rounded,
+                color: Theme.of(dialogContext).colorScheme.error,
+              ),
+              title: const Text('Trigger Test Crash'),
+              subtitle: const Text('Force-closes the app after confirmation.'),
+              onTap: () => Navigator.of(dialogContext)
+                  .pop(_CrashReportingTestAction.crash),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (action == null || !mounted) {
+      return;
+    }
+
+    switch (action) {
+      case _CrashReportingTestAction.nonFatal:
+        await _runTestCrashReportingNonFatal();
+      case _CrashReportingTestAction.crash:
+        await _runTestCrashReportingCrash();
+    }
+  }
+
+  Future<void> _runTestCrashReportingNonFatal() async {
+    try {
+      await CrashlyticsService.instance.testNonFatal();
+
+      LoggingService.instance.logInfo(
+        'CRASHLYTICS',
+        'Test non-fatal error sent',
+      );
+      LoggingService.instance.logInfo(
+        'BETA_TOOLS',
+        'Crash reporting non-fatal test executed',
+      );
+
+      _showSnackBar(_crashReportingCollectionHint());
+    } catch (error) {
+      LoggingService.instance.logError(
+        'BETA_TOOLS',
+        'Crash reporting non-fatal test failed',
+      );
+      _showSnackBar('Non-fatal crash test failed.');
+    }
+  }
+
+  Future<void> _runTestCrashReportingCrash() async {
+    if (!mounted) {
+      return;
+    }
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        insetPadding: dialogInsetPadding(dialogContext),
+        icon: Icon(
+          Icons.warning_rounded,
+          color: colorScheme.error,
+        ),
+        title: const Text('Trigger Test Crash?'),
+        content: const Text('This will force-close the app. Continue?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+            ),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Crash App'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    LoggingService.instance.logInfo('CRASHLYTICS', 'Test crash executed');
+    LoggingService.instance.logInfo(
+      'BETA_TOOLS',
+      'Crash reporting crash test executed',
+    );
+
+    CrashlyticsService.instance.testCrash();
+  }
+
   Future<void> _exportDebugLogs() async {
     try {
       final logs = LoggingService.instance.getLogs();
@@ -395,6 +533,13 @@ class _BetaTesterToolsScreenState extends State<BetaTesterToolsScreen> {
           subtitle: 'Create a temporary backup and validate integrity.',
           onRun: _runningBackup ? null : _runTestBackup,
           running: _runningBackup,
+        ),
+        _BetaToolDefinition(
+          icon: Icons.bug_report_rounded,
+          title: 'Test Crash Reporting',
+          subtitle:
+              'Verify Crashlytics non-fatal reports and crash capture.',
+          onRun: _showCrashReportingTestPicker,
         ),
         _BetaToolDefinition(
           icon: Icons.health_and_safety_rounded,
@@ -494,6 +639,8 @@ class _BetaTesterToolsScreenState extends State<BetaTesterToolsScreen> {
 }
 
 enum _DiagnosticsExportAction { copy, share }
+
+enum _CrashReportingTestAction { nonFatal, crash }
 
 class _BetaHealthCheckCard extends StatelessWidget {
   const _BetaHealthCheckCard();

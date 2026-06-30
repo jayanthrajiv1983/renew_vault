@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 
 import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../services/backup_history_service.dart';
 import '../services/backup_service.dart';
 import '../services/settings_service.dart';
@@ -48,8 +49,14 @@ Future<void> runEncryptedBackupFlow(BuildContext context) async {
       context,
       message: 'Backup complete',
     );
-  } on Exception catch (error) {
-    LoggingService.instance.logError('BACKUP', 'Backup failed');
+  } on Exception catch (error, stack) {
+    LoggingService.instance.logError(
+      CrashlyticsService.featureBackup,
+      'Backup failed',
+      exception: error,
+      stackTrace: stack,
+      operation: 'Export Failed',
+    );
     if (!context.mounted) {
       return;
     }

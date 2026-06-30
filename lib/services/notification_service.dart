@@ -3,6 +3,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../models/renewal_item.dart';
 import 'settings_service.dart';
 import 'storage_service.dart';
@@ -29,30 +30,42 @@ class NotificationService {
       return;
     }
 
-    tz.initializeTimeZones();
-    _configureLocalTimeZone();
+    try {
+      tz.initializeTimeZones();
+      _configureLocalTimeZone();
 
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const initSettings = InitializationSettings(android: androidSettings);
+      const androidSettings =
+          AndroidInitializationSettings('@mipmap/ic_launcher');
+      const initSettings = InitializationSettings(android: androidSettings);
 
-    await _plugin.initialize(initSettings);
+      await _plugin.initialize(initSettings);
 
-    const channel = AndroidNotificationChannel(
-      _channelId,
-      _channelName,
-      description: 'Renewal reminder notifications',
-      importance: Importance.defaultImportance,
-    );
+      const channel = AndroidNotificationChannel(
+        _channelId,
+        _channelName,
+        description: 'Renewal reminder notifications',
+        importance: Importance.defaultImportance,
+      );
 
-    final androidPlugin = _plugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin>();
 
-    await androidPlugin?.createNotificationChannel(channel);
-    await androidPlugin?.requestNotificationsPermission();
-    await androidPlugin?.requestExactAlarmsPermission();
+      await androidPlugin?.createNotificationChannel(channel);
+      await androidPlugin?.requestNotificationsPermission();
+      await androidPlugin?.requestExactAlarmsPermission();
 
-    _initialized = true;
+      _initialized = true;
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureNotifications,
+        'Notification initialization failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Initialization Failed',
+      );
+      rethrow;
+    }
   }
 
   void _configureLocalTimeZone() {
@@ -106,24 +119,35 @@ class NotificationService {
     required String body,
     required tz.TZDateTime scheduledDate,
   }) async {
-    const androidDetails = AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-    );
-    const details = NotificationDetails(android: androidDetails);
+    try {
+      const androidDetails = AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+      );
+      const details = NotificationDetails(android: androidDetails);
 
-    await _plugin.zonedSchedule(
-      id,
-      title,
-      body,
-      scheduledDate,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-    );
-    LoggingService.instance.logInfo(
-      'NOTIFICATIONS',
-      'Notification scheduled (id hash: $id)',
-    );
+      await _plugin.zonedSchedule(
+        id,
+        title,
+        body,
+        scheduledDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+      LoggingService.instance.logInfo(
+        'NOTIFICATIONS',
+        'Notification scheduled (id hash: $id)',
+      );
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureNotifications,
+        'Notification scheduling failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Scheduling Failed',
+      );
+      rethrow;
+    }
   }
 
   Future<void> cancelNotification(int id) async {

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 import '../../models/app_log.dart';
+import 'crashlytics_service.dart';
 
 /// Centralized application logging backed by an unencrypted Hive box.
 ///
@@ -47,8 +48,25 @@ class LoggingService {
   void logWarning(String category, String message) =>
       _log(levelWarning, category, message);
 
-  void logError(String category, String message) =>
-      _log(levelError, category, message);
+  void logError(
+    String category,
+    String message, {
+    Object? exception,
+    StackTrace? stackTrace,
+    String? operation,
+  }) {
+    _log(levelError, category, message);
+    if (exception != null && operation != null) {
+      CrashlyticsService.instance.recordFeatureError(
+        feature: category,
+        operation: operation,
+        exception: exception,
+        stackTrace: stackTrace,
+      );
+    } else {
+      CrashlyticsService.instance.recordNonFatalFromLog(category);
+    }
+  }
 
   void logDebug(String category, String message) =>
       _log(levelDebug, category, message);

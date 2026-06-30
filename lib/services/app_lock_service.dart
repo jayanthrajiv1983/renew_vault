@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import 'settings_service.dart';
 
 /// Handles biometric / device-credential app lock timing and authentication.
@@ -121,7 +122,12 @@ class AppLockService {
 
       if (!isSupported) {
         debugPrint('Authentication result: false (device not supported)');
-        LoggingService.instance.logError('SECURITY', 'Authentication failed');
+        LoggingService.instance.logError(
+          CrashlyticsService.featureBiometrics,
+          'Authentication failed',
+          exception: StateError('Device not supported'),
+          operation: 'Authentication Failed',
+        );
         return false;
       }
 
@@ -134,15 +140,26 @@ class AppLockService {
       );
       debugPrint('Authentication result: $authenticated');
       if (authenticated) {
-        LoggingService.instance.logInfo('SECURITY', 'Authentication successful');
+        LoggingService.instance.logInfo('BIOMETRICS', 'Authentication successful');
         markUnlocked();
       } else {
-        LoggingService.instance.logError('SECURITY', 'Authentication failed');
+        LoggingService.instance.logError(
+          CrashlyticsService.featureBiometrics,
+          'Authentication failed',
+          exception: StateError('Authentication declined'),
+          operation: 'Authentication Failed',
+        );
       }
       return authenticated;
-    } on Exception catch (error) {
+    } on Exception catch (error, stack) {
       debugPrint('Authentication result: false ($error)');
-      LoggingService.instance.logError('SECURITY', 'Authentication failed');
+      LoggingService.instance.logError(
+        CrashlyticsService.featureBiometrics,
+        'Authentication failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Authentication Failed',
+      );
       return false;
     } finally {
       _authInProgress = false;

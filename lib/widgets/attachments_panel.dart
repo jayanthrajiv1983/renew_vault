@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 
+import '../core/services/logging_service.dart';
+import '../core/services/crashlytics_service.dart';
 import '../constants/attachment_limits.dart';
 import '../models/attachment_metadata.dart';
 import '../models/renewal_item.dart';
@@ -223,7 +225,14 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
       }
     } on AttachmentLimitReachedException {
       await _handleLimitReached();
-    } catch (error) {
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureAttachments,
+        'Add attachment failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Add Failed',
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Could not add attachment: $error')),
@@ -305,7 +314,14 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
               .toList(),
         );
       }
-    } catch (error) {
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureAttachments,
+        'Delete attachment failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'Delete Failed',
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
