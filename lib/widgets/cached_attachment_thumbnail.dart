@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -26,16 +26,20 @@ class CachedAttachmentThumbnail extends StatefulWidget {
 }
 
 class _CachedAttachmentThumbnailState extends State<CachedAttachmentThumbnail> {
-  static final Map<String, Future<File>> _resolveFutures = {};
+  static final Map<String, Future<Uint8List>> _resolveFutures = {};
 
-  late final Future<File> _fileFuture;
+  late final Future<Uint8List> _bytesFuture;
 
   @override
   void initState() {
     super.initState();
-    _fileFuture = _resolveFutures.putIfAbsent(
+    _bytesFuture = _resolveFutures.putIfAbsent(
       widget.attachment.id,
-      () => AttachmentService.instance.resolveAttachmentFile(widget.attachment),
+      () async {
+        final viewData = await AttachmentService.instance
+            .resolveAttachmentForView(widget.attachment);
+        return viewData.imageBytes;
+      },
     );
   }
 
@@ -45,15 +49,15 @@ class _CachedAttachmentThumbnailState extends State<CachedAttachmentThumbnail> {
     final cacheSize =
         (widget.size * MediaQuery.devicePixelRatioOf(context)).round();
 
-    return FutureBuilder<File>(
-      future: _fileFuture,
+    return FutureBuilder<Uint8List>(
+      future: _bytesFuture,
       builder: (context, snapshot) {
-        final file = snapshot.data;
-        if (file != null && file.existsSync()) {
+        final bytes = snapshot.data;
+        if (bytes != null && bytes.isNotEmpty) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
-            child: Image.file(
-              file,
+            child: Image.memory(
+              bytes,
               width: widget.size,
               height: widget.size,
               fit: BoxFit.cover,

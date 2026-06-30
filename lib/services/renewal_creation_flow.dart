@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +14,7 @@ import '../screens/ocr_review_screen.dart';
 import '../core/services/logging_service.dart';
 import '../core/services/crashlytics_service.dart';
 import '../widgets/ocr/ocr_scan_helpers.dart';
+import 'attachment_service.dart';
 import 'ocr/ocr_form_mapper.dart';
 import 'ocr_service.dart';
 import 'ocr_correction_service.dart';
@@ -50,9 +53,29 @@ abstract final class RenewalCreationFlow {
       return null;
     }
 
+    File persistedImage;
+    try {
+      persistedImage =
+          await AttachmentService.instance.persistOcrCaptureSource(File(image.path));
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureOcr,
+        'OCR capture staging failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'OCR Staging',
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save scan image: $error')),
+        );
+      }
+      return null;
+    }
+
     return _runOcrReviewForImage(
       context,
-      imagePath: image.path,
+      imagePath: persistedImage.path,
       hasExistingData: hasExistingData,
       currentCategory: currentCategory,
       launchMode: AddItemLaunchMode.scanDocument,
@@ -109,9 +132,29 @@ abstract final class RenewalCreationFlow {
       );
     }
 
+    File persistedImage;
+    try {
+      persistedImage =
+          await AttachmentService.instance.persistOcrCaptureSource(File(path));
+    } catch (error, stack) {
+      LoggingService.instance.logError(
+        CrashlyticsService.featureOcr,
+        'OCR upload staging failed',
+        exception: error,
+        stackTrace: stack,
+        operation: 'OCR Staging',
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save document image: $error')),
+        );
+      }
+      return null;
+    }
+
     return _runOcrReviewForImage(
       context,
-      imagePath: path,
+      imagePath: persistedImage.path,
       hasExistingData: hasExistingData,
       currentCategory: currentCategory,
       launchMode: AddItemLaunchMode.uploadDocument,

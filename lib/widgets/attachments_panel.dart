@@ -8,6 +8,7 @@ import '../features/permissions/models/app_permission_type.dart';
 import '../features/permissions/services/permission_education_coordinator.dart';
 import '../models/attachment_metadata.dart';
 import '../models/renewal_item.dart';
+import '../screens/attachment_image_viewer_screen.dart';
 import '../services/attachment_service.dart';
 import '../services/storage_service.dart';
 import '../theme/app_spacing.dart';
@@ -271,6 +272,20 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
   }
 
   Future<void> _openAttachment(AttachmentMetadata attachment) async {
+    if (switch (attachment.fileType) {
+      AttachmentFileType.pdf => false,
+      AttachmentFileType.png || AttachmentFileType.jpg => true,
+    }) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (context) => AttachmentImageViewerScreen(
+            attachment: attachment,
+          ),
+        ),
+      );
+      return;
+    }
+
     final result = await AttachmentService.instance.openAttachment(attachment);
     if (!mounted || result.type == ResultType.done) {
       return;

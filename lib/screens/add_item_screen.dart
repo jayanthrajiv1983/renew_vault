@@ -236,6 +236,18 @@ class _AddItemScreenState extends State<AddItemScreen> {
   ) async {
     final sourceFile = File(filePath);
     if (!await sourceFile.exists()) {
+      LoggingService.instance.logError(
+        'OCR',
+        'Attach failed attachment source missing ext=${fileType.extension} '
+        'staging=${AttachmentService.instance.isOcrStagingPath(filePath)}',
+        operation: 'OCR Attach',
+      );
+      if (mounted) {
+        AppSnackBar.show(
+          context,
+          'Could not attach scan image. The file is no longer available.',
+        );
+      }
       return;
     }
 
@@ -292,6 +304,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
         fileType: fileType,
         preferredFileName: preferredName,
       );
+      await AttachmentService.instance.cleanupOcrStagingFile(filePath);
       if (mounted) {
         setState(() => _attachments = saveResult.item.attachments);
       }

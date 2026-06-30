@@ -28,8 +28,12 @@ class AttachmentEncryptionService {
 
   final Map<String, File> _decryptedCache = {};
 
-  bool isEncryptedBytes(List<int> bytes) {
-    if (bytes.length < _magicBytes.length + 1 + 16) {
+  static const _headerLength = 5; // RVEA magic (4) + format version (1)
+  static const _minimumEncryptedLength = _headerLength + 16;
+
+  /// True when [bytes] begins with the RVEA format header (5 bytes minimum).
+  bool hasEncryptedHeader(List<int> bytes) {
+    if (bytes.length < _headerLength) {
       return false;
     }
     for (var i = 0; i < _magicBytes.length; i++) {
@@ -40,16 +44,20 @@ class AttachmentEncryptionService {
     return bytes[_magicBytes.length] == formatVersion;
   }
 
+  bool isEncryptedBytes(List<int> bytes) {
+    return hasEncryptedHeader(bytes) && bytes.length >= _minimumEncryptedLength;
+  }
+
   Future<bool> isEncryptedFile(File file) async {
     if (!await file.exists()) {
       return false;
     }
     final length = await file.length();
-    if (length < _magicBytes.length + 1 + 16) {
+    if (length < _headerLength) {
       return false;
     }
-    final header = await file.openRead(0, _magicBytes.length + 1).first;
-    return isEncryptedBytes(header);
+    final header = await file.openRead(0, _headerLength).first;
+    return hasEncryptedHeader(header);
   }
 
   Future<List<int>> encryptBytes(List<int> plainBytes) async {
@@ -69,11 +77,18 @@ class AttachmentEncryptionService {
   }
 
   Future<List<int>> decryptBytes(List<int> encryptedBytes) async {
-    if (!isEncryptedBytes(encryptedBytes)) {
-      return encryptedBytes;
+    var current = encryptedBytes;
+    while (hasEncryptedHeader(current)) {
+      if (current.length < _minimumEncryptedLength) {
+        break;
+      }
+      current = await _decryptSingleLayer(current);
     }
+    return current;
+  }
 
-    final ivOffset = _magicBytes.length + 1;
+  Future<List<int>> _decryptSingleLayer(List<int> encryptedBytes) async {
+    final ivOffset = _headerLength;
     const ivLength = 16;
     final iv = IV(
       Uint8List.fromList(
@@ -105,6 +120,7 @@ class AttachmentEncryptionService {
   Future<File> decryptToReadableFile({
     required File storedFile,
     required String cacheKey,
+    String? fileExtension,
   }) async {
     if (!await storedFile.exists()) {
       return storedFile;
@@ -114,20 +130,43 @@ class AttachmentEncryptionService {
       return storedFile;
     }
 
+    final ext = _normalizeExtension(
+      fileExtension ?? p.extension(storedFile.path),
+    );
+
     final cached = _decryptedCache[cacheKey];
-    if (cached != null && await cached.exists()) {
+    if (cached != null &&
+        await cached.exists() &&
+        p.extension(cached.path).toLowerCase() == ext) {
       return cached;
+    } else if (cached != null) {
+      evictDecryptedCache(cacheKey);
     }
 
     final encryptedBytes = await storedFile.readAsBytes();
     final plainBytes = await decryptBytes(encryptedBytes);
     final tempDir = await getTemporaryDirectory();
     final tempFile = File(
-      p.join(tempDir.path, 'rv_attachment_$cacheKey'),
+      p.join(tempDir.path, 'rv_attachment_$cacheKey$ext'),
     );
     await tempFile.writeAsBytes(plainBytes, flush: true);
     _decryptedCache[cacheKey] = tempFile;
     return tempFile;
+  }
+
+  void evictDecryptedCache(String cacheKey) {
+    final cached = _decryptedCache.remove(cacheKey);
+    if (cached != null && cached.existsSync()) {
+      cached.deleteSync();
+    }
+  }
+
+  static String _normalizeExtension(String extension) {
+    final trimmed = extension.trim().toLowerCase();
+    if (trimmed.isEmpty) {
+      return '.bin';
+    }
+    return trimmed.startsWith('.') ? trimmed : '.$trimmed';
   }
 
   Future<bool> isMigrationComplete() async {
