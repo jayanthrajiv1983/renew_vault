@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/theme/app_text_styles.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/item_detail_section.dart';
 
@@ -125,6 +126,7 @@ class _CategoryDetailFieldRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final colorScheme = theme.colorScheme;
 
     return Padding(
@@ -141,18 +143,16 @@ class _CategoryDetailFieldRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: textStyles.categoryText(
                     color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                AppSpacing.gapTitleSubtitle,
                 valueWidget ??
                     Text(
                       value,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: textStyles.fieldValue(
                         color: valueColor ?? colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                     ),
               ],

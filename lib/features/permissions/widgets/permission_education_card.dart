@@ -40,7 +40,7 @@ class PermissionEducationCard extends StatelessWidget {
             Text(
               content.title,
               style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w600,
                 height: 1.2,
               ),
               textAlign: TextAlign.center,

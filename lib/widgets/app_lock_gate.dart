@@ -254,7 +254,7 @@ class _AppLockOverlay extends StatelessWidget {
                       Text(
                         'Unlock ${AppBrand.name}',
                         style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,
                       ),

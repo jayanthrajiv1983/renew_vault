@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../core/theme/app_text_styles.dart';
 import 'app_brand.dart';
 import 'app_spacing.dart';
 
@@ -28,9 +30,17 @@ abstract final class AppTheme {
       borderRadius: AppSpacing.cardBorderRadius,
     );
 
+    final baseTextTheme = brightness == Brightness.light
+        ? ThemeData.light().textTheme
+        : ThemeData.dark().textTheme;
+    final textTheme = GoogleFonts.interTextTheme(baseTextTheme);
+    final appTextStyles = AppTextStyles.fromTextTheme(textTheme);
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      textTheme: textTheme,
+      extensions: [appTextStyles],
       appBarTheme: AppBarTheme(
         centerTitle: false,
         scrolledUnderElevation: 0,

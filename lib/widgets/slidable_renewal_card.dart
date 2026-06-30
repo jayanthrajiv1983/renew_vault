@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/renewal_item.dart';
 import '../shared/widgets/item_slidable.dart';
+import '../theme/app_spacing.dart';
 import '../utils/item_actions.dart';
 import 'renewal_card.dart';
 
@@ -15,11 +16,13 @@ class SlidableRenewalCard extends StatelessWidget {
     required this.item,
     required this.onTap,
     this.onItemChanged,
+    this.bottomMargin = AppSpacing.cardSpacing,
   });
 
   final RenewalItem item;
   final VoidCallback onTap;
   final VoidCallback? onItemChanged;
+  final double bottomMargin;
 
   @override
   Widget build(BuildContext context) {
@@ -43,6 +46,7 @@ class SlidableRenewalCard extends StatelessWidget {
       child: RenewalCard(
         item: item,
         onTap: onTap,
+        bottomMargin: bottomMargin,
       ),
     );
   }

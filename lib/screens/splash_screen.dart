@@ -197,7 +197,7 @@ class _SplashScreenState extends State<SplashScreen>
                         AppBrand.displayName,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontSize: 30,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: titleColor,
                           height: 1.2,
                         ),

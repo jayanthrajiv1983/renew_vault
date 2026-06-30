@@ -44,7 +44,7 @@ class RenewVaultLogo extends StatelessWidget {
           Text(
             AppBrand.displayName,
             style: textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: colorScheme.onSurface,
             ),
             textAlign: TextAlign.center,

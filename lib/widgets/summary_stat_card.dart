@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
 /// Tappable summary tile for dashboard and analytics grids.
@@ -20,6 +21,7 @@ class SummaryStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final cardRadius = AppSpacing.cardBorderRadius;
 
     return Card(
@@ -42,7 +44,7 @@ class SummaryStatCard extends StatelessWidget {
                   label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: textStyles.categoryText(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
@@ -52,8 +54,7 @@ class SummaryStatCard extends StatelessWidget {
                 '$count',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                style: textStyles.dashboardNumber(
                   color: countColor,
                 ),
               ),

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../../core/theme/app_text_styles.dart';
 import '../../theme/app_spacing.dart';
 
 /// Reusable centered empty-state layout for lists, search, and detail screens.
@@ -255,17 +256,14 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
   List<Widget> _buildChildren(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
     final visual = _visual;
 
     final titleStyle = widget.compact
-        ? theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          )
-        : theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          );
+        ? textStyles.categoryText(color: colorScheme.onSurfaceVariant)
+        : textStyles.sectionTitle();
 
-    final subtitleStyle = theme.textTheme.bodyMedium?.copyWith(
+    final subtitleStyle = textStyles.bodyMedium.copyWith(
       color: colorScheme.onSurfaceVariant,
     );
 

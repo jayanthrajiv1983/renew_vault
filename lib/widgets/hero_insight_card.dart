@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 
 /// Priority hero insight shown above the dashboard stat grid.
@@ -44,6 +45,8 @@ class HeroInsightCard extends StatelessWidget {
   static const double _borderRadius = 24;
   static const EdgeInsets _padding = EdgeInsets.all(16);
   static const double _iconSize = 44;
+  static const double _iconTextGap = 12;
+  static const double _titleDescriptionGap = 6;
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +70,114 @@ class HeroInsightCard extends StatelessWidget {
       HeroInsightVariant.safe => onViewVault,
     };
 
+    final textStyles = AppTextStyles.of(context);
+
+    final content = LayoutBuilder(
+      builder: (context, constraints) {
+        final useStackedLayout = constraints.maxWidth < 520;
+
+        final textBlock = Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              spec.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: textStyles.itemTitle(
+                color: spec.titleColor,
+              ),
+            ),
+            const SizedBox(height: _titleDescriptionGap),
+            Text(
+              spec.description(count),
+              maxLines: useStackedLayout ? 3 : 2,
+              overflow: TextOverflow.ellipsis,
+              softWrap: true,
+              style: textStyles.categoryText(
+                color: spec.descriptionColor,
+              ),
+            ),
+          ],
+        );
+
+        final icon = Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(
+            spec.icon,
+            size: _iconSize,
+            color: spec.accentColor.withValues(alpha: 0.85),
+          ),
+        );
+
+        final cta = spec.useFilledButton
+            ? FilledButton(
+                onPressed: onCta,
+                style: FilledButton.styleFrom(
+                  backgroundColor: spec.accentColor,
+                  foregroundColor: spec.buttonForegroundColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(spec.ctaLabel),
+              )
+            : TextButton(
+                onPressed: onCta,
+                style: TextButton.styleFrom(
+                  foregroundColor: spec.accentColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(spec.ctaLabel),
+              );
+
+        if (useStackedLayout) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  icon,
+                  const SizedBox(width: _iconTextGap),
+                  Expanded(child: textBlock),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: cta,
+              ),
+            ],
+          );
+        }
+
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              icon,
+              const SizedBox(width: _iconTextGap),
+              Expanded(child: textBlock),
+              const SizedBox(width: 10),
+              Align(
+                alignment: Alignment.center,
+                child: cta,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
     final card = Material(
       color: Colors.transparent,
       elevation: 0,
@@ -86,74 +197,7 @@ class HeroInsightCard extends StatelessWidget {
         ),
         child: Padding(
           padding: _padding,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                spec.icon,
-                size: _iconSize,
-                color: spec.accentColor.withValues(alpha: 0.85),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      spec.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.25,
-                            color: spec.titleColor,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      spec.description(count),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            height: 1.35,
-                            color: spec.descriptionColor,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              spec.useFilledButton
-                  ? FilledButton(
-                      onPressed: onCta,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: spec.accentColor,
-                        foregroundColor: spec.buttonForegroundColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(spec.ctaLabel),
-                    )
-                  : TextButton(
-                      onPressed: onCta,
-                      style: TextButton.styleFrom(
-                        foregroundColor: spec.accentColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: Text(spec.ctaLabel),
-                    ),
-            ],
-          ),
+          child: content,
         ),
       ),
     );
@@ -204,7 +248,7 @@ class _HeroVisualSpec {
               isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
           buttonForegroundColor: Colors.white,
           icon: Icons.warning_amber_rounded,
-          title: '⚠️ Action Required',
+          title: 'Action Required',
           description: (count) => count == 1
               ? 'You have 1 expired item that needs attention.'
               : 'You have $count expired items that need attention.',
@@ -223,7 +267,7 @@ class _HeroVisualSpec {
               isDark ? const Color(0xFFFCD34D) : const Color(0xFFD97706),
           buttonForegroundColor: isDark ? const Color(0xFF422006) : Colors.white,
           icon: Icons.calendar_month_rounded,
-          title: '📅 Upcoming Renewals',
+          title: 'Upcoming Renewals',
           description: (count) => count == 1
               ? '1 item expires within the next 30 days.'
               : '$count items expire within the next 30 days.',
@@ -242,7 +286,7 @@ class _HeroVisualSpec {
               isDark ? const Color(0xFF86EFAC) : const Color(0xFF16A34A),
           buttonForegroundColor: AppColors.statSafe,
           icon: Icons.celebration_rounded,
-          title: "🎉 You're All Set",
+          title: "You're All Set",
           description: (_) => 'All items are currently up to date.',
           ctaLabel: 'View Vault',
           useFilledButton: false,

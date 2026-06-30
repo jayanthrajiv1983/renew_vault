@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 /// Central spacing and shape tokens for Renew Vault.
 abstract final class AppSpacing {
   static const double screenPadding = 24;
-  static const double sectionSpacing = 16;
-  static const double cardSpacing = 12;
+  static const double sectionSpacing = 20;
+  static const double cardSpacing = 16;
+  static const double titleSubtitleGap = 10;
+  static const double categoryOwnerGap = 12;
   static const double cardPadding = 16;
   static const double cardRadius = 12;
   static const double cardElevation = 1;
@@ -28,6 +30,12 @@ abstract final class AppSpacing {
   static SizedBox get gapSection => const SizedBox(height: sectionSpacing);
 
   static SizedBox get gapCard => const SizedBox(height: cardSpacing);
+
+  static SizedBox get gapTitleSubtitle =>
+      const SizedBox(height: titleSubtitleGap);
+
+  static SizedBox get gapCategoryOwner =>
+      const SizedBox(height: categoryOwnerGap);
 
   static SizedBox get gapField => const SizedBox(height: fieldSpacing);
 }

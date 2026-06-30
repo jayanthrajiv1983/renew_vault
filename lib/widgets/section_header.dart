@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
 /// Consistent section title used across list and settings screens.
@@ -15,6 +16,9 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
+
     return Padding(
       padding: padding ??
           const EdgeInsets.only(
@@ -23,9 +27,9 @@ class SectionHeader extends StatelessWidget {
           ),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+        style: textStyles.sectionTitle(
+          color: theme.colorScheme.onSurface,
+        ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),

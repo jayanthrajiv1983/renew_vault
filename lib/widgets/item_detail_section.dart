@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
 class ItemDetailSection extends StatelessWidget {
@@ -23,6 +24,7 @@ class ItemDetailSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final colorScheme = theme.colorScheme;
     final shape = borderRadius != null
         ? RoundedRectangleBorder(borderRadius: borderRadius!)
@@ -45,8 +47,8 @@ class ItemDetailSection extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    style: textStyles.sectionTitle(
+                      color: colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -80,6 +82,8 @@ class ItemDetailField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.cardSpacing),
@@ -88,21 +92,33 @@ class ItemDetailField extends StatelessWidget {
         children: [
           Text(
             label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            style: textStyles.categoryText(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 4),
+          AppSpacing.gapTitleSubtitle,
           if (trailing != null)
             Row(
               children: [
                 trailing!,
                 const SizedBox(width: AppSpacing.cardSpacing),
-                Expanded(child: Text(value)),
+                Expanded(
+                  child: Text(
+                    value,
+                    style: textStyles.fieldValue(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                ),
               ],
             )
           else
-            Text(value),
+            Text(
+              value,
+              style: textStyles.fieldValue(
+                color: colorScheme.onSurface,
+              ),
+            ),
         ],
       ),
     );

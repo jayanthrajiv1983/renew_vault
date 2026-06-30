@@ -42,6 +42,18 @@ const _kAppBarTitleBreakpoint = 600.0;
 /// Bottom inset so extended FAB does not cover list content.
 const _kFabScrollClearance = 120.0;
 
+/// Home-screen vertical rhythm (distinct from global [AppSpacing.sectionSpacing]).
+abstract final class _HomeSpacing {
+  static const double heroToDashboard = 16;
+  static const double sectionGap = 20;
+  static const double titleToCard = 12;
+  static const double cardGap = 12;
+}
+
+/// Section title padding: gap is applied by the parent sliver, not the header.
+const _kHomeSectionHeaderPadding =
+    EdgeInsets.only(bottom: _HomeSpacing.titleToCard);
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -741,12 +753,43 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  /// Builds [HeroInsightCard] when possible. Returns null on build failure so
+  /// the legacy overdue banner can serve as fallback.
+  Widget? _buildHeroInsightCard(int expiredCount) {
+    try {
+      return HeroInsightCard(
+        expiredCount: expiredCount,
+        expiringSoonCount: _countExpiringSoon(),
+        onReviewExpired: () => _openFilteredItems(
+          title: 'Expired',
+          filter: ItemFilter.expired,
+        ),
+        onViewUpcoming: () => _openFilteredItems(
+          title: 'Expiring Soon',
+          filter: ItemFilter.expiringSoon,
+        ),
+        onViewVault: () => _openFilteredItems(
+          title: 'Total Items',
+          filter: ItemFilter.all,
+        ),
+      );
+    } catch (e, stack) {
+      assert(() {
+        debugPrint('HeroInsightCard failed to build: $e\n$stack');
+        return true;
+      }());
+      return null;
+    }
+  }
+
   Widget _buildDashboardHeader({
     required BuildContext context,
     required Widget? backupReminderBanner,
     required int expiredCount,
   }) {
-    final showOverdueBanner = expiredCount >= 1 &&
+    final heroInsight = _buildHeroInsightCard(expiredCount);
+    final showOverdueBanner = heroInsight == null &&
+        expiredCount >= 1 &&
         SettingsService.instance.getShowExpiredBanner();
 
     return Column(
@@ -788,23 +831,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ? null
                 : () => _openCategoryItems(_selectedCategory!),
           ),
-        HeroInsightCard(
-          expiredCount: expiredCount,
-          expiringSoonCount: _countExpiringSoon(),
-          onReviewExpired: () => _openFilteredItems(
-            title: 'Expired',
-            filter: ItemFilter.expired,
-          ),
-          onViewUpcoming: () => _openFilteredItems(
-            title: 'Expiring Soon',
-            filter: ItemFilter.expiringSoon,
-          ),
-          onViewVault: () => _openFilteredItems(
-            title: 'Total Items',
-            filter: ItemFilter.all,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sectionSpacing),
+        if (heroInsight != null) ...[
+          heroInsight,
+          const SizedBox(height: _HomeSpacing.heroToDashboard),
+        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final crossAxisCount =
@@ -816,8 +846,8 @@ class _HomeScreenState extends State<HomeScreen> {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: AppSpacing.cardSpacing,
               crossAxisSpacing: AppSpacing.cardSpacing,
-              // Fixed row height fits label + value + subtitle with 16px padding.
-              mainAxisExtent: 115,
+              // Fixed row height: title row + value + subtitle slot + padding.
+              mainAxisExtent: 128,
               children: [
                 DashboardStatCard(
                   type: DashboardStatType.totalItems,
@@ -915,8 +945,12 @@ class _HomeScreenState extends State<HomeScreen> {
         )
       else ...[
         _horizontalSliverPadding(
+          top: _HomeSpacing.sectionGap,
           sliver: const SliverToBoxAdapter(
-            child: SectionHeader(title: 'Expiring Soon'),
+            child: SectionHeader(
+              title: 'Expiring Soon',
+              padding: _kHomeSectionHeaderPadding,
+            ),
           ),
         ),
         if (expiringSoon.isEmpty)
@@ -931,8 +965,10 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         else
           _horizontalSliverPadding(
-            sliver: SliverList.builder(
+            sliver: SliverList.separated(
               itemCount: expiringSoon.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: _HomeSpacing.cardGap),
               itemBuilder: (context, index) {
                 final item = expiringSoon[index];
                 return SlidableRenewalCard(
@@ -940,13 +976,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   item: item,
                   onTap: () => _openItemDetail(item),
                   onItemChanged: _loadItems,
+                  bottomMargin: 0,
                 );
               },
             ),
           ),
         _horizontalSliverPadding(
+          top: _HomeSpacing.sectionGap,
           sliver: const SliverToBoxAdapter(
-            child: SectionHeader(title: 'All Items'),
+            child: SectionHeader(
+              title: 'All Items',
+              padding: _kHomeSectionHeaderPadding,
+            ),
           ),
         ),
         if (filteredItems.isEmpty)
@@ -963,8 +1004,10 @@ class _HomeScreenState extends State<HomeScreen> {
         else
           _horizontalSliverPadding(
             bottom: _kFabScrollClearance,
-            sliver: SliverList.builder(
+            sliver: SliverList.separated(
               itemCount: filteredItems.length,
+              separatorBuilder: (_, _) =>
+                  const SizedBox(height: _HomeSpacing.cardGap),
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
                 return SlidableRenewalCard(
@@ -972,6 +1015,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   item: item,
                   onTap: () => _openItemDetail(item),
                   onItemChanged: _loadItems,
+                  bottomMargin: 0,
                 );
               },
             ),

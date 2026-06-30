@@ -83,7 +83,7 @@ class _OnboardingPageViewItemState extends State<OnboardingPageViewItem>
                 Text(
                   widget.content.title,
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     height: 1.2,
                   ),
                   textAlign: TextAlign.center,

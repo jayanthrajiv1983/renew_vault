@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../models/renewal_item.dart';
 import '../services/family_service.dart';
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 import '../utils/category_fields_builder.dart';
 import '../utils/form_padding.dart';
@@ -102,8 +103,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final daysRemaining = getDaysRemaining(item.renewalDate);
-    final statusColor = getStatusColor(daysRemaining);
+    final statusColor = getStatusColor(daysRemaining, theme.colorScheme);
     final statusText = getStatusText(daysRemaining);
     final sortedReminderDays = [...item.reminderDays]..sort((a, b) => b.compareTo(a));
     final categoryFields = categoryFieldsFor(item.category, item.metadata);
@@ -150,9 +152,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                     Text(
                       item.category,
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: textStyles.categoryText(
                         color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.cardSpacing),
@@ -167,9 +168,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                       ),
                       child: Text(
                         statusText,
-                        style: theme.textTheme.labelLarge?.copyWith(
+                        style: textStyles.daysLeft(
                           color: statusColor,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -460,6 +460,7 @@ class _DetailInfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final colorScheme = theme.colorScheme;
 
     return Padding(
@@ -476,18 +477,16 @@ class _DetailInfoRow extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: textStyles.categoryText(
                     color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                AppSpacing.gapTitleSubtitle,
                 valueWidget ??
                     Text(
                       value!,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: textStyles.fieldValue(
                         color: valueColor ?? colorScheme.onSurface,
-                        fontWeight: FontWeight.w600,
                       ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
@@ -547,6 +546,7 @@ class _OwnerInfoValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final colorScheme = theme.colorScheme;
     final member = FamilyService.instance.getByName(ownerName);
     final relationship = member?.relationship.trim() ?? '';
@@ -559,8 +559,8 @@ class _OwnerInfoValue extends StatelessWidget {
       children: [
         Text(
           ownerName,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+          style: textStyles.fieldValue(
+            color: colorScheme.onSurface,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -570,7 +570,7 @@ class _OwnerInfoValue extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2),
             child: Text(
               relationship,
-              style: theme.textTheme.bodySmall?.copyWith(
+              style: textStyles.metadata(
                 color: colorScheme.onSurfaceVariant,
               ),
             ),

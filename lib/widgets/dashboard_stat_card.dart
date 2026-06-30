@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_brand.dart';
 import '../theme/app_colors.dart';
 
@@ -32,12 +33,18 @@ class DashboardStatCard extends StatelessWidget {
   final int animationIndex;
 
   static const double _borderRadius = 20;
-  static const EdgeInsets _padding = EdgeInsets.all(16);
-  static const double _iconSize = 34;
+  static const EdgeInsets _padding =
+      EdgeInsets.fromLTRB(16, 12, 16, 16);
+  static const double _iconContainerSize = 40;
+  static const double _iconSize = 28;
+  static const double _titleToValueGap = 10;
+  static const double _valueToSubtitleGap = 4;
+  static const double _subtitleLineHeight = 14.4;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
     final spec = _StatVisualSpec.forType(type, isDark: isDark);
@@ -66,74 +73,57 @@ class DashboardStatCard extends StatelessWidget {
           highlightColor: spec.accentColor.withValues(alpha: 0.06),
           child: Padding(
             padding: _padding,
-            child: Stack(
-              clipBehavior: Clip.none,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Icon(
-                    spec.icon,
-                    size: _iconSize,
-                    color: spec.accentColor.withValues(alpha: 0.75),
-                  ),
-                ),
-                Column(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Padding(
-                      padding: EdgeInsets.only(right: _iconSize + 2),
+                    Expanded(
                       child: Text(
                         label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          height: 1.2,
+                        maxLines: 2,
+                        softWrap: true,
+                        style: textStyles.dashboardTitle(
                           color: spec.titleColor,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: EdgeInsets.only(right: _iconSize + 2),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          '$count',
-                          maxLines: 1,
-                          style: theme.textTheme.displaySmall?.copyWith(
-                            fontSize: 32,
-                            fontWeight: FontWeight.w700,
-                            height: 1.05,
-                            letterSpacing: -0.5,
-                            color: spec.valueColor(colorScheme),
-                          ),
-                        ),
-                      ),
+                    const SizedBox(width: 8),
+                    _StatIconBadge(
+                      icon: spec.icon,
+                      accentColor: spec.accentColor,
                     ),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          subtitle!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            height: 1.2,
-                            color: spec.subtitleColor,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
+                ),
+                const SizedBox(height: _titleToValueGap),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    '$count',
+                    maxLines: 1,
+                    style: textStyles.dashboardNumber(
+                      color: spec.valueColor(colorScheme),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: _valueToSubtitleGap),
+                SizedBox(
+                  height: _subtitleLineHeight,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: subtitle != null
+                        ? Text(
+                            subtitle!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textStyles.dashboardSubtitle(
+                              color: spec.subtitleColor,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
               ],
             ),
@@ -145,6 +135,35 @@ class DashboardStatCard extends StatelessWidget {
     return _StaggeredScaleIn(
       index: animationIndex,
       child: SizedBox.expand(child: card),
+    );
+  }
+}
+
+class _StatIconBadge extends StatelessWidget {
+  const _StatIconBadge({
+    required this.icon,
+    required this.accentColor,
+  });
+
+  final IconData icon;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: DashboardStatCard._iconContainerSize,
+      height: DashboardStatCard._iconContainerSize,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: accentColor.withValues(alpha: 0.12),
+        ),
+        child: Icon(
+          icon,
+          size: DashboardStatCard._iconSize,
+          color: accentColor.withValues(alpha: 0.85),
+        ),
+      ),
     );
   }
 }
