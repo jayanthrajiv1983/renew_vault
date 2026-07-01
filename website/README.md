@@ -70,9 +70,11 @@ Under **Build and deployment**:
 |---------|--------|
 | **Source** | Deploy from a branch |
 | **Branch** | `main` (or your default branch) |
-| **Folder** | `/website` |
+| **Folder** | `/docs` (see note below) |
 
 Click **Save**.
+
+> **Note:** GitHub branch deploy only supports `/ (root)` or `/docs` — not `/website`. This repo mirrors `website/` into `docs/` for branch deploy, or use the **GitHub Actions** workflow (Settings → Pages → Source → **GitHub Actions**) to publish directly from `website/`.
 
 #### 4. Wait for deployment
 
@@ -238,8 +240,8 @@ Or open `index.html` directly in a browser for a quick check (some features beha
 
 | Problem | Likely cause | Fix |
 |---------|--------------|-----|
-| 404 on homepage | Wrong folder selected | Set Pages folder to `/website`, not `/ (root)` |
-| Unstyled pages | Jekyll ignoring assets | Ensure `website/.nojekyll` exists and is committed |
+| 404 on homepage | Wrong folder selected | Set Pages folder to `/docs`, or use **GitHub Actions** source with the deploy workflow |
+| 404 on subpages | Deploying from `/` root | Files in `website/` are served at `/website/...`; use `/docs` or GitHub Actions so pages deploy at the site root |
 | Broken nav on live site only | Absolute paths | Use relative paths (`css/styles.css`, not `/css/styles.css`) |
 | Favicon missing | Wrong path or cache | Confirm `assets/favicon.svg` exists; hard-refresh |
 | Old content after push | CDN cache | Wait a few minutes; try incognito window |
