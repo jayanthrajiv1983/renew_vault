@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_system.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
@@ -33,6 +34,10 @@ class FamilyBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
+    final axisLabelStyle = textStyles.tertiaryInfo(
+      color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+    );
 
     if (ownerCounts.isEmpty) {
       return EmptyStateWidget.compact(
@@ -113,9 +118,7 @@ class FamilyBarChart extends StatelessWidget {
                       }
                       return Text(
                         value.toInt().toString(),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: axisLabelStyle,
                       );
                     },
                   ),
@@ -136,9 +139,7 @@ class FamilyBarChart extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppDesignTokens.space8),
                         child: Text(
                           shortName,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                          style: axisLabelStyle,
                           textAlign: TextAlign.center,
                         ),
                       );

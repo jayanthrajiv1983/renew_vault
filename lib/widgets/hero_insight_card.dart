@@ -95,7 +95,7 @@ class HeroInsightCard extends StatelessWidget {
               maxLines: useStackedLayout ? 3 : 2,
               overflow: TextOverflow.ellipsis,
               softWrap: true,
-              style: textStyles.categoryText(
+              style: textStyles.secondaryInfo(
                 color: spec.descriptionColor,
               ),
             ),

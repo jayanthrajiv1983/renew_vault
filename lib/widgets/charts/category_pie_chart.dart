@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../constants/categories.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
@@ -22,6 +23,7 @@ class CategoryPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
     final total = categoryCounts.values.fold<int>(0, (sum, count) => sum + count);
 
     if (total == 0) {
@@ -49,15 +51,9 @@ class CategoryPieChart extends StatelessWidget {
           color: color,
           title: '$percentage%',
           radius: 56,
-          titleStyle: theme.textTheme.labelSmall?.copyWith(
+          titleStyle: textStyles.daysLeft(
             color: _contrastColor(color, scheme),
-            fontWeight: FontWeight.w600,
-          ) ??
-              TextStyle(
-                color: _contrastColor(color, scheme),
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-              ),
+          ).copyWith(fontSize: 11),
           badgeWidget: null,
         ),
       );

@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_system.dart';
+import '../../core/theme/app_text_styles.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import '../../services/analytics_service.dart';
@@ -19,6 +20,10 @@ class ExpiryLineChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
+    final axisLabelStyle = textStyles.tertiaryInfo(
+      color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+    );
     final lineColor = scheme.primary;
     final dotColor = scheme.secondary;
     final fillColor = scheme.primary.withValues(alpha: 0.12);
@@ -83,9 +88,7 @@ class ExpiryLineChart extends StatelessWidget {
                       }
                       return Text(
                         value.toInt().toString(),
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: scheme.onSurfaceVariant,
-                        ),
+                        style: axisLabelStyle,
                       );
                     },
                   ),
@@ -106,9 +109,7 @@ class ExpiryLineChart extends StatelessWidget {
                         padding: const EdgeInsets.only(top: AppDesignTokens.space8),
                         child: Text(
                           monthlyExpiries[index].label,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                          ),
+                          style: axisLabelStyle,
                         ),
                       );
                     },
@@ -150,10 +151,9 @@ class ExpiryLineChart extends StatelessWidget {
                       final bucket = monthlyExpiries[index];
                       return LineTooltipItem(
                         '${bucket.label}\n${bucket.count} expiring',
-                        theme.textTheme.labelSmall!.copyWith(
+                        textStyles.daysLeft(
                           color: scheme.onInverseSurface,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        ).copyWith(fontSize: 11),
                       );
                     }).toList();
                   },

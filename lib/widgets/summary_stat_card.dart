@@ -41,7 +41,7 @@ class SummaryStatCard extends StatelessWidget {
                 label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: textStyles.categoryText(
+                style: textStyles.secondaryInfo(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),

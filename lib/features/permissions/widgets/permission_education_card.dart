@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_text_styles.dart';
 import '../../../theme/app_spacing.dart';
 import '../models/permission_education_content.dart';
 
@@ -19,6 +20,7 @@ class PermissionEducationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
 
     return Material(
       borderRadius: AppSpacing.cardBorderRadius,
@@ -39,18 +41,14 @@ class PermissionEducationCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.sectionSpacing),
             Text(
               content.title,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                height: 1.2,
-              ),
+              style: textStyles.itemTitle(color: colorScheme.onSurface),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.fieldLabelGap),
             Text(
               content.description,
-              style: theme.textTheme.bodyLarge?.copyWith(
+              style: textStyles.secondaryInfo(
                 color: colorScheme.onSurfaceVariant,
-                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),

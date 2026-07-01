@@ -4,6 +4,23 @@ import 'package:flutter/material.dart';
 ///
 /// Access semantic styles via [AppTextStyles.of]:
 /// `AppTextStyles.of(context).sectionTitle(color: colorScheme.onSurface)`.
+///
+/// ## Information hierarchy (Sprint 23.6)
+///
+/// **Level 1 — PRIMARY** (scan first): item titles, stat values, days-left /
+/// expired status, numeric values. Color: `onSurface` or semantic status.
+/// Weight: w600. Tokens: [itemTitle], [daysLeft], [fieldValue],
+/// [dashboardNumber], [primaryInfo].
+///
+/// **Level 2 — SECONDARY** (support, don't compete): category names, field
+/// labels, supporting descriptions. Color: `onSurfaceVariant`. Weight: w400–w500.
+/// Tokens: [categoryText], [detailFieldLabel], [dashboardTitle],
+/// [secondaryInfo].
+///
+/// **Level 3 — TERTIARY** (unobtrusive): owner chips, helper text, empty
+/// states, metadata, attachment hints. Color: `onSurfaceVariant` (softer) or
+/// `outline`. Weight: w400, smaller. Tokens: [metadata], [dashboardSubtitle],
+/// [tertiaryInfo].
 @immutable
 class AppTextStyles extends ThemeExtension<AppTextStyles> {
   const AppTextStyles({
@@ -73,7 +90,7 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
       labelLarge: base(textTheme.labelLarge),
       sectionTitleStyle: base(textTheme.titleLarge).copyWith(
         fontSize: 18,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         height: 1.25,
       ),
@@ -103,7 +120,7 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
       ),
       dashboardNumberStyle: base(textTheme.displaySmall).copyWith(
         fontSize: 30,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         height: 1.05,
         letterSpacing: -0.5,
       ),
@@ -123,7 +140,7 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
         height: 1.3,
       ),
       detailSectionHeaderStyle: base(textTheme.titleLarge).copyWith(
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: FontWeight.w600,
         letterSpacing: -0.2,
         height: 1.25,
@@ -139,47 +156,65 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
 
   // ── Semantic aliases (color-aware) ────────────────────────────────────────
 
-  /// Section titles: 18sp w500, letterSpacing -0.2.
+  // Level 1 — PRIMARY
+
+  /// Generic L1 token (16sp w600). Prefer [itemTitle], [fieldValue], etc.
+  TextStyle primaryInfo({Color? color}) =>
+      itemTitleStyle.copyWith(color: color);
+
+  /// Section titles: 18sp w600, letterSpacing -0.2.
   TextStyle sectionTitle({Color? color}) =>
       sectionTitleStyle.copyWith(color: color);
 
-  /// Renewal / list item titles: 16sp w600, letterSpacing -0.1.
+  /// Renewal / list item titles — L1: 16sp w600, letterSpacing -0.1.
   TextStyle itemTitle({Color? color}) =>
       itemTitleStyle.copyWith(color: color);
 
-  /// Category and secondary labels: 13sp w400 (use onSurfaceVariant).
-  TextStyle categoryText({Color? color}) =>
-      categoryTextStyle.copyWith(color: color);
-
-  /// Owner and metadata: 12sp w400.
-  TextStyle metadata({Color? color}) => metadataStyle.copyWith(color: color);
-
-  /// Days-left status: 14sp w600.
+  /// Days-left / expired status — L1: 14sp w600.
   TextStyle daysLeft({Color? color}) => daysLeftStyle.copyWith(color: color);
 
-  /// Dashboard stat value: 30sp w700.
+  /// Dashboard stat value — L1: 30sp w600.
   TextStyle dashboardNumber({Color? color}) =>
       dashboardNumberStyle.copyWith(color: color);
 
-  /// Dashboard stat label: 14sp w500.
-  TextStyle dashboardTitle({Color? color}) =>
-      dashboardTitleStyle.copyWith(color: color);
-
-  /// Dashboard stat subtitle: 12sp w400.
-  TextStyle dashboardSubtitle({Color? color}) =>
-      dashboardSubtitleStyle.copyWith(color: color);
-
-  /// Detail field values: 16sp w600 (use onSurface or primary).
+  /// Detail field values — L1: 16sp w600 (use onSurface or primary).
   TextStyle fieldValue({Color? color}) =>
       fieldValueStyle.copyWith(color: color);
 
-  /// Detail screen section headers: 20sp w600.
+  /// Detail screen section headers — 18sp w600, letterSpacing -0.2.
   TextStyle detailSectionHeader({Color? color}) =>
       detailSectionHeaderStyle.copyWith(color: color);
 
-  /// Detail field labels (Title, Category, etc.): 13sp w500 (use onSurfaceVariant).
+  // Level 2 — SECONDARY
+
+  /// Generic L2 token (13sp w400). Prefer [categoryText], [detailFieldLabel].
+  TextStyle secondaryInfo({Color? color}) =>
+      categoryTextStyle.copyWith(color: color);
+
+  /// Category and secondary labels — L2: 13sp w400 (use onSurfaceVariant).
+  TextStyle categoryText({Color? color}) =>
+      categoryTextStyle.copyWith(color: color);
+
+  /// Dashboard stat label — L2: 14sp w500.
+  TextStyle dashboardTitle({Color? color}) =>
+      dashboardTitleStyle.copyWith(color: color);
+
+  /// Detail field labels (Title, Category, etc.) — L2: 13sp w500.
   TextStyle detailFieldLabel({Color? color}) =>
       detailFieldLabelStyle.copyWith(color: color);
+
+  // Level 3 — TERTIARY
+
+  /// Generic L3 token (12sp w400). Prefer [metadata], [dashboardSubtitle].
+  TextStyle tertiaryInfo({Color? color}) =>
+      metadataStyle.copyWith(color: color);
+
+  /// Owner chips and metadata — L3: 12sp w400.
+  TextStyle metadata({Color? color}) => metadataStyle.copyWith(color: color);
+
+  /// Dashboard stat subtitle — L3: 12sp w400.
+  TextStyle dashboardSubtitle({Color? color}) =>
+      dashboardSubtitleStyle.copyWith(color: color);
 
   @override
   AppTextStyles copyWith({

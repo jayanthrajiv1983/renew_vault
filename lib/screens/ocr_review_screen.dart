@@ -269,7 +269,9 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
                           Text(
                             'Extracted Fields',
                             style: AppTextStyles.of(context).sectionTitle(
-                              color: colorScheme.onSurface,
+                              color: AppDesignTokens.sectionHeaderTextColor(
+                                colorScheme,
+                              ),
                             ),
                           ),
                           const SizedBox(height: AppDesignTokens.space4),

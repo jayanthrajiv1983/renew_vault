@@ -69,9 +69,15 @@ abstract final class AppDesignTokens {
 
   // ── Section rhythm ────────────────────────────────────────────────────────
 
-  static const double sectionGap = space20;
-  static const double sectionTopGap = space8;
-  static const double titleToFirstCard = space12;
+  static const double sectionGap = space16;
+  static const double sectionTopGap = space4;
+  static const double titleToFirstCard = space8;
+
+  /// Section header title color — onSurface at reduced opacity (Sprint 23.6).
+  static const double sectionHeaderTextAlpha = 0.9;
+
+  static Color sectionHeaderTextColor(ColorScheme colorScheme) =>
+      colorScheme.onSurface.withValues(alpha: sectionHeaderTextAlpha);
   /// Tight padding within a single icon → label → value block.
   static const double detailRowPaddingVertical = 0;
 
@@ -81,9 +87,19 @@ abstract final class AppDesignTokens {
   /// Whitespace between field blocks (replaces row dividers).
   static const double detailFieldBlockGap = 20;
 
-  static const double detailSectionTitleGap = space18;
+  static const double detailSectionTitleGap = space14;
   static const double detailIconColumnSize = 40;
   static const double detailIconGap = 17;
+
+  /// Renewal card list — fixed leading icon column (48×48 circular slot).
+  static const double renewalCardIconColumnSize = 48;
+
+  /// Whitespace between renewal-card icon column and text content.
+  static const double renewalCardIconGap = space12;
+
+  /// Renewal card list — fixed trailing status column (two 14sp lines, right-aligned).
+  static const double renewalCardStatusColumnWidth = 100;
+
   static const double detailDividerThickness = 1;
 
   /// Used only when a divider is explicitly needed between major groups.

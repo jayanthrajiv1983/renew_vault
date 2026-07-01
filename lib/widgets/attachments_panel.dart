@@ -12,6 +12,7 @@ import '../screens/attachment_image_viewer_screen.dart';
 import '../services/attachment_service.dart';
 import '../services/storage_service.dart';
 import '../core/theme/design_system.dart';
+import '../core/theme/app_text_styles.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/metadata_utils.dart';
@@ -377,6 +378,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
   Widget _buildContent(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
     final atLimit = !_canAdd && _attachments.isNotEmpty;
 
     return Column(
@@ -437,8 +439,8 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
             _isDetail
                 ? 'No attachments yet. Add a photo or PDF to keep records with this item.'
                 : 'No attachments yet. Add a photo or PDF before saving.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: textStyles.tertiaryInfo(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
             ),
           ),
         ] else ...[
@@ -461,8 +463,8 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
           Text(
             'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment. '
             'Add a new file to replace the current one.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: textStyles.tertiaryInfo(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
             ),
           ),
         ],
@@ -534,6 +536,7 @@ class _AttachmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -550,11 +553,15 @@ class _AttachmentTile extends StatelessWidget {
         attachment.fileName,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+        style: textStyles.primaryInfo(color: colorScheme.onSurface),
       ),
       subtitle: Text(
         showOpenAction
             ? '${attachment.fileType.label} · ${formatMetadataDate(attachment.uploadedAt)}'
             : attachment.fileType.label,
+        style: textStyles.tertiaryInfo(
+          color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
+        ),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

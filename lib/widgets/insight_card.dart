@@ -80,9 +80,7 @@ class InsightCard extends StatelessWidget {
                   insight.message,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: textStyles.bodyLarge.copyWith(
-                    fontWeight: FontWeight.w500,
-                    height: 1.45,
+                  style: textStyles.secondaryInfo(
                     color: colorScheme.onSurface,
                   ),
                 ),

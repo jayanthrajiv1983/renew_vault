@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_text_styles.dart';
 import '../core/theme/design_system.dart';
 import '../services/security_audit_service.dart';
 import '../theme/app_colors.dart';
@@ -113,6 +114,7 @@ class _SecurityStatusTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
     final color =
         enabled ? colorScheme.safeColor : colorScheme.neutralColor;
     final icon =
@@ -126,13 +128,16 @@ class _SecurityStatusTile extends StatelessWidget {
         size: AppDesignTokens.iconMedium,
         color: color,
       ),
-      title: Text(label),
+      title: Text(
+        label,
+        style: textStyles.secondaryInfo(color: colorScheme.onSurfaceVariant),
+      ),
       trailing: Align(
         alignment: Alignment.centerRight,
         widthFactor: 1,
         child: Text(
           enabled ? 'Active' : 'Review',
-          style: theme.textTheme.labelMedium?.copyWith(color: color),
+          style: textStyles.primaryInfo(color: color),
         ),
       ),
     );

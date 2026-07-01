@@ -6,6 +6,7 @@ import '../core/theme/app_text_styles.dart';
 import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_colors.dart';
+import '../shared/widgets/item_card_leading_icon.dart';
 import 'owner_avatar.dart';
 
 DateTime dateOnly(DateTime date) {
@@ -77,14 +78,6 @@ class RenewalCard extends StatelessWidget {
     this.bottomMargin = AppDesignTokens.cardGap,
   });
 
-  static const double _leadingSlotSize = 48;
-  static const double _leadingIconSize = AppDesignTokens.iconMedium;
-
-  static const double _iconContentGap = AppDesignTokens.space8;
-
-  /// Status column width — fits two 14sp lines without scaling text down.
-  static const double _statusMaxWidth = 100;
-
   static const double _contentStatusGap = AppDesignTokens.space8;
 
   /// Title → category: legacy 10px + 4px breathing room (design tokens).
@@ -121,87 +114,74 @@ class RenewalCard extends StatelessWidget {
         onTap: onTap,
         child: Padding(
           padding: _cardContentPadding,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: _leadingSlotSize,
-                height: _leadingSlotSize,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: categoryColor(item.category, theme.colorScheme)
-                        .withValues(alpha: 0.08),
-                  ),
-                  child: Center(
-                    child: Icon(
-                      categoryIcon(item.category),
-                      size: _leadingIconSize,
-                      color: categoryColor(item.category, theme.colorScheme)
-                          .withValues(alpha: 0.65),
-                    ),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: ItemCardLeadingIcon(
+                    icon: categoryIcon(item.category),
+                    color: categoryColor(item.category, theme.colorScheme),
                   ),
                 ),
-              ),
-              const SizedBox(width: _iconContentGap),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            item.title,
-                            style: textStyles
-                                .itemTitle(color: theme.colorScheme.onSurface)
-                                .copyWith(letterSpacing: 0.18),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                const SizedBox(width: AppDesignTokens.renewalCardIconGap),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.title,
+                        style: textStyles.itemTitle(
+                          color: theme.colorScheme.onSurface,
                         ),
-                        const SizedBox(width: _contentStatusGap),
-                        SizedBox(
-                          width: _statusMaxWidth,
-                          child: Text(
-                            statusText,
-                            style: textStyles.daysLeft(color: statusColor),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: true,
-                            textAlign: TextAlign.end,
-                            textHeightBehavior: const TextHeightBehavior(
-                              applyHeightToFirstAscent: false,
-                              applyHeightToLastDescent: false,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: _titleCategoryGap),
-                    Text(
-                      item.category,
-                      style: textStyles.categoryText(
-                        color: theme.colorScheme.onSurfaceVariant,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
+                      const SizedBox(height: _titleCategoryGap),
+                      Text(
+                        item.category,
+                        style: textStyles.categoryText(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: _categoryOwnerGap),
+                      _OwnerChip(
+                        ownerName: item.owner,
+                        textStyle: textStyles.tertiaryInfo(
+                          color: theme.colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.72),
+                        ),
+                        backgroundColor:
+                            theme.colorScheme.surfaceContainerHighest,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: _contentStatusGap),
+                SizedBox(
+                  width: AppDesignTokens.renewalCardStatusColumnWidth,
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Text(
+                      statusText,
+                      style: textStyles.daysLeft(color: statusColor),
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: _categoryOwnerGap),
-                    _OwnerChip(
-                      ownerName: item.owner,
-                      textStyle: textStyles.metadata(
-                        color: theme.colorScheme.onSurfaceVariant,
+                      softWrap: true,
+                      textAlign: TextAlign.right,
+                      textHeightBehavior: const TextHeightBehavior(
+                        applyHeightToFirstAscent: false,
+                        applyHeightToLastDescent: false,
                       ),
-                      backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

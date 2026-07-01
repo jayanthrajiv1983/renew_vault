@@ -265,7 +265,12 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                           color: theme.colorScheme.primary,
                         ),
                         const SizedBox(width: AppDesignTokens.space8),
-                        Text(_reminderLabel(days)),
+                        Text(
+                          _reminderLabel(days),
+                          style: textStyles.secondaryInfo(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -279,6 +284,9 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 item.notes,
                 maxLines: 20,
                 overflow: TextOverflow.ellipsis,
+                style: textStyles.secondaryInfo(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
               ],
@@ -299,6 +307,7 @@ class _RenewalStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
     final label = getStatusBadgeLabel(daysRemaining);
     final color = getStatusBadgeColor(daysRemaining, theme.colorScheme);
     final dot = switch (getStatusLevel(daysRemaining)) {
@@ -307,11 +316,7 @@ class _RenewalStatusBadge extends StatelessWidget {
       RenewalStatusLevel.expired => '🔴',
     };
 
-    final labelStyle = theme.textTheme.labelSmall?.copyWith(
-      color: color,
-      fontWeight: FontWeight.w600,
-      height: 1.25,
-    );
+    final labelStyle = textStyles.daysLeft(color: color);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -467,8 +472,8 @@ class _OwnerInfoValue extends StatelessWidget {
             padding: const EdgeInsets.only(top: AppDesignTokens.space4 / 2),
             child: Text(
               relationship,
-              style: textStyles.metadata(
-                color: colorScheme.onSurfaceVariant,
+              style: textStyles.tertiaryInfo(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
               ),
               textHeightBehavior: const TextHeightBehavior(
                 applyHeightToFirstAscent: false,

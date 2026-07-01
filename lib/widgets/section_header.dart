@@ -28,7 +28,7 @@ class SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: textStyles.sectionTitle(
-          color: theme.colorScheme.onSurface,
+          color: AppDesignTokens.sectionHeaderTextColor(theme.colorScheme),
         ),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_system.dart';
+import '../../core/theme/app_text_styles.dart';
 
 class ChartLegendItem {
   const ChartLegendItem({
@@ -31,6 +32,8 @@ class ChartLegend extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final textStyles = AppTextStyles.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Wrap(
       spacing: wrapSpacing,
@@ -51,8 +54,8 @@ class ChartLegend extends StatelessWidget {
             const SizedBox(width: AppDesignTokens.space8),
             Text(
               item.value != null ? '${item.label} (${item.value})' : item.label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              style: textStyles.tertiaryInfo(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
               ),
             ),
           ],

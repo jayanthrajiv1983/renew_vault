@@ -260,11 +260,13 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
     final visual = _visual;
 
     final titleStyle = widget.compact
-        ? textStyles.categoryText(color: colorScheme.onSurfaceVariant)
-        : textStyles.sectionTitle();
+        ? textStyles.tertiaryInfo(
+            color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
+          )
+        : textStyles.sectionTitle(color: colorScheme.onSurface);
 
-    final subtitleStyle = textStyles.bodyMedium.copyWith(
-      color: colorScheme.onSurfaceVariant,
+    final subtitleStyle = textStyles.tertiaryInfo(
+      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.72),
     );
 
     return [

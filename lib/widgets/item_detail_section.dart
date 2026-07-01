@@ -52,7 +52,9 @@ class ItemDetailSection extends StatelessWidget {
                   child: Text(
                     title,
                     style: textStyles.detailSectionHeader(
-                      color: colorScheme.onSurface,
+                      color: AppDesignTokens.sectionHeaderTextColor(
+                        colorScheme,
+                      ),
                     ),
                     textHeightBehavior: const TextHeightBehavior(
                       applyHeightToFirstAscent: false,

@@ -6,6 +6,7 @@ import '../services/family_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../shared/widgets/success_overlay.dart';
 import '../core/theme/design_system.dart';
+import '../core/theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
@@ -109,6 +110,9 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final member = _members[index];
+                final theme = Theme.of(context);
+                final textStyles = AppTextStyles.of(context);
+                final colorScheme = theme.colorScheme;
                 return ListTile(
                   contentPadding: AppDesignTokens.cardListTilePadding,
                   titleAlignment: ListTileTitleAlignment.center,
@@ -117,11 +121,15 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
                     member.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: textStyles.primaryInfo(color: colorScheme.onSurface),
                   ),
                   subtitle: Text(
                     member.relationship,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: textStyles.secondaryInfo(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
