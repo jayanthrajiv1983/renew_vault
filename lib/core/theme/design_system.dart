@@ -9,8 +9,11 @@ abstract final class AppDesignTokens {
 
   static const double space4 = 4;
   static const double space8 = 8;
+  static const double space10 = 10;
   static const double space12 = 12;
+  static const double space14 = 14;
   static const double space16 = 16;
+  static const double space18 = 18;
   static const double space20 = 20;
   static const double space24 = 24;
   static const double space32 = 32;
@@ -67,9 +70,33 @@ abstract final class AppDesignTokens {
   // ── Section rhythm ────────────────────────────────────────────────────────
 
   static const double sectionGap = space20;
+  static const double sectionTopGap = space8;
   static const double titleToFirstCard = space12;
+  /// Tight padding within a single icon → label → value block.
+  static const double detailRowPaddingVertical = 0;
+
+  /// Label-to-value spacing inside a field block.
+  static const double detailFieldLabelGap = 2;
+
+  /// Whitespace between field blocks (replaces row dividers).
+  static const double detailFieldBlockGap = 20;
+
+  static const double detailSectionTitleGap = space18;
+  static const double detailIconColumnSize = 40;
+  static const double detailIconGap = 17;
+  static const double detailDividerThickness = 1;
+
+  /// Used only when a divider is explicitly needed between major groups.
+  static const double detailDividerOpacity = 0.14;
   static const double cardGap = space12;
   static const double heroToDashboard = space16;
+
+  /// Inset for detail-field dividers (icon column + gap).
+  static const double detailDividerInset =
+      detailIconColumnSize + detailIconGap;
+
+  static Color detailDividerColor(ColorScheme colorScheme) =>
+      colorScheme.outlineVariant.withValues(alpha: detailDividerOpacity);
 
   // ── Shape helpers ─────────────────────────────────────────────────────────
 
@@ -89,6 +116,12 @@ abstract final class AppDesignTokens {
 
   static const EdgeInsets cardInsets = EdgeInsets.all(space16);
 
+  /// Detail section cards — balanced padding for premium info panels.
+  static const EdgeInsets detailCardInsets = EdgeInsets.symmetric(
+    horizontal: space16,
+    vertical: space8,
+  );
+
   /// ListTile padding inside Cards — matches [cardInsets] horizontal rhythm.
   static const EdgeInsets cardListTilePadding = EdgeInsets.symmetric(
     horizontal: space16,
@@ -100,6 +133,9 @@ abstract final class AppDesignTokens {
 
   static SizedBox get gapTitleToFirstCard =>
       const SizedBox(height: titleToFirstCard);
+
+  static SizedBox get gapDetailFieldBlock =>
+      const SizedBox(height: detailFieldBlockGap);
 }
 
 /// Alias for [AppDesignTokens].

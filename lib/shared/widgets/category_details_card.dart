@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/design_system.dart';
-import '../../theme/app_spacing.dart';
 import '../../widgets/item_detail_section.dart';
 
 /// A single labeled value row inside [CategoryDetailsCard].
@@ -79,7 +76,7 @@ class CategoryDetailsCard extends StatelessWidget {
     final row = Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _CategoryDetailFieldRow(
+        DetailInformationBlock(
           icon: field.icon,
           leading: field.leading,
           label: field.label,
@@ -87,7 +84,7 @@ class CategoryDetailsCard extends StatelessWidget {
           valueWidget: field.valueWidget,
           valueColor: field.valueColor,
         ),
-        if (index < fields.length - 1) const _CategoryDetailFieldDivider(),
+        if (index < fields.length - 1) const DetailFieldGap(),
       ],
     );
 
@@ -98,109 +95,6 @@ class CategoryDetailsCard extends StatelessWidget {
     return _StaggeredFieldFadeIn(
       index: animationIndexOffset + index,
       child: row,
-    );
-  }
-}
-
-/// Read-only field row — matches Basic Information styling on item detail.
-class _CategoryDetailFieldRow extends StatelessWidget {
-  const _CategoryDetailFieldRow({
-    this.icon,
-    this.leading,
-    required this.label,
-    required this.value,
-    this.valueWidget,
-    this.valueColor,
-  }) : assert(icon != null || leading != null);
-
-  static const double iconColumnWidth = 44;
-  static const double iconGap = AppDesignTokens.space12;
-  static double get dividerLeftPadding => iconColumnWidth + iconGap;
-
-  final IconData? icon;
-  final Widget? leading;
-  final String label;
-  final String value;
-  final Widget? valueWidget;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyles = AppTextStyles.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.cardGap),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLeadingSlot(colorScheme),
-          const SizedBox(width: iconGap),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: textStyles.categoryText(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                AppSpacing.gapTitleSubtitle,
-                valueWidget ??
-                    Text(
-                      value,
-                      style: textStyles.fieldValue(
-                        color: valueColor ?? colorScheme.onSurface,
-                      ),
-                    ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeadingSlot(ColorScheme colorScheme) {
-    if (leading != null) {
-      return SizedBox(
-        width: iconColumnWidth,
-        height: iconColumnWidth,
-        child: Center(child: leading),
-      );
-    }
-
-    return SizedBox(
-      width: iconColumnWidth,
-      height: iconColumnWidth,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(AppDesignTokens.space8 + 2),
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            size: AppDesignTokens.iconMedium,
-            color: colorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryDetailFieldDivider extends StatelessWidget {
-  const _CategoryDetailFieldDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: _CategoryDetailFieldRow.dividerLeftPadding),
-      child: const Divider(height: 1),
     );
   }
 }

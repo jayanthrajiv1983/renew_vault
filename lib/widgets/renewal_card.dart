@@ -78,16 +78,29 @@ class RenewalCard extends StatelessWidget {
   });
 
   static const double _leadingSlotSize = 48;
-  static const double _leadingIconSize = AppDesignTokens.iconHero;
+  static const double _leadingIconSize = AppDesignTokens.iconMedium;
 
-  static const double _iconContentGap = AppDesignTokens.space12;
+  static const double _iconContentGap = AppDesignTokens.space8;
 
   /// Status column width — fits two 14sp lines without scaling text down.
   static const double _statusMaxWidth = 100;
 
   static const double _contentStatusGap = AppDesignTokens.space8;
 
-  static const EdgeInsets _cardContentPadding = AppDesignTokens.cardInsets;
+  /// Title → category: legacy 10px + 4px breathing room (design tokens).
+  static const double _titleCategoryGap =
+      AppDesignTokens.space10 + AppDesignTokens.space4;
+
+  /// Category → owner chip: legacy 12px + 6px separation.
+  static const double _categoryOwnerGap = AppDesignTokens.space18;
+
+  /// +2px horizontal/top padding, −2px bottom — redistributed, same vertical envelope.
+  static const EdgeInsets _cardContentPadding = EdgeInsets.fromLTRB(
+    AppDesignTokens.space18,
+    AppDesignTokens.space18,
+    AppDesignTokens.space16,
+    AppDesignTokens.space14,
+  );
 
   final RenewalItem item;
   final VoidCallback onTap;
@@ -109,7 +122,7 @@ class RenewalCard extends StatelessWidget {
         child: Padding(
           padding: _cardContentPadding,
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(
                 width: _leadingSlotSize,
@@ -118,14 +131,14 @@ class RenewalCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: categoryColor(item.category, theme.colorScheme)
-                        .withValues(alpha: 0.12),
+                        .withValues(alpha: 0.08),
                   ),
                   child: Center(
                     child: Icon(
                       categoryIcon(item.category),
                       size: _leadingIconSize,
                       color: categoryColor(item.category, theme.colorScheme)
-                          .withValues(alpha: 0.85),
+                          .withValues(alpha: 0.65),
                     ),
                   ),
                 ),
@@ -134,18 +147,41 @@ class RenewalCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      item.title,
-                      style: textStyles.itemTitle(
-                        color: theme.colorScheme.onSurface,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title,
+                            style: textStyles
+                                .itemTitle(color: theme.colorScheme.onSurface)
+                                .copyWith(letterSpacing: 0.18),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: _contentStatusGap),
+                        SizedBox(
+                          width: _statusMaxWidth,
+                          child: Text(
+                            statusText,
+                            style: textStyles.daysLeft(color: statusColor),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
+                            textAlign: TextAlign.end,
+                            textHeightBehavior: const TextHeightBehavior(
+                              applyHeightToFirstAscent: false,
+                              applyHeightToLastDescent: false,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    AppSpacing.gapTitleSubtitle,
+                    const SizedBox(height: _titleCategoryGap),
                     Text(
                       item.category,
                       style: textStyles.categoryText(
@@ -154,7 +190,7 @@ class RenewalCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    AppSpacing.gapCategoryOwner,
+                    const SizedBox(height: _categoryOwnerGap),
                     _OwnerChip(
                       ownerName: item.owner,
                       textStyle: textStyles.metadata(
@@ -163,25 +199,6 @@ class RenewalCard extends StatelessWidget {
                       backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     ),
                   ],
-                ),
-              ),
-              const SizedBox(width: _contentStatusGap),
-              SizedBox(
-                width: _statusMaxWidth,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    statusText,
-                    style: textStyles.daysLeft(color: statusColor),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    softWrap: true,
-                    textAlign: TextAlign.end,
-                    textHeightBehavior: const TextHeightBehavior(
-                      applyHeightToFirstAscent: false,
-                      applyHeightToLastDescent: false,
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -203,7 +220,7 @@ class _OwnerChip extends StatelessWidget {
   static const double _avatarRadius = 10;
   static const EdgeInsets _padding = EdgeInsets.symmetric(
     horizontal: AppDesignTokens.space8,
-    vertical: AppDesignTokens.space4,
+    vertical: AppDesignTokens.detailFieldLabelGap,
   );
 
   final String ownerName;

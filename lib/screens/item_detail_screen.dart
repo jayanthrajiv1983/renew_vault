@@ -5,7 +5,6 @@ import '../models/renewal_item.dart';
 import '../services/family_service.dart';
 import '../core/theme/app_text_styles.dart';
 import '../core/theme/design_system.dart';
-import '../theme/app_spacing.dart';
 import '../utils/category_fields_builder.dart';
 import '../utils/form_padding.dart';
 import '../utils/item_actions.dart';
@@ -149,7 +148,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                       size: AppDesignTokens.iconHero,
                       color: categoryColor(item.category, theme.colorScheme),
                     ),
-                    const SizedBox(height: AppDesignTokens.space8),
+                    const SizedBox(height: AppDesignTokens.space4),
                     Text(
                       item.category,
                       textAlign: TextAlign.center,
@@ -157,11 +156,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: AppDesignTokens.cardGap),
+                    const SizedBox(height: AppDesignTokens.space8),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: AppDesignTokens.cardGap,
-                        vertical: AppDesignTokens.space8,
+                        vertical: AppDesignTokens.space4,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
@@ -179,7 +178,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               ),
             ),
           ),
-          const SizedBox(height: AppDesignTokens.pagePaddingVertical),
+          const SizedBox(height: AppDesignTokens.space12),
           ItemDetailSection(
             title: 'Basic Information',
             borderRadius: AppDesignTokens.radiusLargeBorder,
@@ -190,54 +189,41 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               children: [
                 _StaggeredFadeIn(
                   index: 0,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DetailInfoRow(
-                        icon: Icons.description_outlined,
-                        label: 'Title',
-                        value: item.title,
-                      ),
-                      const _DetailInfoDivider(),
-                    ],
+                  child: DetailInformationBlock(
+                    icon: Icons.description_outlined,
+                    label: 'Title',
+                    value: item.title,
+                    valueMaxLines: 3,
                   ),
                 ),
+                const DetailFieldGap(),
                 _StaggeredFadeIn(
                   index: 1,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DetailInfoRow(
-                        icon: categoryIcon(item.category),
-                        label: 'Category',
-                        value: item.category,
-                      ),
-                      const _DetailInfoDivider(),
-                    ],
+                  child: DetailInformationBlock(
+                    icon: categoryIcon(item.category),
+                    label: 'Category',
+                    value: item.category,
+                    valueMaxLines: 3,
                   ),
                 ),
+                const DetailFieldGap(),
                 _StaggeredFadeIn(
                   index: 2,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _DetailInfoRow(
-                        leading:
-                            OwnerAvatar(ownerName: item.owner, radius: 20),
-                        label: 'Owner',
-                        valueWidget: _OwnerInfoValue(ownerName: item.owner),
-                      ),
-                      const _DetailInfoDivider(),
-                    ],
+                  child: DetailInformationBlock(
+                    leading: OwnerAvatar(ownerName: item.owner, radius: 20),
+                    label: 'Owner',
+                    valueWidget: _OwnerInfoValue(ownerName: item.owner),
                   ),
                 ),
+                const DetailFieldGap(),
                 _StaggeredFadeIn(
                   index: 3,
-                  child: _DetailInfoRow(
+                  child: DetailInformationBlock(
                     icon: Icons.calendar_today_outlined,
                     label: 'Expiry Date',
                     value: formatMetadataDate(item.renewalDate),
                     valueColor: theme.colorScheme.primary,
+                    valueMaxLines: 3,
                   ),
                 ),
               ],
@@ -321,29 +307,38 @@ class _RenewalStatusBadge extends StatelessWidget {
       RenewalStatusLevel.expired => '🔴',
     };
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDesignTokens.space8,
-        vertical: 4,
-      ),
+    final labelStyle = theme.textTheme.labelSmall?.copyWith(
+      color: color,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+
+    return DecoratedBox(
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppDesignTokens.space8),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(dot, style: const TextStyle(fontSize: 10, height: 1)),
-          const SizedBox(width: AppDesignTokens.space4),
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDesignTokens.space8,
+          vertical: 2,
+        ),
+        child: Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(
+                text: dot,
+                style: const TextStyle(fontSize: 10, height: 1.25),
+              ),
+              const WidgetSpan(child: SizedBox(width: AppDesignTokens.space4)),
+              TextSpan(text: label, style: labelStyle),
+            ],
           ),
-        ],
+          textHeightBehavior: const TextHeightBehavior(
+            applyHeightToFirstAscent: false,
+            applyHeightToLastDescent: false,
+          ),
+        ),
       ),
     );
   }
@@ -436,112 +431,6 @@ class _StaggeredFadeInState extends State<_StaggeredFadeIn>
   }
 }
 
-/// Fixed icon column + gap; divider inset = [iconColumnWidth] + [iconGap].
-class _DetailInfoRow extends StatelessWidget {
-  const _DetailInfoRow({
-    this.icon,
-    this.leading,
-    required this.label,
-    this.value,
-    this.valueWidget,
-    this.valueColor,
-  })  : assert(icon != null || leading != null),
-        assert(value != null || valueWidget != null);
-
-  static const double iconColumnWidth = 44;
-  static const double iconGap = AppDesignTokens.space12;
-  static double get dividerLeftPadding => iconColumnWidth + iconGap;
-
-  final IconData? icon;
-  final Widget? leading;
-  final String label;
-  final String? value;
-  final Widget? valueWidget;
-  final Color? valueColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textStyles = AppTextStyles.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.cardGap),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLeadingSlot(colorScheme),
-          const SizedBox(width: iconGap),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: textStyles.categoryText(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                AppSpacing.gapTitleSubtitle,
-                valueWidget ??
-                    Text(
-                      value!,
-                      style: textStyles.fieldValue(
-                        color: valueColor ?? colorScheme.onSurface,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLeadingSlot(ColorScheme colorScheme) {
-    if (leading != null) {
-      return SizedBox(
-        width: iconColumnWidth,
-        height: iconColumnWidth,
-        child: Center(child: leading),
-      );
-    }
-
-    return SizedBox(
-      width: iconColumnWidth,
-      height: iconColumnWidth,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colorScheme.primaryContainer.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(AppDesignTokens.space8 + 2),
-        ),
-        child: Center(
-          child: Icon(
-            icon,
-            size: AppDesignTokens.iconMedium,
-            color: colorScheme.onPrimaryContainer,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailInfoDivider extends StatelessWidget {
-  const _DetailInfoDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(left: _DetailInfoRow.dividerLeftPadding),
-      child: const Divider(height: 1),
-    );
-  }
-}
-
 class _OwnerInfoValue extends StatelessWidget {
   const _OwnerInfoValue({required this.ownerName});
 
@@ -568,6 +457,10 @@ class _OwnerInfoValue extends StatelessWidget {
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
+          textHeightBehavior: const TextHeightBehavior(
+            applyHeightToFirstAscent: false,
+            applyHeightToLastDescent: false,
+          ),
         ),
         if (showRelationship)
           Padding(
@@ -576,6 +469,10 @@ class _OwnerInfoValue extends StatelessWidget {
               relationship,
               style: textStyles.metadata(
                 color: colorScheme.onSurfaceVariant,
+              ),
+              textHeightBehavior: const TextHeightBehavior(
+                applyHeightToFirstAscent: false,
+                applyHeightToLastDescent: false,
               ),
             ),
           ),

@@ -450,7 +450,10 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
               onOpen: _isDetail ? () => _openAttachment(attachment) : null,
               onDelete: () => _confirmDelete(attachment),
             ),
-            if (attachment != _attachments.last) const Divider(height: 1),
+            if (attachment != _attachments.last)
+              _isDetail
+                  ? const DetailFieldGap()
+                  : const Divider(height: 1),
           ],
         ],
         if (atLimit) ...[

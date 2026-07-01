@@ -24,6 +24,8 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
     required this.dashboardTitleStyle,
     required this.dashboardSubtitleStyle,
     required this.fieldValueStyle,
+    required this.detailSectionHeaderStyle,
+    required this.detailFieldLabelStyle,
   });
 
   // ── Material-style named roles ──────────────────────────────────────────
@@ -48,6 +50,8 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
   final TextStyle dashboardTitleStyle;
   final TextStyle dashboardSubtitleStyle;
   final TextStyle fieldValueStyle;
+  final TextStyle detailSectionHeaderStyle;
+  final TextStyle detailFieldLabelStyle;
 
   /// Resolves [AppTextStyles] from the nearest [Theme].
   static AppTextStyles of(BuildContext context) {
@@ -115,7 +119,19 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
       ),
       fieldValueStyle: base(textTheme.titleSmall).copyWith(
         fontSize: 16,
+        fontWeight: FontWeight.w600,
+        height: 1.3,
+      ),
+      detailSectionHeaderStyle: base(textTheme.titleLarge).copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.2,
+        height: 1.25,
+      ),
+      detailFieldLabelStyle: base(textTheme.bodyMedium).copyWith(
+        fontSize: 13,
         fontWeight: FontWeight.w500,
+        letterSpacing: 0,
         height: 1.3,
       ),
     );
@@ -153,9 +169,17 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
   TextStyle dashboardSubtitle({Color? color}) =>
       dashboardSubtitleStyle.copyWith(color: color);
 
-  /// Detail field values: 16sp w500.
+  /// Detail field values: 16sp w600 (use onSurface or primary).
   TextStyle fieldValue({Color? color}) =>
       fieldValueStyle.copyWith(color: color);
+
+  /// Detail screen section headers: 20sp w600.
+  TextStyle detailSectionHeader({Color? color}) =>
+      detailSectionHeaderStyle.copyWith(color: color);
+
+  /// Detail field labels (Title, Category, etc.): 13sp w500 (use onSurfaceVariant).
+  TextStyle detailFieldLabel({Color? color}) =>
+      detailFieldLabelStyle.copyWith(color: color);
 
   @override
   AppTextStyles copyWith({
@@ -176,6 +200,8 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
     TextStyle? dashboardTitleStyle,
     TextStyle? dashboardSubtitleStyle,
     TextStyle? fieldValueStyle,
+    TextStyle? detailSectionHeaderStyle,
+    TextStyle? detailFieldLabelStyle,
   }) {
     return AppTextStyles(
       displayLarge: displayLarge ?? this.displayLarge,
@@ -196,6 +222,10 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
       dashboardSubtitleStyle:
           dashboardSubtitleStyle ?? this.dashboardSubtitleStyle,
       fieldValueStyle: fieldValueStyle ?? this.fieldValueStyle,
+      detailSectionHeaderStyle:
+          detailSectionHeaderStyle ?? this.detailSectionHeaderStyle,
+      detailFieldLabelStyle:
+          detailFieldLabelStyle ?? this.detailFieldLabelStyle,
     );
   }
 
@@ -230,6 +260,12 @@ class AppTextStyles extends ThemeExtension<AppTextStyles> {
       dashboardSubtitleStyle:
           lerpStyle(dashboardSubtitleStyle, other.dashboardSubtitleStyle),
       fieldValueStyle: lerpStyle(fieldValueStyle, other.fieldValueStyle),
+      detailSectionHeaderStyle: lerpStyle(
+        detailSectionHeaderStyle,
+        other.detailSectionHeaderStyle,
+      ),
+      detailFieldLabelStyle:
+          lerpStyle(detailFieldLabelStyle, other.detailFieldLabelStyle),
     );
   }
 }
