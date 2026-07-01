@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 
 /// Scroll padding for long forms — clears keyboard and system nav bar.
@@ -48,10 +49,10 @@ EdgeInsets bottomSheetPadding(BuildContext context) {
   final viewInsets = MediaQuery.viewInsetsOf(context).bottom;
   final safeBottom = MediaQuery.paddingOf(context).bottom;
   return EdgeInsets.only(
-    left: AppSpacing.screenPadding,
-    right: AppSpacing.screenPadding,
-    top: AppSpacing.fieldLabelGap,
-    bottom: max(100, viewInsets + safeBottom + AppSpacing.screenPadding),
+    left: AppDesignTokens.pagePaddingHorizontal,
+    right: AppDesignTokens.pagePaddingHorizontal,
+    top: AppDesignTokens.pagePaddingHorizontal,
+    bottom: max(100, viewInsets + safeBottom + AppDesignTokens.pagePaddingHorizontal),
   );
 }
 
@@ -59,9 +60,28 @@ EdgeInsets bottomSheetPadding(BuildContext context) {
 EdgeInsets dialogInsetPadding(BuildContext context) {
   final safe = MediaQuery.paddingOf(context);
   return EdgeInsets.fromLTRB(
-    max(AppSpacing.screenPadding, safe.left + AppSpacing.fieldLabelGap),
-    max(AppSpacing.screenPadding, safe.top + AppSpacing.sectionSpacing),
-    max(AppSpacing.screenPadding, safe.right + AppSpacing.fieldLabelGap),
-    max(AppSpacing.screenPadding, safe.bottom + AppSpacing.sectionSpacing),
+    max(AppDesignTokens.pagePaddingHorizontal, safe.left + AppDesignTokens.space8),
+    max(AppDesignTokens.pagePaddingVertical, safe.top + AppDesignTokens.sectionGap),
+    max(AppDesignTokens.pagePaddingHorizontal, safe.right + AppDesignTokens.space8),
+    max(AppDesignTokens.pagePaddingVertical, safe.bottom + AppDesignTokens.sectionGap),
   );
 }
+
+/// Content padding for [AlertDialog] bodies — matches [AppDesignTokens.pageInsets].
+const EdgeInsets alertDialogContentPadding = AppDesignTokens.pageInsets;
+
+/// Title padding for [AlertDialog] — aligns title X with page horizontal inset.
+const EdgeInsets alertDialogTitlePadding = EdgeInsets.fromLTRB(
+  AppDesignTokens.pagePaddingHorizontal,
+  AppDesignTokens.pagePaddingHorizontal,
+  AppDesignTokens.pagePaddingHorizontal,
+  AppDesignTokens.space8,
+);
+
+/// Actions row padding for [AlertDialog].
+const EdgeInsets alertDialogActionsPadding = EdgeInsets.fromLTRB(
+  AppDesignTokens.pagePaddingHorizontal,
+  0,
+  AppDesignTokens.pagePaddingHorizontal,
+  AppDesignTokens.pagePaddingHorizontal,
+);

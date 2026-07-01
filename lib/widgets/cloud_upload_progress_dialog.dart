@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../services/google_drive_backup_service.dart';
 import '../utils/form_padding.dart';
 
@@ -84,7 +85,7 @@ class _CloudUploadProgressDialogState extends State<_CloudUploadProgressDialog> 
                   _label,
                   style: theme.textTheme.bodyLarge,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppDesignTokens.space16),
                 LinearProgressIndicator(
                   value: _progress > 0 ? _progress.clamp(0.0, 1.0) : null,
                   borderRadius: BorderRadius.circular(4),

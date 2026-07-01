@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/design_system.dart';
 import '../../theme/app_spacing.dart';
 import '../../widgets/item_detail_section.dart';
 
@@ -113,7 +114,7 @@ class _CategoryDetailFieldRow extends StatelessWidget {
   }) : assert(icon != null || leading != null);
 
   static const double iconColumnWidth = 44;
-  static const double iconGap = AppSpacing.sectionSpacing;
+  static const double iconGap = AppDesignTokens.space12;
   static double get dividerLeftPadding => iconColumnWidth + iconGap;
 
   final IconData? icon;
@@ -130,7 +131,7 @@ class _CategoryDetailFieldRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardSpacing),
+      padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.cardGap),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -178,12 +179,14 @@ class _CategoryDetailFieldRow extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(AppSpacing.chipRadius + 2),
+          borderRadius: BorderRadius.circular(AppDesignTokens.space8 + 2),
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: colorScheme.onPrimaryContainer,
+        child: Center(
+          child: Icon(
+            icon,
+            size: AppDesignTokens.iconMedium,
+            color: colorScheme.onPrimaryContainer,
+          ),
         ),
       ),
     );

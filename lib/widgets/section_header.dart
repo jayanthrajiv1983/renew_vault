@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
+import '../core/theme/design_system.dart';
 
 /// Consistent section title used across list and settings screens.
 class SectionHeader extends StatelessWidget {
@@ -22,8 +22,8 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: padding ??
           const EdgeInsets.only(
-            top: AppSpacing.sectionSpacing,
-            bottom: AppSpacing.fieldLabelGap,
+            top: AppDesignTokens.sectionGap,
+            bottom: AppDesignTokens.titleToFirstCard,
           ),
       child: Text(
         title,

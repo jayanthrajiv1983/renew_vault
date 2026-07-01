@@ -34,6 +34,7 @@ Future<void> showCreateRenewalBottomSheet(
               ),
               AppSpacing.gapSection,
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.edit_outlined),
                 title: const Text('Add Manually'),
                 subtitle: const Text('Start with an empty form'),
@@ -41,6 +42,7 @@ Future<void> showCreateRenewalBottomSheet(
                     Navigator.pop(sheetContext, _CreateRenewalOption.manual),
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.document_scanner_outlined),
                 title: const Text('Scan Document'),
                 subtitle: const Text('Use camera or gallery, then review OCR'),
@@ -50,6 +52,7 @@ Future<void> showCreateRenewalBottomSheet(
                 ),
               ),
               ListTile(
+                contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.upload_file_outlined),
                 title: const Text('Upload Document'),
                 subtitle: const Text('Pick an image or PDF from your device'),

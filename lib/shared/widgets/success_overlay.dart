@@ -5,7 +5,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
-import '../../theme/app_brand.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/haptic_feedback.dart';
 
@@ -379,11 +379,7 @@ class _SuccessOverlayState extends State<SuccessOverlay>
     super.dispose();
   }
 
-  Color _successColor(ColorScheme colorScheme) {
-    return colorScheme.brightness == Brightness.dark
-        ? AppBrand.green
-        : const Color(0xFF16A34A);
-  }
+  Color _successColor(ColorScheme colorScheme) => colorScheme.safeColor;
 
   @override
   Widget build(BuildContext context) {

@@ -10,7 +10,8 @@ import '../services/pending_delete_controller.dart';
 import '../services/notification_navigation_service.dart';
 import '../services/settings_service.dart';
 import '../services/storage_service.dart';
-import '../theme/app_spacing.dart';
+import '../core/theme/design_system.dart';
+import '../theme/app_colors.dart';
 import '../utils/backup_flow.dart';
 import '../utils/sort_helper.dart';
 import '../utils/form_padding.dart';
@@ -42,17 +43,9 @@ const _kAppBarTitleBreakpoint = 600.0;
 /// Bottom inset so extended FAB does not cover list content.
 const _kFabScrollClearance = 120.0;
 
-/// Home-screen vertical rhythm (distinct from global [AppSpacing.sectionSpacing]).
-abstract final class _HomeSpacing {
-  static const double heroToDashboard = 16;
-  static const double sectionGap = 20;
-  static const double titleToCard = 12;
-  static const double cardGap = 12;
-}
-
 /// Section title padding: gap is applied by the parent sliver, not the header.
 const _kHomeSectionHeaderPadding =
-    EdgeInsets.only(bottom: _HomeSpacing.titleToCard);
+    EdgeInsets.only(bottom: AppDesignTokens.titleToFirstCard);
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -165,14 +158,20 @@ class _HomeScreenState extends State<HomeScreen> {
               key: const ValueKey('fab-extended'),
               tooltip: tooltip,
               onPressed: _openCreateRenewal,
-              icon: const Icon(Icons.add_rounded),
+              icon: Icon(
+                Icons.add_rounded,
+                size: AppDesignTokens.iconMedium,
+              ),
               label: const Text('Add Item'),
             )
           : FloatingActionButton(
               key: const ValueKey('fab-collapsed'),
               tooltip: tooltip,
               onPressed: _openCreateRenewal,
-              child: const Icon(Icons.add_rounded),
+              child: Icon(
+                Icons.add_rounded,
+                size: AppDesignTokens.iconMedium,
+              ),
             ),
     );
   }
@@ -422,7 +421,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Filter Items',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  const SizedBox(height: AppDesignTokens.sectionGap),
                   DropdownMenu<String?>(
                     key: ValueKey('filter-category-$tempCategory'),
                     initialSelection: tempCategory,
@@ -444,15 +443,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       setSheetState(() => tempCategory = value);
                     },
                   ),
-                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  const SizedBox(height: AppDesignTokens.sectionGap),
                   Text(
                     'Status',
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
-                  const SizedBox(height: AppSpacing.fieldLabelGap),
+                  const SizedBox(height: AppDesignTokens.titleToFirstCard),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: AppDesignTokens.space8,
+                    runSpacing: AppDesignTokens.space8,
                     children: [
                       FilterChip(
                         label: const Text('All'),
@@ -490,7 +489,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.sectionSpacing),
+                  const SizedBox(height: AppDesignTokens.sectionGap),
                   DropdownMenu<String?>(
                     key: ValueKey('filter-owner-$tempOwner'),
                     initialSelection: tempOwner,
@@ -512,7 +511,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       setSheetState(() => tempOwner = value);
                     },
                   ),
-                  const SizedBox(height: AppSpacing.screenPadding),
+                  const SizedBox(height: AppDesignTokens.pagePaddingVertical),
                   Row(
                     children: [
                       Expanded(
@@ -527,7 +526,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: const Text('Clear all'),
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.cardSpacing),
+                      const SizedBox(width: AppDesignTokens.cardGap),
                       Expanded(
                         child: FilledButton(
                           onPressed: () {
@@ -571,9 +570,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   'Sort Items',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                const SizedBox(height: AppDesignTokens.titleToFirstCard),
                 ...SortOption.values.map(
                   (option) => RadioListTile<SortOption>(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(option.label),
                     value: option,
                     groupValue: _explicitSort ?? SortOption.nearestExpiry,
@@ -585,6 +585,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const Divider(),
                 ListTile(
+                  contentPadding: EdgeInsets.zero,
                   leading: const Icon(Icons.clear),
                   title: const Text('Clear Sorting'),
                   selected: _explicitSort == null,
@@ -701,9 +702,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return [
       SliverPadding(
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.sectionSpacing,
-          AppSpacing.sectionSpacing,
-          AppSpacing.sectionSpacing,
+        AppDesignTokens.pagePaddingHorizontal,
+        AppDesignTokens.pagePaddingVertical,
+        AppDesignTokens.pagePaddingHorizontal,
           _kFabScrollClearance,
         ),
         sliver: SliverFillRemaining(
@@ -713,7 +714,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               if (backupReminderBanner != null) ...[
                 backupReminderBanner,
-                const SizedBox(height: AppSpacing.sectionSpacing),
+                const SizedBox(height: AppDesignTokens.sectionGap),
               ],
               Expanded(
                 child: EmptyStateWidget(
@@ -744,9 +745,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.sectionSpacing,
+        AppDesignTokens.pagePaddingHorizontal,
         top,
-        AppSpacing.sectionSpacing,
+        AppDesignTokens.pagePaddingHorizontal,
         bottom,
       ),
       sliver: sliver,
@@ -833,7 +834,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         if (heroInsight != null) ...[
           heroInsight,
-          const SizedBox(height: _HomeSpacing.heroToDashboard),
+          const SizedBox(height: AppDesignTokens.heroToDashboard),
         ],
         LayoutBuilder(
           builder: (context, constraints) {
@@ -844,8 +845,8 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisCount: crossAxisCount,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: AppSpacing.cardSpacing,
-              crossAxisSpacing: AppSpacing.cardSpacing,
+              mainAxisSpacing: AppDesignTokens.cardGap,
+              crossAxisSpacing: AppDesignTokens.cardGap,
               // Fixed row height: title row + value + subtitle slot + padding.
               mainAxisExtent: 128,
               children: [
@@ -896,11 +897,11 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         if (backupReminderBanner != null) ...[
-          const SizedBox(height: AppSpacing.sectionSpacing),
+          const SizedBox(height: AppDesignTokens.sectionGap),
           backupReminderBanner,
         ],
         if (showOverdueBanner) ...[
-          const SizedBox(height: AppSpacing.sectionSpacing),
+          const SizedBox(height: AppDesignTokens.sectionGap),
           _OverdueAlertBanner(
             count: expiredCount,
             onTap: () => _openFilteredItems(
@@ -923,7 +924,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }) {
     return [
       _horizontalSliverPadding(
-        top: AppSpacing.sectionSpacing,
+        top: AppDesignTokens.sectionGap,
         sliver: SliverToBoxAdapter(
           child: _buildDashboardHeader(
             context: context,
@@ -934,7 +935,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       if (showCategoryEmptyState)
         _horizontalSliverPadding(
-          top: AppSpacing.sectionSpacing,
+          top: AppDesignTokens.sectionGap,
           bottom: _kFabScrollClearance,
           sliver: SliverToBoxAdapter(
             child: CategoryEmptyState(
@@ -945,7 +946,7 @@ class _HomeScreenState extends State<HomeScreen> {
         )
       else ...[
         _horizontalSliverPadding(
-          top: _HomeSpacing.sectionGap,
+          top: AppDesignTokens.sectionGap,
           sliver: const SliverToBoxAdapter(
             child: SectionHeader(
               title: 'Expiring Soon',
@@ -968,7 +969,7 @@ class _HomeScreenState extends State<HomeScreen> {
             sliver: SliverList.separated(
               itemCount: expiringSoon.length,
               separatorBuilder: (_, _) =>
-                  const SizedBox(height: _HomeSpacing.cardGap),
+                  const SizedBox(height: AppDesignTokens.cardGap),
               itemBuilder: (context, index) {
                 final item = expiringSoon[index];
                 return SlidableRenewalCard(
@@ -982,7 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         _horizontalSliverPadding(
-          top: _HomeSpacing.sectionGap,
+          top: AppDesignTokens.sectionGap,
           sliver: const SliverToBoxAdapter(
             child: SectionHeader(
               title: 'All Items',
@@ -1007,7 +1008,7 @@ class _HomeScreenState extends State<HomeScreen> {
             sliver: SliverList.separated(
               itemCount: filteredItems.length,
               separatorBuilder: (_, _) =>
-                  const SizedBox(height: _HomeSpacing.cardGap),
+                  const SizedBox(height: AppDesignTokens.cardGap),
               itemBuilder: (context, index) {
                 final item = filteredItems[index];
                 return SlidableRenewalCard(
@@ -1054,7 +1055,7 @@ class _SortChipBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(
-        top: AppSpacing.cardSpacing,
+        top: AppDesignTokens.cardGap,
       ),
       child: Align(
         alignment: Alignment.centerLeft,
@@ -1096,12 +1097,12 @@ class _ActiveFiltersBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(top: AppSpacing.cardSpacing),
+      padding: const EdgeInsets.only(top: AppDesignTokens.cardGap),
       child: Row(
         children: [
           if (selectedCategory != null)
             Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
+              padding: const EdgeInsets.only(right: AppDesignTokens.space8),
               child: InputChip(
                 label: Text(
                   'Category: $selectedCategory',
@@ -1114,7 +1115,7 @@ class _ActiveFiltersBar extends StatelessWidget {
             ),
           if (selectedStatus != null && statusLabel != null)
             Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.fieldLabelGap),
+              padding: const EdgeInsets.only(right: AppDesignTokens.space8),
               child: InputChip(
                 label: Text(
                   'Status: $statusLabel',
@@ -1156,31 +1157,32 @@ class _OverdueAlertBanner extends StatelessWidget {
         : 'You have $count expired items';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),
+      padding: const EdgeInsets.only(bottom: AppDesignTokens.space8),
       child: Material(
-        color: theme.colorScheme.errorContainer,
-        borderRadius: AppSpacing.cardBorderRadius,
+        color: AppColors.expiredContainer(theme.colorScheme),
+        borderRadius: AppDesignTokens.radiusSmallBorder,
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onTap,
-          borderRadius: AppSpacing.cardBorderRadius,
+          borderRadius: AppDesignTokens.radiusSmallBorder,
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.cardPadding,
-              vertical: AppSpacing.cardSpacing,
+              horizontal: AppDesignTokens.space16,
+              vertical: AppDesignTokens.cardGap,
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.warning_amber,
-                  color: theme.colorScheme.onErrorContainer,
+                  Icons.warning_amber_rounded,
+                  size: AppDesignTokens.iconMedium,
+                  color: AppColors.expiredOnContainer(theme.colorScheme),
                 ),
-                const SizedBox(width: AppSpacing.cardSpacing),
+                const SizedBox(width: AppDesignTokens.cardGap),
                 Expanded(
                   child: Text(
                     message,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onErrorContainer,
+                      color: AppColors.expiredOnContainer(theme.colorScheme),
                       fontWeight: FontWeight.w500,
                     ),
                   ),

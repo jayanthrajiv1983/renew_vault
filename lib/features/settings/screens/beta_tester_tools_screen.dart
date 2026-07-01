@@ -16,7 +16,7 @@ import '../../../services/beta_health_service.dart';
 import '../../../services/diagnostics_report_service.dart';
 import '../../../services/notification_service.dart';
 import '../../../services/ocr_service.dart';
-import '../../../theme/app_brand.dart';
+import '../../../theme/app_colors.dart';
 import '../../../theme/app_spacing.dart';
 import '../../../utils/form_padding.dart';
 import '../../../widgets/ocr/ocr_scan_helpers.dart';
@@ -772,8 +772,8 @@ class _BetaHealthCheckRow extends StatelessWidget {
       case BetaTestResult.pass:
         return _BetaHealthChipStyle(
           label: 'PASS',
-          background: AppBrand.green.withValues(alpha: 0.18),
-          foreground: AppBrand.green,
+          background: colorScheme.safeColor.withValues(alpha: 0.18),
+          foreground: colorScheme.safeColor,
         );
       case BetaTestResult.fail:
         return _BetaHealthChipStyle(

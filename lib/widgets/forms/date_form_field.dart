@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_system.dart';
 import 'category_detail_keys.dart';
 
 class DateFormField extends StatelessWidget {
@@ -40,7 +41,7 @@ class DateFormField extends StatelessWidget {
       child: InkWell(
         onTap: () => _pickDate(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.cardGap),
           child: Text(
             value == null ? 'Select a date' : formatDisplayDate(value!),
             style: TextStyle(

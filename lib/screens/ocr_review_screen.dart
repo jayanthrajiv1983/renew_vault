@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../services/ocr/ocr_engine.dart';
 import '../services/ocr/ocr_extraction_result.dart';
 import '../services/ocr/ocr_form_mapper.dart';
@@ -148,15 +150,15 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
             : theme.colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.only(top: AppDesignTokens.space8),
       child: Row(
         children: [
           if (isLow) ...[
             _VerifyBadge(theme: theme),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppDesignTokens.space8),
           ] else if (isLearned) ...[
-            Icon(Icons.auto_fix_high, size: 14, color: color),
-            const SizedBox(width: 4),
+            Icon(Icons.auto_fix_high, size: AppDesignTokens.iconSmall - 4, color: color),
+            const SizedBox(width: AppDesignTokens.space4),
           ],
           Expanded(
             child: Text(
@@ -266,18 +268,18 @@ class _OcrReviewScreenState extends State<OcrReviewScreen> {
                         children: [
                           Text(
                             'Extracted Fields',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
+                            style: AppTextStyles.of(context).sectionTitle(
+                              color: colorScheme.onSurface,
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: AppDesignTokens.space4),
                           Text(
                             'Edit any value before accepting the scan.',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.sectionSpacing),
+                          const SizedBox(height: AppDesignTokens.titleToFirstCard),
                           TextFormField(
                             controller: _titleController,
                             decoration: const InputDecoration(
@@ -401,7 +403,7 @@ class _DocumentDetectionCard extends StatelessWidget {
       child: Padding(
         padding: AppSpacing.cardInsets,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CircleAvatar(
               radius: 24,
@@ -415,7 +417,7 @@ class _DocumentDetectionCard extends StatelessWidget {
                     : colorScheme.onPrimaryContainer,
               ),
             ),
-            const SizedBox(width: AppSpacing.sectionSpacing),
+            const SizedBox(width: AppDesignTokens.space12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,7 +428,7 @@ class _DocumentDetectionCard extends StatelessWidget {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppDesignTokens.space4),
                   Text(
                     documentType,
                     style: theme.textTheme.titleLarge?.copyWith(
@@ -438,8 +440,8 @@ class _DocumentDetectionCard extends StatelessWidget {
                   if (confidencePercent != null) ...[
                     const SizedBox(height: AppSpacing.cardSpacing),
                     Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: AppDesignTokens.space8,
+                      runSpacing: AppDesignTokens.space8,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
                         _ConfidenceChip(
@@ -490,7 +492,7 @@ class _ScanPreviewCard extends StatelessWidget {
                       Icons.broken_image_outlined,
                       color: colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppDesignTokens.space8),
                     Text(
                       'Could not load scan preview',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -531,7 +533,10 @@ class _ConfidenceChip extends StatelessWidget {
         : colorScheme.onSecondaryContainer;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesignTokens.space8 + 2,
+        vertical: AppDesignTokens.space4,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
@@ -557,7 +562,10 @@ class _VerifyBadge extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesignTokens.space8,
+        vertical: AppDesignTokens.space4 / 2,
+      ),
       decoration: BoxDecoration(
         color: colorScheme.errorContainer,
         borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
@@ -567,10 +575,10 @@ class _VerifyBadge extends StatelessWidget {
         children: [
           Icon(
             Icons.warning_amber_rounded,
-            size: 14,
+            size: AppDesignTokens.iconSmall - 4,
             color: colorScheme.onErrorContainer,
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppDesignTokens.space4),
           Text(
             'Verify',
             style: theme.textTheme.labelSmall?.copyWith(
@@ -612,10 +620,10 @@ class _ReviewActionBar extends StatelessWidget {
           top: false,
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-              AppSpacing.screenPadding,
-              AppSpacing.cardSpacing,
-              AppSpacing.screenPadding,
-              AppSpacing.screenPadding + viewInsets,
+              AppDesignTokens.pagePaddingHorizontal,
+              AppDesignTokens.cardGap,
+              AppDesignTokens.pagePaddingHorizontal,
+              AppDesignTokens.pagePaddingHorizontal + viewInsets,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,

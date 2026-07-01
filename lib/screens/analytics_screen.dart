@@ -8,7 +8,7 @@ import '../services/insights_service.dart';
 import '../services/pending_delete_controller.dart';
 import '../services/storage_service.dart';
 import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
+import '../core/theme/design_system.dart';
 import '../utils/form_padding.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../widgets/charts/category_pie_chart.dart';
@@ -100,7 +100,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool get _hasInsufficientData => _data.overview.total == 0;
 
   static const _sectionTitlePadding =
-      EdgeInsets.only(bottom: AppSpacing.cardSpacing);
+      EdgeInsets.only(bottom: AppDesignTokens.titleToFirstCard);
 
   SliverPadding _horizontalSliverPadding({
     required Widget sliver,
@@ -109,9 +109,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }) {
     return SliverPadding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.sectionSpacing,
+        AppDesignTokens.pagePaddingHorizontal,
         top,
-        AppSpacing.sectionSpacing,
+        AppDesignTokens.pagePaddingHorizontal,
         bottom,
       ),
       sliver: sliver,
@@ -136,7 +136,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               scrollDirection: Axis.horizontal,
               itemCount: _insightsList.length,
               separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.cardSpacing),
+                  const SizedBox(width: AppDesignTokens.cardGap),
               itemBuilder: (context, index) {
                 return SizedBox(
                   width: 300,
@@ -145,7 +145,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               },
             ),
           ),
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
         ],
         const SectionHeader(
           title: 'Overview',
@@ -155,8 +155,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisCount: 2,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: AppSpacing.cardSpacing,
-          crossAxisSpacing: AppSpacing.cardSpacing,
+          mainAxisSpacing: AppDesignTokens.cardGap,
+          crossAxisSpacing: AppDesignTokens.cardGap,
           childAspectRatio: 1.55,
           children: [
             SummaryStatCard(
@@ -167,28 +167,28 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             SummaryStatCard(
               label: 'Expired',
               count: _data.overview.expired,
-              countColor: AppColors.statExpired,
+              countColor: AppColors.expiredColor(theme.colorScheme),
             ),
             SummaryStatCard(
               label: 'Expiring 30 days',
               count: _data.overview.expiringSoon,
-              countColor: AppColors.statExpiringSoon,
+              countColor: theme.colorScheme.expiringColor,
             ),
             SummaryStatCard(
               label: 'Safe',
               count: _data.overview.safe,
-              countColor: AppColors.statSafe,
+              countColor: theme.colorScheme.safeColor,
             ),
           ],
         ),
-        AppSpacing.gapSection,
+        AppDesignTokens.gapSection,
         const SectionHeader(
           title: 'Category Breakdown',
           padding: _sectionTitlePadding,
         ),
         Card(
           child: Padding(
-            padding: AppSpacing.cardInsets,
+            padding: AppDesignTokens.cardInsets,
             child: RepaintBoundary(
               child: CategoryPieChart(
                 categoryCounts: _data.categoryCounts,
@@ -197,14 +197,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ),
         ),
-        AppSpacing.gapSection,
+        AppDesignTokens.gapSection,
         const SectionHeader(
           title: 'Family Member Analytics',
           padding: _sectionTitlePadding,
         ),
         Card(
           child: Padding(
-            padding: AppSpacing.cardInsets,
+            padding: AppDesignTokens.cardInsets,
             child: RepaintBoundary(
               child: FamilyBarChart(
                 ownerCounts: _data.ownerCounts,
@@ -212,14 +212,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             ),
           ),
         ),
-        AppSpacing.gapSection,
+        AppDesignTokens.gapSection,
         const SectionHeader(
           title: 'Expiry Trend',
           padding: _sectionTitlePadding,
         ),
         Card(
           child: Padding(
-            padding: AppSpacing.cardInsets,
+            padding: AppDesignTokens.cardInsets,
             child: RepaintBoundary(
               child: ExpiryLineChart(
                 monthlyExpiries: _data.monthlyExpiries,
@@ -244,7 +244,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         ),
         Card(
           child: Padding(
-            padding: AppSpacing.cardInsets,
+            padding: AppDesignTokens.cardInsets,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -257,7 +257,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                const SizedBox(height: AppDesignTokens.space8),
                 Text(
                   _data.itemsWithCostCount == 0
                       ? 'Add annual cost on insurance and tax items to improve this estimate.'
@@ -281,13 +281,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
     return [
       _horizontalSliverPadding(
-        top: AppSpacing.sectionSpacing,
+        top: AppDesignTokens.sectionGap,
         sliver: SliverToBoxAdapter(
           child: _buildChartsAndSummary(context),
         ),
       ),
       _horizontalSliverPadding(
-        top: AppSpacing.sectionSpacing,
+        top: AppDesignTokens.sectionGap,
         sliver: const SliverToBoxAdapter(
           child: SectionHeader(
             title: 'Upcoming Actions',
@@ -300,7 +300,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           sliver: SliverToBoxAdapter(
             child: Card(
               child: Padding(
-                padding: AppSpacing.cardInsets,
+                padding: AppDesignTokens.cardInsets,
                 child: EmptyStateWidget.compact(
                   title: 'No upcoming items',
                 ),
@@ -310,8 +310,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         )
       else
         _horizontalSliverPadding(
-          sliver: SliverList.builder(
+          sliver: SliverList.separated(
             itemCount: _data.upcomingItems.length,
+            separatorBuilder: (_, _) =>
+                const SizedBox(height: AppDesignTokens.cardGap),
             itemBuilder: (context, index) {
               final item = _data.upcomingItems[index];
               return SlidableRenewalCard(
@@ -319,12 +321,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 item: item,
                 onTap: () => _openItemDetail(item),
                 onItemChanged: _loadData,
+                bottomMargin: 0,
               );
             },
           ),
         ),
       _horizontalSliverPadding(
-        top: AppSpacing.sectionSpacing,
+        top: AppDesignTokens.sectionGap,
         bottom: bottomPadding,
         sliver: SliverToBoxAdapter(
           child: _buildExpenseEstimation(context),

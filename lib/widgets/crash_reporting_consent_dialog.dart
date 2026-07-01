@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/services/crashlytics_service.dart';
 import '../core/services/logging_service.dart';
 import '../services/settings_service.dart';
+import '../utils/form_padding.dart';
 
 /// Shows the one-time crash reporting consent prompt after upgrade or first launch.
 ///
@@ -13,6 +14,10 @@ Future<bool?> showCrashReportingConsentDialog(BuildContext context) {
     context: context,
     barrierDismissible: true,
     builder: (context) => AlertDialog(
+      insetPadding: dialogInsetPadding(context),
+      titlePadding: alertDialogTitlePadding,
+      contentPadding: alertDialogContentPadding,
+      actionsPadding: alertDialogActionsPadding,
       title: const Text('Help Improve Renew Vault'),
       content: const Text(
         'Allow anonymous crash reports to help improve app stability?\n\n'

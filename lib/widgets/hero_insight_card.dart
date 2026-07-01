@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// Priority hero insight shown above the dashboard stat grid.
 enum HeroInsightVariant {
@@ -42,11 +44,9 @@ class HeroInsightCard extends StatelessWidget {
   final VoidCallback onViewUpcoming;
   final VoidCallback onViewVault;
 
-  static const double _borderRadius = 24;
-  static const EdgeInsets _padding = EdgeInsets.all(16);
-  static const double _iconSize = 44;
-  static const double _iconTextGap = 12;
-  static const double _titleDescriptionGap = 6;
+  static const EdgeInsets _padding = AppDesignTokens.cardInsets;
+  static const double _iconTextGap = AppDesignTokens.space12;
+  static const double _titleDescriptionGap = AppDesignTokens.space8;
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +54,10 @@ class HeroInsightCard extends StatelessWidget {
       expiredCount: expiredCount,
       expiringSoonCount: expiringSoonCount,
     );
+    final colorScheme = Theme.of(context).colorScheme;
     final spec = _HeroVisualSpec.forVariant(
       variant,
-      isDark: Theme.of(context).brightness == Brightness.dark,
+      colorScheme: colorScheme,
     );
     final count = switch (variant) {
       HeroInsightVariant.expired => expiredCount,
@@ -105,7 +106,7 @@ class HeroInsightCard extends StatelessWidget {
           padding: const EdgeInsets.only(top: 1),
           child: Icon(
             spec.icon,
-            size: _iconSize,
+            size: AppDesignTokens.iconHero,
             color: spec.accentColor.withValues(alpha: 0.85),
           ),
         );
@@ -117,8 +118,8 @@ class HeroInsightCard extends StatelessWidget {
                   backgroundColor: spec.accentColor,
                   foregroundColor: spec.buttonForegroundColor,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
+                    horizontal: AppDesignTokens.space12,
+                    vertical: AppDesignTokens.space8,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -130,8 +131,8 @@ class HeroInsightCard extends StatelessWidget {
                 style: TextButton.styleFrom(
                   foregroundColor: spec.accentColor,
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
+                    horizontal: AppDesignTokens.space12,
+                    vertical: AppDesignTokens.space8,
                   ),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -151,7 +152,7 @@ class HeroInsightCard extends StatelessWidget {
                   Expanded(child: textBlock),
                 ],
               ),
-              const SizedBox(height: 10),
+              AppSpacing.gapTitleSubtitle,
               Align(
                 alignment: Alignment.centerRight,
                 child: cta,
@@ -167,7 +168,7 @@ class HeroInsightCard extends StatelessWidget {
               icon,
               const SizedBox(width: _iconTextGap),
               Expanded(child: textBlock),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSpacing.titleSubtitleGap),
               Align(
                 alignment: Alignment.center,
                 child: cta,
@@ -178,9 +179,11 @@ class HeroInsightCard extends StatelessWidget {
       },
     );
 
+    final theme = Theme.of(context);
+
     final card = Material(
       color: Colors.transparent,
-      elevation: 0,
+      elevation: AppDesignTokens.elevationDashboard,
       surfaceTintColor: Colors.transparent,
       child: Ink(
         decoration: BoxDecoration(
@@ -189,11 +192,8 @@ class HeroInsightCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: spec.gradientColors,
           ),
-          borderRadius: BorderRadius.circular(_borderRadius),
-          border: Border.all(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-            width: 1,
-          ),
+          borderRadius: AppDesignTokens.radiusHeroBorder,
+          border: AppDesignTokens.cardBorder(theme),
         ),
         child: Padding(
           padding: _padding,
@@ -233,19 +233,18 @@ class _HeroVisualSpec {
 
   static _HeroVisualSpec forVariant(
     HeroInsightVariant variant, {
-    required bool isDark,
+    required ColorScheme colorScheme,
   }) {
+    final isDark = colorScheme.brightness == Brightness.dark;
     switch (variant) {
       case HeroInsightVariant.expired:
         return _HeroVisualSpec(
           gradientColors: isDark
               ? const [Color(0xFF3D1F1F), Color(0xFF2A1818)]
               : const [Color(0xFFFEE2E2), Color(0xFFFFF5F5)],
-          accentColor: AppColors.statExpired,
-          titleColor:
-              isDark ? const Color(0xFFFECACA) : const Color(0xFF991B1B),
-          descriptionColor:
-              isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+          accentColor: AppColors.expiredColor(colorScheme),
+          titleColor: AppColors.expiredOnContainer(colorScheme),
+          descriptionColor: AppColors.expiredColor(colorScheme),
           buttonForegroundColor: Colors.white,
           icon: Icons.warning_amber_rounded,
           title: 'Action Required',
@@ -260,11 +259,9 @@ class _HeroVisualSpec {
           gradientColors: isDark
               ? const [Color(0xFF3D2E18), Color(0xFF2A2218)]
               : const [Color(0xFFFEF3C7), Color(0xFFFFFBEB)],
-          accentColor: AppColors.statExpiringSoon,
-          titleColor:
-              isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
-          descriptionColor:
-              isDark ? const Color(0xFFFCD34D) : const Color(0xFFD97706),
+          accentColor: AppColors.expiringColor(colorScheme),
+          titleColor: AppColors.expiringOnContainer(colorScheme),
+          descriptionColor: AppColors.warningColor(colorScheme),
           buttonForegroundColor: isDark ? const Color(0xFF422006) : Colors.white,
           icon: Icons.calendar_month_rounded,
           title: 'Upcoming Renewals',
@@ -279,12 +276,10 @@ class _HeroVisualSpec {
           gradientColors: isDark
               ? const [Color(0xFF1A3D2A), Color(0xFF152A20)]
               : const [Color(0xFFDCFCE7), Color(0xFFF0FDF4)],
-          accentColor: AppColors.statSafe,
-          titleColor:
-              isDark ? const Color(0xFFBBF7D0) : const Color(0xFF166534),
-          descriptionColor:
-              isDark ? const Color(0xFF86EFAC) : const Color(0xFF16A34A),
-          buttonForegroundColor: AppColors.statSafe,
+          accentColor: AppColors.safeColor(colorScheme),
+          titleColor: AppColors.safeOnContainer(colorScheme),
+          descriptionColor: AppColors.safeColor(colorScheme),
+          buttonForegroundColor: AppColors.safeColor(colorScheme),
           icon: Icons.celebration_rounded,
           title: "You're All Set",
           description: (_) => 'All items are currently up to date.',

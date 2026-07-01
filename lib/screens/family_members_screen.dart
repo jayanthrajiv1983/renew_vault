@@ -5,6 +5,7 @@ import '../models/family_member.dart';
 import '../services/family_service.dart';
 import '../shared/widgets/empty_state_widget.dart';
 import '../shared/widgets/success_overlay.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
@@ -102,14 +103,15 @@ class _FamilyMembersScreenState extends State<FamilyMembersScreen> {
             : ListView.separated(
                 padding: listScrollPadding(
                   context,
-                  top: AppSpacing.fieldLabelGap,
                   includeFabClearance: true,
                 ),
               itemCount: _members.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final member = _members[index];
                 return ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
                   leading: OwnerAvatar(ownerName: member.name, radius: 20),
                   title: Text(
                     member.name,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 
 class ItemDetailSection extends StatelessWidget {
@@ -34,31 +35,37 @@ class ItemDetailSection extends StatelessWidget {
       elevation: elevation ?? theme.cardTheme.elevation,
       surfaceTintColor: surfaceTintColor ?? colorScheme.surfaceTint,
       shape: shape,
-      margin: const EdgeInsets.only(bottom: AppSpacing.sectionSpacing),
+      margin: const EdgeInsets.only(bottom: AppDesignTokens.sectionGap),
       clipBehavior: Clip.antiAlias,
       child: Padding(
-        padding: AppSpacing.cardInsets,
+        padding: AppDesignTokens.cardInsets,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
-                  child: Text(
-                    title,
-                    style: textStyles.sectionTitle(
-                      color: colorScheme.onSurface,
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      title,
+                      style: textStyles.sectionTitle(
+                        color: colorScheme.onSurface,
+                      ),
                     ),
                   ),
                 ),
                 if (trailing != null) ...[
-                  const SizedBox(width: AppSpacing.fieldLabelGap),
-                  trailing!,
+                  const SizedBox(width: AppDesignTokens.space8),
+                  Align(
+                    alignment: Alignment.center,
+                    child: trailing!,
+                  ),
                 ],
               ],
             ),
-            const SizedBox(height: AppSpacing.cardSpacing),
+            const SizedBox(height: AppDesignTokens.titleToFirstCard),
             child,
           ],
         ),
@@ -99,8 +106,12 @@ class ItemDetailField extends StatelessWidget {
           AppSpacing.gapTitleSubtitle,
           if (trailing != null)
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                trailing!,
+                Align(
+                  alignment: Alignment.center,
+                  child: trailing!,
+                ),
                 const SizedBox(width: AppSpacing.cardSpacing),
                 Expanded(
                   child: Text(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_brand.dart';
 import '../theme/app_colors.dart';
 
@@ -32,26 +33,22 @@ class DashboardStatCard extends StatelessWidget {
   final VoidCallback? onTap;
   final int animationIndex;
 
-  static const double _borderRadius = 20;
-  static const EdgeInsets _padding =
-      EdgeInsets.fromLTRB(16, 12, 16, 16);
+  static const EdgeInsets _padding = EdgeInsets.all(14);
   static const double _iconContainerSize = 40;
-  static const double _iconSize = 28;
-  static const double _titleToValueGap = 10;
-  static const double _valueToSubtitleGap = 4;
+  static const double _titleToValueGap = AppDesignTokens.space8;
+  static const double _valueToSubtitleGap = 2;
   static const double _subtitleLineHeight = 14.4;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textStyles = AppTextStyles.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final colorScheme = theme.colorScheme;
-    final spec = _StatVisualSpec.forType(type, isDark: isDark);
+    final spec = _StatVisualSpec.forType(type, colorScheme: colorScheme);
 
     final card = Material(
       color: Colors.transparent,
-      elevation: 0,
+      elevation: AppDesignTokens.elevationDashboard,
       surfaceTintColor: Colors.transparent,
       child: Ink(
         decoration: BoxDecoration(
@@ -60,15 +57,12 @@ class DashboardStatCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: spec.gradientColors,
           ),
-          borderRadius: BorderRadius.circular(_borderRadius),
-          border: Border.all(
-            color: theme.dividerColor.withValues(alpha: 0.08),
-            width: 1,
-          ),
+          borderRadius: AppDesignTokens.radiusLargeBorder,
+          border: AppDesignTokens.cardBorder(theme),
         ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(_borderRadius),
+          borderRadius: AppDesignTokens.radiusLargeBorder,
           splashColor: spec.accentColor.withValues(alpha: 0.12),
           highlightColor: spec.accentColor.withValues(alpha: 0.06),
           child: Padding(
@@ -77,19 +71,22 @@ class DashboardStatCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
-                      child: Text(
-                        label,
-                        maxLines: 2,
-                        softWrap: true,
-                        style: textStyles.dashboardTitle(
-                          color: spec.titleColor,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          label,
+                          maxLines: 2,
+                          softWrap: true,
+                          style: textStyles.dashboardTitle(
+                            color: spec.titleColor,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppDesignTokens.space8),
                     _StatIconBadge(
                       icon: spec.icon,
                       accentColor: spec.accentColor,
@@ -97,14 +94,19 @@ class DashboardStatCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: _titleToValueGap),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    '$count',
-                    maxLines: 1,
-                    style: textStyles.dashboardNumber(
-                      color: spec.valueColor(colorScheme),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '$count',
+                        maxLines: 1,
+                        style: textStyles.dashboardNumber(
+                          color: spec.valueColor(colorScheme),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -158,10 +160,12 @@ class _StatIconBadge extends StatelessWidget {
           shape: BoxShape.circle,
           color: accentColor.withValues(alpha: 0.12),
         ),
-        child: Icon(
-          icon,
-          size: DashboardStatCard._iconSize,
-          color: accentColor.withValues(alpha: 0.85),
+        child: Center(
+          child: Icon(
+            icon,
+            size: AppDesignTokens.iconLarge,
+            color: accentColor.withValues(alpha: 0.85),
+          ),
         ),
       ),
     );
@@ -187,8 +191,9 @@ class _StatVisualSpec {
 
   static _StatVisualSpec forType(
     DashboardStatType type, {
-    required bool isDark,
+    required ColorScheme colorScheme,
   }) {
+    final isDark = colorScheme.brightness == Brightness.dark;
     switch (type) {
       case DashboardStatType.totalItems:
         return _StatVisualSpec(
@@ -207,36 +212,33 @@ class _StatVisualSpec {
           gradientColors: isDark
               ? const [Color(0xFF3D2E18), Color(0xFF2A2218)]
               : const [Color(0xFFFEF3C7), Color(0xFFFFFBEB)],
-          accentColor: AppColors.statExpiringSoon,
-          titleColor: isDark ? const Color(0xFFFDE68A) : const Color(0xFF92400E),
-          subtitleColor:
-              isDark ? const Color(0xFFFCD34D) : const Color(0xFFD97706),
+          accentColor: AppColors.expiringColor(colorScheme),
+          titleColor: AppColors.expiringOnContainer(colorScheme),
+          subtitleColor: AppColors.warningColor(colorScheme),
           icon: Icons.schedule_rounded,
-          valueColor: (_) => AppColors.statExpiringSoon,
+          valueColor: (scheme) => AppColors.expiringColor(scheme),
         );
       case DashboardStatType.expired:
         return _StatVisualSpec(
           gradientColors: isDark
               ? const [Color(0xFF3D1F1F), Color(0xFF2A1818)]
               : const [Color(0xFFFEE2E2), Color(0xFFFFF5F5)],
-          accentColor: AppColors.statExpired,
-          titleColor: isDark ? const Color(0xFFFECACA) : const Color(0xFF991B1B),
-          subtitleColor:
-              isDark ? const Color(0xFFFCA5A5) : const Color(0xFFDC2626),
+          accentColor: AppColors.expiredColor(colorScheme),
+          titleColor: AppColors.expiredOnContainer(colorScheme),
+          subtitleColor: AppColors.expiredColor(colorScheme),
           icon: Icons.warning_amber_rounded,
-          valueColor: (_) => AppColors.statExpired,
+          valueColor: (_) => AppColors.expiredColor(colorScheme),
         );
       case DashboardStatType.safe:
         return _StatVisualSpec(
           gradientColors: isDark
               ? const [Color(0xFF1A3D2A), Color(0xFF152A20)]
               : const [Color(0xFFDCFCE7), Color(0xFFF0FDF4)],
-          accentColor: AppColors.statSafe,
-          titleColor: isDark ? const Color(0xFFBBF7D0) : const Color(0xFF166534),
-          subtitleColor:
-              isDark ? const Color(0xFF86EFAC) : const Color(0xFF16A34A),
+          accentColor: AppColors.safeColor(colorScheme),
+          titleColor: AppColors.safeOnContainer(colorScheme),
+          subtitleColor: AppColors.safeColor(colorScheme),
           icon: Icons.verified_rounded,
-          valueColor: (_) => AppColors.statSafe,
+          valueColor: (scheme) => AppColors.safeColor(scheme),
         );
     }
   }

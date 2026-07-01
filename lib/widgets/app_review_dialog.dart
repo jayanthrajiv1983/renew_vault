@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/app_review_service.dart';
+import '../utils/form_padding.dart';
 
 enum AppReviewDialogAction { rate, later, noThanks }
 
@@ -10,6 +11,10 @@ Future<AppReviewDialogAction?> showAppReviewDialog(BuildContext context) {
     context: context,
     barrierDismissible: false,
     builder: (context) => AlertDialog(
+      insetPadding: dialogInsetPadding(context),
+      titlePadding: alertDialogTitlePadding,
+      contentPadding: alertDialogContentPadding,
+      actionsPadding: alertDialogActionsPadding,
       title: const Text('Enjoying Renew Vault?'),
       content: const Text(
         'If you have a moment, a quick rating helps others discover Renew Vault.',

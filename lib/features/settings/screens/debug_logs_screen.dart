@@ -136,8 +136,8 @@ class _DebugLogsScreenState extends State<DebugLogsScreen> {
         );
       case LoggingService.levelWarning:
         return (
-          background: AppColors.statExpiringSoon.withValues(alpha: 0.18),
-          foreground: AppColors.statExpiringSoon,
+          background: colorScheme.warningColor.withValues(alpha: 0.18),
+          foreground: colorScheme.warningColor,
         );
       case LoggingService.levelError:
         return (

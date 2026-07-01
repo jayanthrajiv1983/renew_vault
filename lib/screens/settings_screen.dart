@@ -28,7 +28,7 @@ import '../services/notification_service.dart';
 import '../services/settings_service.dart';
 
 import '../shared/widgets/success_overlay.dart';
-import '../theme/app_spacing.dart';
+import '../core/theme/design_system.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/backup_flow.dart';
@@ -107,6 +107,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 
   bool get _isBusy => _isRestoring || _isImporting;
+
+  static const double _listIconSize = AppDesignTokens.iconMedium;
 
 
 
@@ -418,16 +420,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   'Backup Reminder',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                const SizedBox(height: AppSpacing.fieldLabelGap),
+                const SizedBox(height: AppDesignTokens.space8),
                 Text(
                   'Show a reminder on the home screen when a backup is overdue',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                 ),
-                const SizedBox(height: AppSpacing.sectionSpacing),
+                const SizedBox(height: AppDesignTokens.sectionGap),
                 ...BackupReminderInterval.values.map(
                   (interval) => RadioListTile<BackupReminderInterval>(
+                    contentPadding: EdgeInsets.zero,
                     title: Text(interval.label),
                     value: interval,
                     groupValue: _backupReminderInterval,
@@ -600,16 +603,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required ColorScheme colorScheme,
   }) {
     return ListTile(
+      contentPadding: AppDesignTokens.cardListTilePadding,
+      titleAlignment: ListTileTitleAlignment.center,
       leading: CircleAvatar(
         backgroundColor: colorScheme.primaryContainer,
         child: Icon(
           icon,
+          size: _listIconSize,
           color: colorScheme.onPrimaryContainer,
         ),
       ),
       title: Text(title),
       subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
+      trailing: Icon(Icons.chevron_right, size: _listIconSize),
       onTap: () => _launchFeedback(type),
     );
   }
@@ -617,7 +623,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _sectionHeader(String title) {
     return SectionHeader(
       title: title,
-      padding: const EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),
+      padding: const EdgeInsets.only(
+        bottom: AppDesignTokens.titleToFirstCard,
+      ),
     );
   }
 
@@ -680,12 +688,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               return Card(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.cardPadding,
-                    AppSpacing.cardPadding,
-                    AppSpacing.cardPadding,
-                    AppSpacing.fieldLabelGap,
-                  ),
+                  padding: AppDesignTokens.cardInsets,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -693,7 +696,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'Theme Mode',
                         style: theme.textTheme.titleSmall,
                       ),
-                      const SizedBox(height: AppSpacing.cardSpacing),
+                      const SizedBox(height: AppDesignTokens.cardGap),
                       SegmentedButton<AppThemeMode>(
                         segments: AppThemeMode.values
                             .map(
@@ -715,7 +718,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('App Preferences'),
 
@@ -728,11 +731,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
                     Icons.warning_amber_outlined,
-
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Show Expired Banner'),
@@ -750,11 +751,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
-                    Icons.sort,
-
+                    Icons.sort_rounded,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Auto Sort by Nearest Expiry'),
@@ -777,24 +776,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Family'),
 
           Card(
 
             child: ListTile(
+              contentPadding: AppDesignTokens.cardListTilePadding,
+              titleAlignment: ListTileTitleAlignment.center,
 
               leading: CircleAvatar(
 
                 backgroundColor: theme.colorScheme.primaryContainer,
 
                 child: Icon(
-
                   Icons.group_outlined,
-
+                  size: _listIconSize,
                   color: theme.colorScheme.onPrimaryContainer,
-
                 ),
 
               ),
@@ -803,7 +802,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               subtitle: const Text('Add, edit, or remove family members'),
 
-              trailing: const Icon(Icons.chevron_right),
+              trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
               onTap: _openFamilyMembersScreen,
 
@@ -811,7 +810,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Notifications'),
 
@@ -826,11 +825,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
                     Icons.notifications_active_outlined,
-
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Enable Notifications'),
@@ -846,20 +843,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: Icon(
-
-                    Icons.notifications_none,
-
+                    Icons.notifications_none_rounded,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Scheduled Reminders'),
 
                   subtitle: const Text('View upcoming reminder alerts'),
 
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
                   onTap: _openNotificationsScreen,
 
@@ -868,20 +865,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: Icon(
-
-                    Icons.event_available,
-
+                    Icons.event_available_rounded,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Upcoming Items'),
 
                   subtitle: const Text('Items with reminders on the way'),
 
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
                   onTap: _openUpcomingRenewalsScreen,
 
@@ -898,10 +895,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   selectedDays: _defaultReminderDays,
 
                   contentPadding: const EdgeInsets.fromLTRB(
-                    AppSpacing.cardPadding,
-                    AppSpacing.cardPadding,
-                    AppSpacing.cardPadding,
-                    AppSpacing.cardPadding,
+                    AppDesignTokens.space16,
+                    AppDesignTokens.space16,
+                    AppDesignTokens.space16,
+                    AppDesignTokens.space16,
                   ),
 
                   onChanged: _setDefaultReminderDays,
@@ -914,7 +911,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Privacy & Security'),
 
@@ -932,7 +929,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           Card(
 
@@ -943,11 +940,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
                     Icons.lock_outline,
-
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Enable App Lock'),
@@ -967,13 +962,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: Icon(
-
-                    Icons.fingerprint,
-
+                    Icons.fingerprint_rounded,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Test Biometric Authentication'),
@@ -984,7 +979,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   ),
 
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
                   onTap: _testBiometricAuthentication,
 
@@ -995,11 +990,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
                     Icons.visibility_off_outlined,
-
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Hide app contents in Recents'),
@@ -1021,11 +1014,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
 
                   secondary: Icon(
-
                     Icons.bug_report_outlined,
-
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
-
                   ),
 
                   title: const Text('Share Anonymous Crash Reports'),
@@ -1048,18 +1039,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Automatic Backup'),
 
           Card(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.cardPadding,
-                AppSpacing.cardPadding,
-                AppSpacing.cardPadding,
-                AppSpacing.fieldLabelGap,
-              ),
+              padding: AppDesignTokens.cardInsets,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1067,14 +1053,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'Reminder Frequency',
                     style: theme.textTheme.titleSmall,
                   ),
-                  const SizedBox(height: AppSpacing.fieldLabelGap),
+                  const SizedBox(height: AppDesignTokens.space8),
                   Text(
                     'Schedule a notification reminding you to back up your vault',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.cardSpacing),
+                  const SizedBox(height: AppDesignTokens.cardGap),
                   DropdownButtonFormField<BackupFrequency>(
                     value: _backupFrequency,
                     decoration: const InputDecoration(
@@ -1101,7 +1087,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Data Management'),
 
@@ -1112,17 +1098,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: CircleAvatar(
 
                     backgroundColor: theme.colorScheme.secondaryContainer,
 
                     child: Icon(
-
                       Icons.schedule_outlined,
-
+                      size: _listIconSize,
                       color: theme.colorScheme.onSecondaryContainer,
-
                     ),
 
                   ),
@@ -1131,7 +1117,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   subtitle: Text(_backupReminderInterval.label),
 
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
                   onTap: _openBackupReminderSheet,
 
@@ -1140,17 +1126,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: CircleAvatar(
 
                     backgroundColor: theme.colorScheme.primaryContainer,
 
                     child: Icon(
-
                       Icons.backup_rounded,
-
+                      size: _listIconSize,
                       color: theme.colorScheme.onPrimaryContainer,
-
                     ),
 
                   ),
@@ -1161,7 +1147,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     'Backup data, Google Drive, and backup history',
                   ),
 
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
 
                   onTap: _openBackupScreen,
 
@@ -1170,17 +1156,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: CircleAvatar(
 
                     backgroundColor: theme.colorScheme.errorContainer,
 
                     child: Icon(
-
-                      Icons.restore,
-
+                      Icons.restore_rounded,
+                      size: _listIconSize,
                       color: theme.colorScheme.onErrorContainer,
-
                     ),
 
                   ),
@@ -1192,8 +1178,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   trailing: _busyTrailing(_isRestoring) ??
-
-                      const Icon(Icons.chevron_right),
+                      Icon(Icons.chevron_right, size: _listIconSize),
 
                   enabled: !_isBusy,
 
@@ -1210,17 +1195,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
                   leading: CircleAvatar(
 
                     backgroundColor: theme.colorScheme.tertiaryContainer,
 
                     child: Icon(
-
-                      Icons.download,
-
+                      Icons.download_rounded,
+                      size: _listIconSize,
                       color: theme.colorScheme.onTertiaryContainer,
-
                     ),
 
                   ),
@@ -1232,8 +1217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
 
                   trailing: _busyTrailing(_isImporting) ??
-
-                      const Icon(Icons.chevron_right),
+                      Icon(Icons.chevron_right, size: _listIconSize),
 
                   enabled: !_isBusy,
 
@@ -1253,7 +1237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Feedback & Support'),
 
@@ -1295,7 +1279,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Diagnostics'),
 
@@ -1303,10 +1287,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
                   leading: CircleAvatar(
                     backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(
                       Icons.health_and_safety_rounded,
+                      size: _listIconSize,
                       color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
@@ -1314,16 +1301,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: const Text(
                     'View app, device, and storage information',
                   ),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
                   onTap: _openAppDiagnosticsScreen,
                 ),
                 if (!kReleaseMode) ...[
                   const Divider(height: 1),
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.secondaryContainer,
                       child: Icon(
                         Icons.article_outlined,
+                        size: _listIconSize,
                         color: theme.colorScheme.onSecondaryContainer,
                       ),
                     ),
@@ -1331,15 +1321,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: const Text(
                       'View and export application event logs',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Icon(Icons.chevron_right, size: _listIconSize),
                     onTap: _openDebugLogsScreen,
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.tertiaryContainer,
                       child: Icon(
                         Icons.science_rounded,
+                        size: _listIconSize,
                         color: theme.colorScheme.onTertiaryContainer,
                       ),
                     ),
@@ -1347,7 +1340,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     subtitle: const Text(
                       'Run tests for notifications, OCR, backup, and more',
                     ),
-                    trailing: const Icon(Icons.chevron_right),
+                    trailing: Icon(Icons.chevron_right, size: _listIconSize),
                     onTap: _openBetaTesterToolsScreen,
                   ),
                 ],
@@ -1355,7 +1348,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('Privacy & Legal'),
 
@@ -1363,42 +1356,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               children: [
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
                   leading: Icon(
                     Icons.privacy_tip_outlined,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
                   ),
                   title: const Text('Privacy Policy'),
                   subtitle: const Text('How we handle your data'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
                   onTap: _openPrivacyPolicy,
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
                   leading: Icon(
                     Icons.description_outlined,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
                   ),
                   title: const Text('Terms & Conditions'),
                   subtitle: const Text('Rules for using Renew Vault'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
                   onTap: _openTermsAndConditions,
                 ),
                 const Divider(height: 1),
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
                   leading: Icon(
                     Icons.code_outlined,
+                    size: _listIconSize,
                     color: theme.colorScheme.primary,
                   ),
                   title: const Text('Open Source Licenses'),
                   subtitle: const Text('Third-party software acknowledgements'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: Icon(Icons.chevron_right, size: _listIconSize),
                   onTap: _openOpenSourceLicenses,
                 ),
               ],
             ),
           ),
 
-          AppSpacing.gapSection,
+          AppDesignTokens.gapSection,
 
           _sectionHeader('About'),
 
@@ -1412,13 +1414,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   padding: const EdgeInsets.fromLTRB(
 
-                    AppSpacing.cardPadding,
+                    AppDesignTokens.space16,
 
-                    AppSpacing.sectionSpacing,
+                    AppDesignTokens.sectionGap,
 
-                    AppSpacing.cardPadding,
+                    AppDesignTokens.space16,
 
-                    AppSpacing.cardPadding,
+                    AppDesignTokens.space16,
 
                   ),
 
@@ -1436,7 +1438,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       ),
 
-                      const SizedBox(height: AppSpacing.sectionSpacing),
+                      const SizedBox(height: AppDesignTokens.sectionGap),
 
                       _AboutVersionInfo(theme: theme),
 
@@ -1449,12 +1451,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 1),
 
                 ListTile(
+                  contentPadding: AppDesignTokens.cardListTilePadding,
+                  titleAlignment: ListTileTitleAlignment.center,
 
-                  leading: const Icon(Icons.star_outline),
-
+                  leading: Icon(
+                    Icons.star_outline_rounded,
+                    size: _listIconSize,
+                  ),
                   title: const Text('Rate App'),
-
-                  trailing: const Icon(Icons.open_in_new, size: 18),
+                  trailing: Icon(
+                    Icons.open_in_new_rounded,
+                    size: AppDesignTokens.iconSmall,
+                  ),
 
                   onTap: () => _openUrl(
 
@@ -1592,7 +1600,7 @@ class _AboutVersionBody extends StatelessWidget {
 
         if (releaseChannel.isNotEmpty) ...[
 
-          const SizedBox(height: AppSpacing.fieldLabelGap),
+          const SizedBox(height: AppDesignTokens.space8),
 
           Chip(
 

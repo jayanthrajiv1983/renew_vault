@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 
-import '../../theme/app_brand.dart';
+import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/haptic_feedback.dart';
 import 'success_overlay.dart';
@@ -54,13 +54,13 @@ abstract final class MicrointeractionRegistry {
     MicrointeractionType.success: MicrointeractionDefinition(
       icon: Icons.check_circle_rounded,
       semanticLabel: 'Success',
-      iconColor: (_) => AppBrand.green,
+      iconColor: (scheme) => scheme.safeColor,
       haptic: AppHaptics.onSuccess,
     ),
     MicrointeractionType.celebration: MicrointeractionDefinition(
       icon: Icons.celebration_rounded,
       semanticLabel: 'Celebration',
-      iconColor: (colorScheme) => AppBrand.accentOrange,
+      iconColor: (colorScheme) => colorScheme.expiringColor,
       haptic: AppHaptics.onCelebration,
       emphasis: MicrointeractionEmphasis.celebration,
     ),

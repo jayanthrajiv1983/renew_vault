@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../services/security_audit_service.dart';
+import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
 /// Informational security posture tiles for Settings → Privacy & Security.
@@ -110,15 +112,28 @@ class _SecurityStatusTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = enabled ? theme.colorScheme.primary : theme.colorScheme.outline;
-    final icon = enabled ? Icons.check_circle : Icons.info_outline;
+    final colorScheme = theme.colorScheme;
+    final color =
+        enabled ? colorScheme.safeColor : colorScheme.neutralColor;
+    final icon =
+        enabled ? Icons.check_circle_rounded : Icons.info_outline_rounded;
 
     return ListTile(
-      leading: Icon(icon, color: color),
+      contentPadding: AppDesignTokens.cardListTilePadding,
+      titleAlignment: ListTileTitleAlignment.center,
+      leading: Icon(
+        icon,
+        size: AppDesignTokens.iconMedium,
+        color: color,
+      ),
       title: Text(label),
-      trailing: Text(
-        enabled ? 'Active' : 'Review',
-        style: theme.textTheme.labelMedium?.copyWith(color: color),
+      trailing: Align(
+        alignment: Alignment.centerRight,
+        widthFactor: 1,
+        child: Text(
+          enabled ? 'Active' : 'Review',
+          style: theme.textTheme.labelMedium?.copyWith(color: color),
+        ),
       ),
     );
   }

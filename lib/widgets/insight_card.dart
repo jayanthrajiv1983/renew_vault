@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../services/insights_service.dart';
+import '../theme/app_colors.dart';
+import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 
 class InsightCard extends StatelessWidget {
@@ -14,15 +17,16 @@ class InsightCard extends StatelessWidget {
   static const double _radius = 20;
   static const double _elevation = 2;
   static const EdgeInsets _padding = AppSpacing.cardInsets;
+  static const double _iconSlotSize = 44;
 
   Color _accentColor(ColorScheme colorScheme) {
     switch (insight.priority) {
       case InsightPriority.high:
-        return colorScheme.error;
+        return colorScheme.expiringColor;
       case InsightPriority.medium:
-        return colorScheme.primary;
+        return colorScheme.infoColor;
       case InsightPriority.low:
-        return colorScheme.tertiary;
+        return colorScheme.neutralColor;
     }
   }
 
@@ -30,6 +34,7 @@ class InsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final textStyles = AppTextStyles.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final accent = _accentColor(colorScheme);
 
@@ -48,27 +53,38 @@ class InsightCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: colorScheme.primaryContainer.withValues(
-                alpha: isDark ? 0.4 : 0.55,
-              ),
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: accent,
-                size: 22,
+            SizedBox(
+              width: _iconSlotSize,
+              height: _iconSlotSize,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.primaryContainer.withValues(
+                    alpha: isDark ? 0.4 : 0.55,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: accent.withValues(alpha: 0.85),
+                    size: AppDesignTokens.iconMedium,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sectionSpacing),
+            const SizedBox(width: AppDesignTokens.space12),
             Expanded(
-              child: Text(
-                insight.message,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyLarge?.copyWith(
-                  fontWeight: FontWeight.w500,
-                  height: 1.45,
-                  color: colorScheme.onSurface,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  insight.message,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w500,
+                    height: 1.45,
+                    color: colorScheme.onSurface,
+                  ),
                 ),
               ),
             ),

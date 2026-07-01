@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import 'app_brand.dart';
 import 'app_spacing.dart';
 
@@ -105,16 +106,18 @@ abstract final class AppTheme {
         ),
       ),
       dialogTheme: DialogThemeData(
+        elevation: AppDesignTokens.elevationDialog,
         shape: cardShape,
         insetPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.screenPadding,
-          vertical: AppSpacing.screenPadding,
+          horizontal: AppDesignTokens.pagePaddingHorizontal,
+          vertical: AppDesignTokens.pagePaddingVertical,
         ),
       ),
       bottomSheetTheme: BottomSheetThemeData(
+        elevation: AppDesignTokens.elevationBottomSheet,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
-            top: AppSpacing.cardBorderRadius.topLeft,
+            top: AppDesignTokens.radiusSmallBorder.topLeft,
           ),
         ),
         showDragHandle: true,
@@ -125,9 +128,7 @@ abstract final class AppTheme {
         thickness: 1,
       ),
       listTileTheme: const ListTileThemeData(
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.cardPadding,
-        ),
+        contentPadding: AppDesignTokens.cardListTilePadding,
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(

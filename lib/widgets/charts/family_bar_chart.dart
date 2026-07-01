@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_system.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import 'chart_legend.dart';
@@ -132,7 +133,7 @@ class FamilyBarChart extends StatelessWidget {
                       final shortName =
                           name.length > 8 ? '${name.substring(0, 7)}…' : name;
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: AppDesignTokens.space8),
                         child: Text(
                           shortName,
                           style: theme.textTheme.labelSmall?.copyWith(

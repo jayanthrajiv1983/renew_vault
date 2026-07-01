@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 
 /// Tappable summary tile for dashboard and analytics grids.
@@ -30,32 +31,30 @@ class SummaryStatCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: cardRadius,
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.cardPadding,
-            vertical: AppSpacing.cardPadding - 4,
-          ),
+          padding: AppDesignTokens.cardInsets,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child: Text(
-                  label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: textStyles.categoryText(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: textStyles.categoryText(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-              const SizedBox(height: 6),
-              Text(
-                '$count',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: textStyles.dashboardNumber(
-                  color: countColor,
+              const SizedBox(height: AppDesignTokens.space8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '$count',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: textStyles.dashboardNumber(
+                    color: countColor,
+                  ),
                 ),
               ),
             ],

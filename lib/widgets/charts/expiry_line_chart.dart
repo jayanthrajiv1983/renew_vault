@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_system.dart';
 import '../../shared/widgets/empty_state_widget.dart';
 import '../../theme/app_spacing.dart';
 import '../../services/analytics_service.dart';
@@ -102,7 +103,7 @@ class ExpiryLineChart extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Padding(
-                        padding: const EdgeInsets.only(top: 8),
+                        padding: const EdgeInsets.only(top: AppDesignTokens.space8),
                         child: Text(
                           monthlyExpiries[index].label,
                           style: theme.textTheme.labelSmall?.copyWith(

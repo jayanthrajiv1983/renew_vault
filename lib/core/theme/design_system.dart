@@ -1,0 +1,106 @@
+import 'package:flutter/material.dart';
+
+/// Centralized layout, shape, and elevation tokens for Renew Vault.
+///
+/// Typography lives in [AppTextStyles]; use these tokens for spacing,
+/// radii, icon sizes, card borders, and elevations.
+abstract final class AppDesignTokens {
+  // ── Spacing scale ─────────────────────────────────────────────────────────
+
+  static const double space4 = 4;
+  static const double space8 = 8;
+  static const double space12 = 12;
+  static const double space16 = 16;
+  static const double space20 = 20;
+  static const double space24 = 24;
+  static const double space32 = 32;
+
+  // ── Border radius ─────────────────────────────────────────────────────────
+
+  static const double radiusSmall = 12;
+  static const double radiusMedium = 16;
+  static const double radiusLarge = 20;
+  static const double radiusHero = 24;
+
+  // ── Card elevation ────────────────────────────────────────────────────────
+
+  static const double elevationDashboard = 0;
+  static const double elevationCard = 0;
+  static const double elevationDialog = 2;
+  static const double elevationBottomSheet = 3;
+
+  // ── Card border (subtle outline, not shadow) ──────────────────────────────
+
+  static const double cardBorderWidth = 1;
+  static const double cardBorderAlpha = 0.08;
+
+  static Color cardBorderColor(ThemeData theme) =>
+      theme.dividerColor.withValues(alpha: cardBorderAlpha);
+
+  static BorderSide cardBorderSide(ThemeData theme) => BorderSide(
+        color: cardBorderColor(theme),
+        width: cardBorderWidth,
+      );
+
+  static Border cardBorder(ThemeData theme) =>
+      Border.all(color: cardBorderColor(theme), width: cardBorderWidth);
+
+  // ── Icon sizes ────────────────────────────────────────────────────────────
+
+  static const double iconSmall = 18;
+  static const double iconMedium = 22;
+  static const double iconLarge = 28;
+  static const double iconHero = 36;
+
+  // ── Page padding ──────────────────────────────────────────────────────────
+
+  static const double pagePaddingHorizontal = space16;
+  static const double pagePaddingVertical = space16;
+
+  static const EdgeInsets pagePadding = EdgeInsets.symmetric(
+    horizontal: pagePaddingHorizontal,
+    vertical: pagePaddingVertical,
+  );
+
+  static const EdgeInsets pageInsets = EdgeInsets.all(pagePaddingHorizontal);
+
+  // ── Section rhythm ────────────────────────────────────────────────────────
+
+  static const double sectionGap = space20;
+  static const double titleToFirstCard = space12;
+  static const double cardGap = space12;
+  static const double heroToDashboard = space16;
+
+  // ── Shape helpers ─────────────────────────────────────────────────────────
+
+  static BorderRadius get radiusSmallBorder =>
+      BorderRadius.circular(radiusSmall);
+
+  static BorderRadius get radiusMediumBorder =>
+      BorderRadius.circular(radiusMedium);
+
+  static BorderRadius get radiusLargeBorder =>
+      BorderRadius.circular(radiusLarge);
+
+  static BorderRadius get radiusHeroBorder =>
+      BorderRadius.circular(radiusHero);
+
+  // ── Common insets & gaps ──────────────────────────────────────────────────
+
+  static const EdgeInsets cardInsets = EdgeInsets.all(space16);
+
+  /// ListTile padding inside Cards — matches [cardInsets] horizontal rhythm.
+  static const EdgeInsets cardListTilePadding = EdgeInsets.symmetric(
+    horizontal: space16,
+  );
+
+  static SizedBox get gapSection => const SizedBox(height: sectionGap);
+
+  static SizedBox get gapCard => const SizedBox(height: cardGap);
+
+  static SizedBox get gapTitleToFirstCard =>
+      const SizedBox(height: titleToFirstCard);
+}
+
+/// Alias for [AppDesignTokens].
+typedef DesignSystem = AppDesignTokens;

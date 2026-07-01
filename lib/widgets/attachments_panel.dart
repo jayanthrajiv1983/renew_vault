@@ -11,7 +11,7 @@ import '../models/renewal_item.dart';
 import '../screens/attachment_image_viewer_screen.dart';
 import '../services/attachment_service.dart';
 import '../services/storage_service.dart';
-import '../theme/app_spacing.dart';
+import '../core/theme/design_system.dart';
 import '../utils/app_snackbar.dart';
 import '../utils/form_padding.dart';
 import '../utils/metadata_utils.dart';
@@ -387,11 +387,11 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
             'Attachments',
             style: theme.textTheme.titleMedium,
           ),
-          const SizedBox(height: AppSpacing.fieldLabelGap),
+          const SizedBox(height: AppDesignTokens.space8),
         ],
         Wrap(
-          spacing: AppSpacing.fieldLabelGap,
-          runSpacing: AppSpacing.fieldLabelGap,
+          spacing: AppDesignTokens.space8,
+          runSpacing: AppDesignTokens.space8,
           children: [
             _AttachmentActionButton(
               icon: Icons.photo_camera_outlined,
@@ -432,7 +432,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
           ],
         ),
         if (_attachments.isEmpty) ...[
-          const SizedBox(height: AppSpacing.cardSpacing),
+          const SizedBox(height: AppDesignTokens.cardGap),
           Text(
             _isDetail
                 ? 'No attachments yet. Add a photo or PDF to keep records with this item.'
@@ -442,7 +442,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
             ),
           ),
         ] else ...[
-          const SizedBox(height: AppSpacing.cardSpacing),
+          const SizedBox(height: AppDesignTokens.cardGap),
           for (final attachment in _attachments) ...[
             _AttachmentTile(
               attachment: attachment,
@@ -454,7 +454,7 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
           ],
         ],
         if (atLimit) ...[
-          const SizedBox(height: AppSpacing.fieldLabelGap),
+          const SizedBox(height: AppDesignTokens.space8),
           Text(
             'Free plan allows ${AttachmentLimits.maxFreeAttachments} attachment. '
             'Add a new file to replace the current one.',
@@ -473,8 +473,8 @@ class _AttachmentsPanelState extends State<AttachmentsPanel> {
       final colorScheme = Theme.of(context).colorScheme;
       return ItemDetailSection(
         title: 'Attachments',
-        borderRadius: BorderRadius.circular(AppSpacing.sectionSpacing),
-        elevation: AppSpacing.cardElevation,
+        borderRadius: AppDesignTokens.radiusLargeBorder,
+        elevation: AppDesignTokens.elevationCard,
         surfaceTintColor: colorScheme.surfaceTint,
         child: _buildContent(context),
       );
@@ -498,7 +498,7 @@ class _AttachmentActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton.tonalIcon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: AppDesignTokens.iconSmall),
       label: Text(label),
     );
   }

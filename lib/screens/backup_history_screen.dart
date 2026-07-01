@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../models/backup_history_entry.dart';
 import '../core/services/logging_service.dart';
 import '../services/backup_history_service.dart';
@@ -160,7 +161,6 @@ class _BackupHistoryScreenState extends State<BackupHistoryScreen> {
                 : ListView.builder(
                     padding: listScrollPadding(
                       context,
-                      top: AppSpacing.fieldLabelGap,
                     ),
                     itemCount: timelineItems.length,
                     itemBuilder: (context, index) {
@@ -226,10 +226,10 @@ class _DateHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(
-        left: AppSpacing.screenPadding,
-        right: AppSpacing.screenPadding,
-        top: AppSpacing.sectionSpacing,
-        bottom: AppSpacing.fieldLabelGap,
+        left: AppDesignTokens.pagePaddingHorizontal,
+        right: AppDesignTokens.pagePaddingHorizontal,
+        top: AppDesignTokens.sectionGap,
+        bottom: AppDesignTokens.space8,
       ),
       child: Text(
         formatBackupDateHeader(date),
@@ -271,7 +271,9 @@ class _BackupTimelineTile extends StatelessWidget {
     final nodeIcon = entry.isCloud ? Icons.cloud_done_outlined : Icons.phone_android_outlined;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screenPadding),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesignTokens.pagePaddingHorizontal,
+      ),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -317,7 +319,7 @@ class _BackupTimelineTile extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(width: AppSpacing.fieldLabelGap),
+            const SizedBox(width: AppDesignTokens.space8),
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
@@ -374,12 +376,12 @@ class _BackupTimelineTile extends StatelessWidget {
                           icon: Icons.schedule_outlined,
                           label: formatBackupDateTime(entry.createdAt),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppDesignTokens.space4),
                         _MetaRow(
                           icon: Icons.sd_storage_outlined,
                           label: formatFileSize(entry.fileSizeBytes),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppDesignTokens.space4),
                         _MetaRow(
                           icon: entry.isCloud
                               ? Icons.cloud_outlined
@@ -425,7 +427,10 @@ class _TypeChip extends StatelessWidget {
         : colorScheme.onPrimaryContainer;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDesignTokens.space8 + 2,
+        vertical: AppDesignTokens.space4,
+      ),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
@@ -454,10 +459,10 @@ class _MetaRow extends StatelessWidget {
       children: [
         Icon(
           icon,
-          size: 16,
+          size: AppDesignTokens.iconSmall - 2,
           color: theme.colorScheme.onSurfaceVariant,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppDesignTokens.space8),
         Expanded(
           child: Text(
             label,

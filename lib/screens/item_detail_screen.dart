@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import '../models/renewal_item.dart';
 import '../services/family_service.dart';
 import '../core/theme/app_text_styles.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 import '../utils/category_fields_builder.dart';
 import '../utils/form_padding.dart';
@@ -145,10 +146,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   children: [
                     Icon(
                       categoryIcon(item.category),
-                      size: 54,
+                      size: AppDesignTokens.iconHero,
                       color: categoryColor(item.category, theme.colorScheme),
                     ),
-                    const SizedBox(height: AppSpacing.fieldLabelGap),
+                    const SizedBox(height: AppDesignTokens.space8),
                     Text(
                       item.category,
                       textAlign: TextAlign.center,
@@ -156,15 +157,15 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.cardSpacing),
+                    const SizedBox(height: AppDesignTokens.cardGap),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.cardSpacing,
-                        vertical: 6,
+                        horizontal: AppDesignTokens.cardGap,
+                        vertical: AppDesignTokens.space8,
                       ),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: AppSpacing.buttonBorderRadius,
+                        borderRadius: AppDesignTokens.radiusLargeBorder,
                       ),
                       child: Text(
                         statusText,
@@ -178,11 +179,11 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.screenPadding),
+          const SizedBox(height: AppDesignTokens.pagePaddingVertical),
           ItemDetailSection(
             title: 'Basic Information',
-            borderRadius: BorderRadius.circular(AppSpacing.sectionSpacing),
-            elevation: AppSpacing.cardElevation,
+            borderRadius: AppDesignTokens.radiusLargeBorder,
+            elevation: AppDesignTokens.elevationCard,
             surfaceTintColor: theme.colorScheme.surfaceTint,
             trailing: _RenewalStatusBadge(daysRemaining: daysRemaining),
             child: Column(
@@ -249,9 +250,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                 position: _categoryDetailsSlide,
                 child: CategoryDetailsCard(
                   fields: categoryFields,
-                  borderRadius:
-                      BorderRadius.circular(AppSpacing.sectionSpacing),
-                  elevation: AppSpacing.cardElevation,
+                  borderRadius: AppDesignTokens.radiusLargeBorder,
+                  elevation: AppDesignTokens.elevationCard,
                   surfaceTintColor: theme.colorScheme.surfaceTint,
                   animationIndexOffset: 4,
                 ),
@@ -269,15 +269,16 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               children: [
                 for (final days in sortedReminderDays)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.fieldLabelGap),
+                    padding: const EdgeInsets.only(bottom: AppDesignTokens.space8),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Icon(
                           Icons.notifications_outlined,
-                          size: 18,
+                          size: AppDesignTokens.iconSmall,
                           color: theme.colorScheme.primary,
                         ),
-                        const SizedBox(width: AppSpacing.fieldLabelGap),
+                        const SizedBox(width: AppDesignTokens.space8),
                         Text(_reminderLabel(days)),
                       ],
                     ),
@@ -313,7 +314,7 @@ class _RenewalStatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final label = getStatusBadgeLabel(daysRemaining);
-    final color = getStatusBadgeColor(daysRemaining);
+    final color = getStatusBadgeColor(daysRemaining, theme.colorScheme);
     final dot = switch (getStatusLevel(daysRemaining)) {
       RenewalStatusLevel.safe => '🟢',
       RenewalStatusLevel.expiringSoon => '🟠',
@@ -322,18 +323,19 @@ class _RenewalStatusBadge extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.fieldLabelGap,
+        horizontal: AppDesignTokens.space8,
         vertical: 4,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppSpacing.chipRadius),
+        borderRadius: BorderRadius.circular(AppDesignTokens.space8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(dot, style: const TextStyle(fontSize: 10, height: 1)),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppDesignTokens.space4),
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
@@ -447,7 +449,7 @@ class _DetailInfoRow extends StatelessWidget {
         assert(value != null || valueWidget != null);
 
   static const double iconColumnWidth = 44;
-  static const double iconGap = AppSpacing.sectionSpacing;
+  static const double iconGap = AppDesignTokens.space12;
   static double get dividerLeftPadding => iconColumnWidth + iconGap;
 
   final IconData? icon;
@@ -464,7 +466,7 @@ class _DetailInfoRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.cardSpacing),
+      padding: const EdgeInsets.symmetric(vertical: AppDesignTokens.cardGap),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -514,12 +516,14 @@ class _DetailInfoRow extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: colorScheme.primaryContainer.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(AppSpacing.chipRadius + 2),
+          borderRadius: BorderRadius.circular(AppDesignTokens.space8 + 2),
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: colorScheme.onPrimaryContainer,
+        child: Center(
+          child: Icon(
+            icon,
+            size: AppDesignTokens.iconMedium,
+            color: colorScheme.onPrimaryContainer,
+          ),
         ),
       ),
     );
@@ -567,7 +571,7 @@ class _OwnerInfoValue extends StatelessWidget {
         ),
         if (showRelationship)
           Padding(
-            padding: const EdgeInsets.only(top: 2),
+            padding: const EdgeInsets.only(top: AppDesignTokens.space4 / 2),
             child: Text(
               relationship,
               style: textStyles.metadata(

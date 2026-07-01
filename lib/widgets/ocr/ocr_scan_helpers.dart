@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../services/ocr/ocr_scan_stage.dart';
+import '../../core/theme/design_system.dart';
 import '../../theme/app_spacing.dart';
 import '../../utils/form_padding.dart';
 
@@ -17,11 +18,13 @@ Future<ImageSource?> showOcrSourcePicker(BuildContext context) {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.photo_camera_outlined),
               title: const Text('Take Photo'),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
+              contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.photo_library_outlined),
               title: const Text('Choose from Gallery'),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
@@ -157,7 +160,10 @@ class _OcrScanningOverlayContentState extends State<_OcrScanningOverlayContent>
       borderRadius: AppSpacing.cardBorderRadius,
       color: theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDesignTokens.space32,
+          vertical: AppDesignTokens.space24,
+        ),
         child: SizedBox(
           width: 280,
           child: Column(
@@ -178,7 +184,7 @@ class _OcrScanningOverlayContentState extends State<_OcrScanningOverlayContent>
                     color: theme.colorScheme.primary,
                   ),
                 ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppDesignTokens.sectionGap),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
@@ -189,7 +195,7 @@ class _OcrScanningOverlayContentState extends State<_OcrScanningOverlayContent>
                   color: theme.colorScheme.primary,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppDesignTokens.space16),
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 250),
                 child: Text(

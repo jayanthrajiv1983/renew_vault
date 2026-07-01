@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 
 class BackupReminderBanner extends StatelessWidget {
@@ -25,17 +26,16 @@ class BackupReminderBanner extends StatelessWidget {
         borderRadius: AppSpacing.cardBorderRadius,
         clipBehavior: Clip.antiAlias,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.cardPadding,
-            AppSpacing.cardSpacing,
-            AppSpacing.fieldLabelGap,
-            AppSpacing.cardSpacing,
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDesignTokens.space16,
+            vertical: AppDesignTokens.cardGap,
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Icon(
                 Icons.cloud_upload_outlined,
+                size: AppDesignTokens.iconMedium,
                 color: theme.colorScheme.onSecondaryContainer,
               ),
               const SizedBox(width: AppSpacing.cardSpacing),

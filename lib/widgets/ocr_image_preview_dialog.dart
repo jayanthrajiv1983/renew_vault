@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
 import '../utils/form_padding.dart';
 import 'form_action_bar.dart';
@@ -125,7 +126,7 @@ class _OcrImagePreviewDialogState extends State<_OcrImagePreviewDialog> {
                             size: 16,
                             color: theme.colorScheme.primary,
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppDesignTokens.space8),
                           Expanded(
                             child: Text(
                               'Enhanced: cropped, deskewed, grayscale, higher contrast, sharpened.',

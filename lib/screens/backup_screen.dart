@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../core/theme/design_system.dart';
 import '../services/google_drive_backup_service.dart';
 import '../services/settings_service.dart';
 import '../shared/widgets/success_overlay.dart';
@@ -194,6 +195,8 @@ class _BackupScreenState extends State<BackupScreen> {
               child: Column(
                 children: [
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.primaryContainer,
                       child: Icon(
@@ -212,6 +215,8 @@ class _BackupScreenState extends State<BackupScreen> {
                   ),
                   const Divider(height: 1),
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.surfaceContainerHighest,
                       child: Icon(
@@ -233,6 +238,8 @@ class _BackupScreenState extends State<BackupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.secondaryContainer,
                       child: Icon(
@@ -252,10 +259,10 @@ class _BackupScreenState extends State<BackupScreen> {
                   if (lastCloudBackupLabel != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.cardPadding + 56,
+                        AppDesignTokens.space16 + 56,
                         0,
-                        AppSpacing.cardPadding,
-                        AppSpacing.fieldLabelGap,
+                        AppDesignTokens.space16,
+                        AppDesignTokens.space8,
                       ),
                       child: Text(
                         lastCloudBackupLabel,
@@ -266,14 +273,14 @@ class _BackupScreenState extends State<BackupScreen> {
                     ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.cardPadding,
+                      AppDesignTokens.space16,
                       0,
-                      AppSpacing.cardPadding,
-                      AppSpacing.cardPadding,
+                      AppDesignTokens.space16,
+                      AppDesignTokens.space16,
                     ),
                     child: Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                      spacing: AppDesignTokens.space8,
+                      runSpacing: AppDesignTokens.space8,
                       children: [
                         if (googleEmail == null)
                           FilledButton.icon(
@@ -322,6 +329,8 @@ class _BackupScreenState extends State<BackupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ListTile(
+                    contentPadding: AppDesignTokens.cardListTilePadding,
+                    titleAlignment: ListTileTitleAlignment.center,
                     leading: CircleAvatar(
                       backgroundColor: theme.colorScheme.tertiaryContainer,
                       child: Icon(
@@ -342,7 +351,7 @@ class _BackupScreenState extends State<BackupScreen> {
             AppSpacing.gapSection,
             Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.cardPadding,
+                horizontal: AppDesignTokens.pagePaddingHorizontal,
               ),
               child: Text(
                 'Regular backups help protect your item data if you change devices or reinstall the app.',

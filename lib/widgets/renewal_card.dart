@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../constants/categories.dart';
 import '../models/renewal_item.dart';
 import '../core/theme/app_text_styles.dart';
-import '../theme/app_colors.dart';
+import '../core/theme/design_system.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_colors.dart';
 import 'owner_avatar.dart';
 
 DateTime dateOnly(DateTime date) {
@@ -16,10 +17,7 @@ int getDaysRemaining(DateTime renewalDate) {
 }
 
 Color getStatusColor(int daysRemaining, ColorScheme colorScheme) {
-  if (daysRemaining < 0) {
-    return colorScheme.error;
-  }
-  return AppColors.statusForDaysRemaining(daysRemaining);
+  return AppColors.statusForDaysRemaining(daysRemaining, colorScheme);
 }
 
 String getStatusText(int daysRemaining) {
@@ -60,14 +58,14 @@ String getStatusBadgeLabel(int daysRemaining) {
   }
 }
 
-Color getStatusBadgeColor(int daysRemaining) {
+Color getStatusBadgeColor(int daysRemaining, ColorScheme colorScheme) {
   switch (getStatusLevel(daysRemaining)) {
     case RenewalStatusLevel.expired:
-      return AppColors.statExpired;
+      return AppColors.expiredColor(colorScheme);
     case RenewalStatusLevel.expiringSoon:
-      return AppColors.statExpiringSoon;
+      return AppColors.expiringColor(colorScheme);
     case RenewalStatusLevel.safe:
-      return AppColors.statSafe;
+      return AppColors.safeColor(colorScheme);
   }
 }
 
@@ -76,23 +74,20 @@ class RenewalCard extends StatelessWidget {
     super.key,
     required this.item,
     required this.onTap,
-    this.bottomMargin = AppSpacing.cardSpacing,
+    this.bottomMargin = AppDesignTokens.cardGap,
   });
 
-  static const double _leadingIconSize = 48;
+  static const double _leadingSlotSize = 48;
+  static const double _leadingIconSize = AppDesignTokens.iconHero;
 
-  /// Tighter than [AppSpacing.sectionSpacing] between icon and text column.
-  static const double _iconContentGap = 12;
+  static const double _iconContentGap = AppDesignTokens.space12;
 
   /// Status column width — fits two 14sp lines without scaling text down.
   static const double _statusMaxWidth = 100;
 
-  static const double _contentStatusGap = 8;
+  static const double _contentStatusGap = AppDesignTokens.space8;
 
-  static const EdgeInsets _cardContentPadding = EdgeInsets.symmetric(
-    horizontal: 12,
-    vertical: AppSpacing.cardPadding,
-  );
+  static const EdgeInsets _cardContentPadding = AppDesignTokens.cardInsets;
 
   final RenewalItem item;
   final VoidCallback onTap;
@@ -109,7 +104,7 @@ class RenewalCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.only(bottom: bottomMargin),
       child: InkWell(
-        borderRadius: AppSpacing.cardBorderRadius,
+        borderRadius: AppDesignTokens.radiusSmallBorder,
         onTap: onTap,
         child: Padding(
           padding: _cardContentPadding,
@@ -117,12 +112,22 @@ class RenewalCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
-                width: _leadingIconSize,
-                height: _leadingIconSize,
-                child: Icon(
-                  categoryIcon(item.category),
-                  size: _leadingIconSize,
-                  color: categoryColor(item.category, theme.colorScheme),
+                width: _leadingSlotSize,
+                height: _leadingSlotSize,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: categoryColor(item.category, theme.colorScheme)
+                        .withValues(alpha: 0.12),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      categoryIcon(item.category),
+                      size: _leadingIconSize,
+                      color: categoryColor(item.category, theme.colorScheme)
+                          .withValues(alpha: 0.85),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: _iconContentGap),
@@ -163,13 +168,20 @@ class RenewalCard extends StatelessWidget {
               const SizedBox(width: _contentStatusGap),
               SizedBox(
                 width: _statusMaxWidth,
-                child: Text(
-                  statusText,
-                  style: textStyles.daysLeft(color: statusColor),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  softWrap: true,
-                  textAlign: TextAlign.end,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    statusText,
+                    style: textStyles.daysLeft(color: statusColor),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: true,
+                    textAlign: TextAlign.end,
+                    textHeightBehavior: const TextHeightBehavior(
+                      applyHeightToFirstAscent: false,
+                      applyHeightToLastDescent: false,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -189,8 +201,10 @@ class _OwnerChip extends StatelessWidget {
   });
 
   static const double _avatarRadius = 10;
-  static const EdgeInsets _padding =
-      EdgeInsets.symmetric(horizontal: 8, vertical: 4);
+  static const EdgeInsets _padding = EdgeInsets.symmetric(
+    horizontal: AppDesignTokens.space8,
+    vertical: AppDesignTokens.space4,
+  );
 
   final String ownerName;
   final TextStyle textStyle;
@@ -207,6 +221,7 @@ class _OwnerChip extends StatelessWidget {
         padding: _padding,
         child: Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             OwnerAvatar(ownerName: ownerName, radius: _avatarRadius),
             const SizedBox(width: AppSpacing.fieldLabelGap),
@@ -216,6 +231,10 @@ class _OwnerChip extends StatelessWidget {
                 style: textStyle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+                textHeightBehavior: const TextHeightBehavior(
+                  applyHeightToFirstAscent: false,
+                  applyHeightToLastDescent: false,
+                ),
               ),
             ),
           ],

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_system.dart';
+
 class ChartLegendItem {
   const ChartLegendItem({
     required this.label,
@@ -18,8 +20,8 @@ class ChartLegend extends StatelessWidget {
   const ChartLegend({
     super.key,
     required this.items,
-    this.wrapSpacing = 12,
-    this.runSpacing = 8,
+    this.wrapSpacing = AppDesignTokens.cardGap,
+    this.runSpacing = AppDesignTokens.space8,
   });
 
   final List<ChartLegendItem> items;
@@ -36,6 +38,7 @@ class ChartLegend extends StatelessWidget {
       children: items.map((item) {
         final legend = Row(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: 12,
@@ -45,7 +48,7 @@ class ChartLegend extends StatelessWidget {
                 borderRadius: BorderRadius.circular(3),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppDesignTokens.space8),
             Text(
               item.value != null ? '${item.label} (${item.value})' : item.label,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -63,7 +66,10 @@ class ChartLegend extends StatelessWidget {
           onTap: item.onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDesignTokens.space4,
+              vertical: AppDesignTokens.space4 / 2,
+            ),
             child: legend,
           ),
         );
