@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Replace jayanthrajiv1983 with your GitHub username before deploying
-Sitemap: https://jayanthrajiv1983.github.io/homecare_vault/sitemap.xml
+Sitemap: https://jayanthrajiv1983.github.io/renew_vault/sitemap.xml

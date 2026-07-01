@@ -4,7 +4,7 @@ Static marketing and legal site for **Renew Vault**, deployed via [GitHub Pages]
 
 **Live URL (after deployment):** `https://<username>.github.io/<repo-name>/`
 
-Example for this repo: `https://<your-github-username>.github.io/homecare_vault/`
+Example for this repo: `https://<your-github-username>.github.io/renew_vault/`
 
 ---
 
@@ -159,9 +159,9 @@ Before deploying (or after your GitHub Pages URL is known), replace the placehol
 | `robots.txt` | `Sitemap:` line |
 | `sitemap.xml` | Every `<loc>` entry |
 
-**Placeholder base URL:** `https://jayanthrajiv1983.github.io/homecare_vault/`
+**Placeholder base URL:** `https://jayanthrajiv1983.github.io/renew_vault/`
 
-Example after replace: `https://johndoe.github.io/homecare_vault/`
+Example after replace: `https://johndoe.github.io/renew_vault/`
 
 Quick find-and-replace in the `website/` folder:
 
@@ -195,10 +195,10 @@ When submitting to Google Play, use these live URLs (after deploy + placeholder 
 
 | Field | URL |
 |-------|-----|
-| Privacy Policy | `https://<username>.github.io/homecare_vault/privacy-policy.html` |
-| Terms (if required) | `https://<username>.github.io/homecare_vault/terms.html` |
-| Website | `https://<username>.github.io/homecare_vault/` |
-| Support / Contact | `https://<username>.github.io/homecare_vault/support.html` or `contact.html` |
+| Privacy Policy | `https://<username>.github.io/renew_vault/privacy-policy.html` |
+| Terms (if required) | `https://<username>.github.io/renew_vault/terms.html` |
+| Website | `https://<username>.github.io/renew_vault/` |
+| Support / Contact | `https://<username>.github.io/renew_vault/support.html` or `contact.html` |
 
 ### Favicon and logo
 
