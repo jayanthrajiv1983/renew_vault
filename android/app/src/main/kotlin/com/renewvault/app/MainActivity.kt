@@ -1,4 +1,4 @@
-package com.example.homecare_vault
+package com.renewvault.app
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -6,7 +6,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
-    private val privacyChannelName = "com.example.homecare_vault/privacy_protection"
+    private val privacyChannelName = "com.renewvault.app/privacy_protection"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

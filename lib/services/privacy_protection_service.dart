@@ -11,7 +11,7 @@ class PrivacyProtectionService {
   static final PrivacyProtectionService instance = PrivacyProtectionService._();
 
   static const _channel =
-      MethodChannel('com.example.homecare_vault/privacy_protection');
+      MethodChannel('com.renewvault.app/privacy_protection');
 
   bool isProtectionEnabled() =>
       SettingsService.instance.getHideAppContentsInRecents();
